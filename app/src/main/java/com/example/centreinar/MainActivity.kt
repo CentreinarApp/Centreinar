@@ -1,20 +1,25 @@
 package com.example.centreinar
 
 import android.os.Bundle
+import android.util.Log
 import android.view.Menu
-import com.google.android.material.snackbar.Snackbar
-import com.google.android.material.navigation.NavigationView
+import androidx.appcompat.app.AppCompatActivity
+import androidx.drawerlayout.widget.DrawerLayout
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.findNavController
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.navigateUp
 import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
-import androidx.drawerlayout.widget.DrawerLayout
-import androidx.appcompat.app.AppCompatActivity
 import com.example.centreinar.databinding.ActivityMainBinding
-import androidx.lifecycle.lifecycleScope
-import kotlinx.coroutines.launch
 import com.example.centreinar.DatabaseProvider
+import com.example.centreinar.ui.home.HomeViewModel
+import com.example.centreinar.ui.home.HomeViewModelFactory
+import com.google.android.material.navigation.NavigationView
+import com.google.android.material.snackbar.Snackbar
+import kotlinx.coroutines.launch
 
 
 class MainActivity : AppCompatActivity() {
@@ -29,19 +34,6 @@ class MainActivity : AppCompatActivity() {
 
         setSupportActionBar(binding.appBarMain.toolbar)
 
-        // Initialize and populate the database in a coroutine
-        lifecycleScope.launch {
-            val database = DatabaseProvider.getDatabase(applicationContext)
-            val dao = database.limitDao()
-
-            // Verify inserted data
-            val limits = dao.getAllLimits()
-            println("Number of limits in database: ${limits.size}")
-            limits.forEach { limit ->
-                println("Grain: ${limit.grain}, Group: ${limit.group}, Type: ${limit.type}")
-            }
-        }
-
         binding.appBarMain.fab.setOnClickListener { view ->
             Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
                 .setAction("Action", null)
@@ -53,9 +45,8 @@ class MainActivity : AppCompatActivity() {
         val navController = findNavController(R.id.nav_host_fragment_content_main)
 
         appBarConfiguration = AppBarConfiguration(
-            setOf(
-                R.id.nav_home, R.id.nav_gallery, R.id.nav_slideshow
-            ), drawerLayout
+            setOf(R.id.nav_home, R.id.nav_gallery, R.id.nav_slideshow),
+            drawerLayout
         )
         setupActionBarWithNavController(navController, appBarConfiguration)
         navView.setupWithNavController(navController)

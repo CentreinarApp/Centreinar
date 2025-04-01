@@ -1,7 +1,7 @@
 package com.example.centreinar
+
 import android.content.Context
 import androidx.room.Room
-import com.example.centreinar.AppDatabase
 
 object DatabaseProvider {
     private var INSTANCE: AppDatabase? = null
@@ -11,9 +11,11 @@ object DatabaseProvider {
             val instance = Room.databaseBuilder(
                 context.applicationContext,
                 AppDatabase::class.java,
-                "limits"
-            ).createFromAsset("database/innit.db")
-            .build()
+                "grains_db"  // Changed to more appropriate name
+            )
+                .createFromAsset("database/innit.db")
+                .fallbackToDestructiveMigration()  // Added migration strategy
+                .build()
 
             INSTANCE = instance
             instance
