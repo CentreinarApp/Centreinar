@@ -1,11 +1,19 @@
 package com.example.centreinar
+
 import androidx.room.Database
 import androidx.room.RoomDatabase
-import com.example.centreinar.Limit
-import com.example.centreinar.LimitDao
 
-
-@Database(entities = [Limit::class], version = 1, exportSchema = false)
+@Database(
+    entities = [
+        Limit::class,
+        Classification::class,
+        Sample::class
+    ],
+    version = 2,  // Incremented version number
+    exportSchema = false
+)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun limitDao(): LimitDao
+    abstract fun classificationDao(): ClassificationDao
+    abstract fun sampleDao(): SampleDao
 }
