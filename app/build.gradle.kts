@@ -2,6 +2,8 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.ksp)
+    id("kotlin-kapt")
+    alias (libs.plugins.hilt.application)
 }
 
 android {
@@ -42,7 +44,10 @@ android {
 dependencies {
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
+    implementation (libs.hilt.android)
+    kapt (libs.hilt.android.compiler)
     ksp(libs.androidx.room.compiler)
+    implementation (libs.hilt.navigation.compose)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
