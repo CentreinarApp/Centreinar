@@ -20,6 +20,27 @@ data class Classification(
     @ColumnInfo(name = "sample")
     val sampleId: Int = 0,
 
+    @ColumnInfo(name = "foreignMattersPercentage")
+    val foreignMattersPercentage: Float = 0.0f,
+
+    @ColumnInfo(name = "brokenCrackedDamagedPercentage")
+    val brokenCrackedDamagedPercentage: Float = 0.0f,
+
+    @ColumnInfo(name = "greenishPercentage")
+    val greenishPercentage:Float = 0.0f,
+
+    @ColumnInfo(name = "moldyPercentage")
+    val moldyPercentage: Float = 0.0f,
+
+    @ColumnInfo(name = "burntPercentage")
+    val burntPercentage: Float = 0.0f,
+
+    @ColumnInfo(name = "burntOrSourPercentage")  // Fixed wrong column name
+    val burntOrSourPercentage: Float = 0.0f,
+
+    @ColumnInfo(name = "spoiledPercentage")
+    val spoiledPercentage: Float = 0.0f,
+
     @ColumnInfo(name = "foreignMatters")
     val foreignMatters: Int = 0,
 
@@ -35,7 +56,7 @@ data class Classification(
     @ColumnInfo(name = "burnt")
     val burnt: Int = 0,
 
-    @ColumnInfo(name = "burntOrSour")  // Fixed wrong column name
+    @ColumnInfo(name = "burntOrSour")
     val burntOrSour: Int = 0,
 
     @ColumnInfo(name = "spoiled")
@@ -43,7 +64,4 @@ data class Classification(
 
     @ColumnInfo(name = "finalType")
     val finalType: Int = 0
-) {
-    // Secondary constructor with default values
-    constructor() : this(0, "", 0, 0, 0, 0, 0, 0, 0, 0, 0)
-}
+)
