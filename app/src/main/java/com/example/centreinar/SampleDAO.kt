@@ -32,7 +32,7 @@ interface SampleDao {
     suspend fun getById(id: Int): Sample?
 
     // Example filter queries
-    @Query("SELECT * FROM sample WHERE weight BETWEEN :minWeight AND :maxWeight")
+    @Query("SELECT * FROM sample WHERE sampleWeight BETWEEN :minWeight AND :maxWeight")
     fun getByWeightRange(minWeight: Float, maxWeight: Float): Flow<List<Sample>>
 
     @Query("SELECT * FROM sample WHERE humidity > :minHumidity")
