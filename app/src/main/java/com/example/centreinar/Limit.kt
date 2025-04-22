@@ -7,6 +7,7 @@ import androidx.room.ColumnInfo
 data class Limit(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
+    @ColumnInfo(name = "source") val source: Int,
     @ColumnInfo(name = "grain") val grain: String,
     @ColumnInfo(name = "group") val group : Int,
     @ColumnInfo(name = "type") val type : Int,
