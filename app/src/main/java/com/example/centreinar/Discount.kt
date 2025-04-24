@@ -12,7 +12,7 @@ data class Discount(
     @ColumnInfo(name = "impuritiesLoss") val impuritiesLoss: Float,
     @ColumnInfo(name = "humidityLoss") val humidityLoss: Float,
     @ColumnInfo(name = "technicalLoss") val technicalLoss: Float,
-    @ColumnInfo(name = "burntLossPrice") val burntLoss: Float,
+    @ColumnInfo(name = "burntLoss") val burntLoss: Float,
     @ColumnInfo(name = "burntOrSourLoss") val burntOrSourLoss: Float,
     @ColumnInfo(name = "moldyLoss") val moldyLoss: Float,
     @ColumnInfo(name = "spoiledLoss") val spoiledLoss: Float,

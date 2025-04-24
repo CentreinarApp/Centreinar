@@ -35,7 +35,7 @@ data class Sample(
     val sampleWeight: Float = 0.0f,
 
     @ColumnInfo(name = "cleanWeight")
-    val cleanWeight: Float = 0.0f,
+    var cleanWeight: Float = 0.0f,
 
     @ColumnInfo(name = "foreignMattersAndImpurities")
     val foreignMattersAndImpurities: Float = 0.0f,
@@ -66,11 +66,4 @@ data class Sample(
 
     @ColumnInfo(name = "immature")
     val immature: Float = 0.0f,
-
-    @ColumnInfo(name = "spoiled")
-    val spoiled: Float = 0.0f
-
-) {
-    // Secondary constructor with default values
-    constructor() : this(0, " ", 0, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f)
-}
+)
