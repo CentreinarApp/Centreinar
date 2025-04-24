@@ -1,8 +1,11 @@
 package com.example.centreinar
 
 import com.example.centreinar.LimitCategory
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class Utilities {
+@Singleton
+class Utilities @Inject constructor()  {
    fun findCategoryForValue(intervals: List<LimitCategory>, value: Float): Int {
         if(value == 0.0f) return 1
         for (interval in intervals) {

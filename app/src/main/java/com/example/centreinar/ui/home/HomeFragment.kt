@@ -4,19 +4,17 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.TextView
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.ViewModelProvider
-import com.example.centreinar.DatabaseProvider
+import androidx.fragment.app.viewModels
 import com.example.centreinar.databinding.FragmentHomeBinding
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class HomeFragment : Fragment() {
 
     private var _binding: FragmentHomeBinding? = null
     private val binding get() = _binding!!
-
-    // ViewModel instance
-    private lateinit var homeViewModel: HomeViewModel
+    private val viewModel: HomeViewModel by viewModels()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -24,21 +22,14 @@ class HomeFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View {
         _binding = FragmentHomeBinding.inflate(inflater, container, false)
-
-        // ✅ Get the DAO instance
-        val limitDao = DatabaseProvider.getDatabase(requireContext()).limitDao()
-        val classificationDao = DatabaseProvider.getDatabase(requireContext()).classificationDao()
-        // ✅ Initialize ViewModel with the Factory
-        val factory = HomeViewModelFactory(limitDao, classificationDao)
-        homeViewModel = ViewModelProvider(requireActivity(), factory).get(HomeViewModel::class.java)
-
-        // ✅ Observe ViewModel data
-        val textView: TextView = binding.textHome
-        homeViewModel.text.observe(viewLifecycleOwner) {
-            textView.text = it
-        }
-
+        observeViewModel()
         return binding.root
+    }
+
+    private fun observeViewModel() {
+        viewModel.text.observe(viewLifecycleOwner) { text ->
+            binding.textHome.text = text
+        }
     }
 
     override fun onDestroyView() {

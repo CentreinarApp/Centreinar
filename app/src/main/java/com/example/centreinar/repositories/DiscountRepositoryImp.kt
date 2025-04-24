@@ -14,7 +14,9 @@ import com.example.centreinar.Utilities
 import com.example.centreinar.InputDiscount
 
 import javax.inject.Inject
+import javax.inject.Singleton
 
+@Singleton
 class DiscountRepositoryImp @Inject constructor(
     private val limitDao: LimitDao,
     private val classificationDao: ClassificationDao,

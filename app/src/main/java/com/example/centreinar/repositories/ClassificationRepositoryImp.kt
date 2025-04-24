@@ -9,7 +9,9 @@ import com.example.centreinar.SampleDao
 import com.example.centreinar.Utilities
 
 import javax.inject.Inject
+import javax.inject.Singleton
 
+@Singleton
 class ClassificationRepositoryImpl @Inject constructor(
     private val limitDao: LimitDao,
     private val classificationDao: ClassificationDao,
