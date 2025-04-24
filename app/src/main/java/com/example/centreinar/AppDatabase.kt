@@ -7,13 +7,17 @@ import androidx.room.RoomDatabase
     entities = [
         Limit::class,
         Classification::class,
-        Sample::class
+        Sample::class,
+        Discount::class,
+        InputDiscount::class
     ],
-    version = 2,  // Incremented version number
+    version = 3,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun limitDao(): LimitDao
     abstract fun classificationDao(): ClassificationDao
     abstract fun sampleDao(): SampleDao
+    abstract fun discountDao(): DiscountDao
+    abstract fun inputDiscountDao(): InputDiscountDao
 }
