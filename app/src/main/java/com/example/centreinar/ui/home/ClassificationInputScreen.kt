@@ -33,12 +33,15 @@ fun ClassificationInputScreen(
     var humidity by remember { mutableStateOf("") }
     var greenish by remember { mutableStateOf("") }
     var brokenCrackedDamaged by remember { mutableStateOf("") }
+    var damaged by remember { mutableStateOf("") }
     var burnt by remember { mutableStateOf("") }
     var sour by remember { mutableStateOf("") }
     var moldy by remember { mutableStateOf("") }
     var fermented by remember { mutableStateOf("") }
     var germinated by remember { mutableStateOf("") }
     var immature by remember { mutableStateOf("") }
+    var shriveled by remember { mutableStateOf("") }
+
 
     // Clear form function
     fun clearForm() {
@@ -51,12 +54,14 @@ fun ClassificationInputScreen(
         humidity = ""
         greenish = ""
         brokenCrackedDamaged = ""
+        damaged = ""
         burnt = ""
         sour = ""
         moldy = ""
         fermented = ""
         germinated = ""
         immature = ""
+        shriveled = ""
     }
 
     val numericFields = setOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14) // Indices of numeric fields
@@ -66,32 +71,25 @@ fun ClassificationInputScreen(
         SampleInputField("Grupo", group) {
             if (it.isEmpty() || it.toIntOrNull() != null) group = it
         },
+        SampleInputField("Umidade", humidity) {
+            if (it.isEmpty() || it.toFloatOrNull() != null) humidity = it
+        },
         SampleInputField("Peso do lote(kg)", lotWeight) {
             if (it.isEmpty() || it.toFloatOrNull() != null) lotWeight = it
         },
         SampleInputField("Peso da amostra(g)", sampleWeight) {
             if (it.isEmpty() || it.toFloatOrNull() != null) sampleWeight = it
         },
-        SampleInputField("Peso limpo", cleanWeight) {
-            if (it.isEmpty() || it.toFloatOrNull() != null) cleanWeight = it
-        },
-        SampleInputField("Impurezas", foreignMatters) {
+        SampleInputField("Máteria Estranha e Impurezas", foreignMatters) {
             if (it.isEmpty() || it.toFloatOrNull() != null) foreignMatters = it
         },
-        SampleInputField("Umidade", humidity) {
-            if (it.isEmpty() || it.toFloatOrNull() != null) humidity = it
-        },
-        SampleInputField("Esverdeados", greenish) {
-            if (it.isEmpty() || it.toFloatOrNull() != null) greenish = it
-        },
-        SampleInputField("Partidos, Quebrados e Amassados", brokenCrackedDamaged) {
-            if (it.isEmpty() || it.toFloatOrNull() != null) brokenCrackedDamaged = it
+
+        //spoiled
+        SampleInputField("Ardidos", sour) {
+            if (it.isEmpty() || it.toFloatOrNull() != null) sour = it
         },
         SampleInputField("Queimados", burnt) {
             if (it.isEmpty() || it.toFloatOrNull() != null) burnt = it
-        },
-        SampleInputField("Ardidos", sour) {
-            if (it.isEmpty() || it.toFloatOrNull() != null) sour = it
         },
         SampleInputField("Mofados", moldy) {
             if (it.isEmpty() || it.toFloatOrNull() != null) moldy = it
@@ -105,6 +103,19 @@ fun ClassificationInputScreen(
         SampleInputField("Imaturos", immature) {
             if (it.isEmpty() || it.toFloatOrNull() != null) immature = it
         },
+        SampleInputField("Chochos", shriveled) {
+            if (it.isEmpty() || it.toFloatOrNull() != null) shriveled = it
+        },
+        SampleInputField("Danificados", damaged) {
+            if (it.isEmpty() || it.toFloatOrNull() != null) damaged = it
+        },
+        SampleInputField("Esverdeados", greenish) {
+            if (it.isEmpty() || it.toFloatOrNull() != null) greenish = it
+        },
+        SampleInputField("Partidos, Quebrados e Amassados", brokenCrackedDamaged) {
+            if (it.isEmpty() || it.toFloatOrNull() != null) brokenCrackedDamaged = it
+        },
+
     )
 
     LazyColumn(
@@ -152,12 +163,15 @@ fun ClassificationInputScreen(
                         humidity = humidity.toFloatOrNull() ?: 0f,
                         greenish = greenish.toFloatOrNull() ?: 0f,
                         brokenCrackedDamaged = brokenCrackedDamaged.toFloatOrNull() ?: 0f,
+                        damaged = damaged.toFloatOrNull() ?: 0f,
                         burnt = burnt.toFloatOrNull() ?: 0f,
                         sour = sour.toFloatOrNull() ?: 0f,
                         moldy = moldy.toFloatOrNull() ?: 0f,
                         fermented = fermented.toFloatOrNull() ?: 0f,
                         germinated = germinated.toFloatOrNull() ?: 0f,
-                        immature = immature.toFloatOrNull() ?: 0f
+                        immature = immature.toFloatOrNull() ?: 0f,
+                        shriveled = shriveled.toFloatOrNull() ?: 0f
+
                     )
                     viewModel.classifySample(sample)
                 },
