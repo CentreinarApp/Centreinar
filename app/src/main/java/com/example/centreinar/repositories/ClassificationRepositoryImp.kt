@@ -25,7 +25,7 @@ class ClassificationRepositoryImpl @Inject constructor(
         val limitMap = getLimitsForGrain(sample.grain,sample.group,limitSource)
 
         val grain = sample.grain
-
+        val limitImpuritiesList = limitMap["impurities"]?: emptyList()
         val limitBrokenList = limitMap["broken"]?: emptyList()
         val limitGreenishList = limitMap["greenish"]?: emptyList()
         val limitMoldyList = limitMap["moldy"]?: emptyList()
@@ -42,10 +42,11 @@ class ClassificationRepositoryImpl @Inject constructor(
         val percentageBurnt = tools.calculateDefectPercentage(sample.burnt, cleanWeight)
         val percentageBurntOrSour = tools.calculateDefectPercentage(sample.sour + sample.burnt,cleanWeight)
         val percentageSpoiled = tools.calculateDefectPercentage(
-            sample.moldy + sample.fermented + sample.sour + sample.germinated + sample.immature,
+            sample.moldy + sample.fermented + sample.sour + sample.burnt  + sample.germinated + sample.immature + sample.shriveled + sample.damaged,
             cleanWeight
         )
 
+        val impuritiesType = tools.findCategoryForValue(limitImpuritiesList, percentageImpurities)
         val brokenType = tools.findCategoryForValue(limitBrokenList, percentageBroken)
         val greenishType = tools.findCategoryForValue(limitGreenishList, percentageGreenish)
         val moldyType = tools.findCategoryForValue(limitMoldyList, percentageMoldy)
@@ -55,7 +56,7 @@ class ClassificationRepositoryImpl @Inject constructor(
 
         val finalType = listOf(brokenType, greenishType, moldyType, burntType, burntOrSourType, spoiledType).maxOrNull() ?: 0
 
-        val impuritiesType = if (percentageImpurities > 1) 7 else finalType
+
 
         val classification = Classification(
             grain = sample.grain,
@@ -96,6 +97,7 @@ class ClassificationRepositoryImpl @Inject constructor(
     override suspend fun getLimitsForGrain(grain: String, group: Int, limitSource: Int): Map<String, List<LimitCategory>>{
 
             return mapOf(
+                "impurities" to limitDao.getLimitsForImpurities(grain,group,limitSource),
                 "broken" to limitDao.getLimitsForBrokenCrackedDamaged(grain, group,limitSource),
                 "greenish" to limitDao.getLimitsForGreenish(grain, group, limitSource),
                 "burnt" to limitDao.getLimitsForBurnt(grain, group,limitSource),
