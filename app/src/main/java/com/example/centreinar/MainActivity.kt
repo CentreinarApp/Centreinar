@@ -1,65 +1,131 @@
 package com.example.centreinar
 
 import android.os.Bundle
-import android.view.Menu
-import androidx.appcompat.app.AppCompatActivity
-import androidx.drawerlayout.widget.DrawerLayout
-import androidx.navigation.findNavController
-import androidx.navigation.ui.AppBarConfiguration
-import androidx.navigation.ui.navigateUp
-import androidx.navigation.ui.setupActionBarWithNavController
-import androidx.navigation.ui.setupWithNavController
-import com.example.centreinar.databinding.ActivityMainBinding
-import com.google.android.material.navigation.NavigationView
-import com.google.android.material.snackbar.Snackbar
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material3.DrawerState
+import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.NavigationDrawerItem
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberDrawerState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.example.centreinar.ui.CentreinarTheme
+import com.example.centreinar.ui.home.ClassificationInputScreen
+import com.example.centreinar.ui.HomeScreen
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
-class MainActivity : AppCompatActivity() {
-
-    private lateinit var appBarConfiguration: AppBarConfiguration
-    private lateinit var binding: ActivityMainBinding
-
+class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = ActivityMainBinding.inflate(layoutInflater)
-        setContentView(binding.root)
-
-        setupUI()
-        setupNavigation()
-    }
-
-    private fun setupUI() {
-        setSupportActionBar(binding.appBarMain.toolbar)
-
-        binding.appBarMain.fab.setOnClickListener { view ->
-            Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                .setAction("Action", null)
-                .setAnchorView(R.id.fab).show()
+        setContent {
+            CentreinarTheme {
+                CentreinarApp()
+            }
         }
     }
+}
 
-    private fun setupNavigation() {
-        val drawerLayout: DrawerLayout = binding.drawerLayout
-        val navView: NavigationView = binding.navView
-        val navController = findNavController(R.id.nav_host_fragment_content_main)
+@Composable
+fun CentreinarApp() {
+    val navController = rememberNavController()
+    val drawerState = rememberDrawerState(DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
 
-        appBarConfiguration = AppBarConfiguration(
-            setOf(R.id.nav_home, R.id.nav_gallery, R.id.nav_slideshow),
-            drawerLayout
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            NavigationDrawerContent(navController, drawerState, scope)
+        }
+    ) {
+        Scaffold(
+            topBar = { AppBar(scope, drawerState) },
+            floatingActionButton = { AddFab() }
+        ) { padding ->
+            NavHost(
+                navController = navController,
+                startDestination = "home",
+                modifier = Modifier.padding(padding)
+            ) {
+                composable("home") { HomeScreen() }
+                composable("input") { ClassificationInputScreen() }
+                // Add other destinations
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun AppBar(
+    scope: CoroutineScope,
+    drawerState: DrawerState
+) {
+    TopAppBar(
+        title = { Text("Centreinar") },
+        navigationIcon = {
+            IconButton(
+                onClick = { scope.launch { drawerState.open() } }
+            ) {
+                Icon(Icons.Filled.Menu, contentDescription = "Menu")
+            }
+        }
+    )
+}
+
+@Composable
+private fun AddFab() {
+    FloatingActionButton(onClick = { /* Handle FAB click */ }) {
+        Icon(Icons.Filled.Add, contentDescription = "Add")
+    }
+}
+
+@Composable
+private fun NavigationDrawerContent(
+    navController: NavController,
+    drawerState: DrawerState,
+    scope: CoroutineScope
+) {
+    Column(Modifier.fillMaxSize()) {
+        // Drawer header
+        Text("Menu", modifier = Modifier.padding(16.dp))
+
+        // Navigation items
+        NavigationDrawerItem(
+            label = { Text("Home") },
+            selected = false,
+            onClick = {
+                scope.launch { drawerState.close() }
+                navController.navigate("home")
+            }
         )
-
-        setupActionBarWithNavController(navController, appBarConfiguration)
-        navView.setupWithNavController(navController)
-    }
-
-    override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        menuInflater.inflate(R.menu.main, menu)
-        return true
-    }
-
-    override fun onSupportNavigateUp(): Boolean {
-        val navController = findNavController(R.id.nav_host_fragment_content_main)
-        return navController.navigateUp(appBarConfiguration) || super.onSupportNavigateUp()
+        NavigationDrawerItem(
+            label = { Text("New Sample") },
+            selected = false,
+            onClick = { navController.navigate("input") }
+        )
+        // Add other navigation items
     }
 }
