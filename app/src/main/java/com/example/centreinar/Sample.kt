@@ -49,6 +49,9 @@ data class Sample(
     @ColumnInfo(name = "brokenCrackedDamaged")
     val brokenCrackedDamaged: Float = 0.0f,
 
+    @ColumnInfo(name = "damaged")
+    val damaged: Float = 0.0f,
+
     @ColumnInfo(name = "burnt")
     val burnt: Float = 0.0f,
 
@@ -66,4 +69,8 @@ data class Sample(
 
     @ColumnInfo(name = "immature")
     val immature: Float = 0.0f,
+
+    @ColumnInfo(name = "shriveled")
+    val shriveled: Float = 0.0f,
+
 )
