@@ -34,6 +34,9 @@ fun ClassificationInputScreen(
     var greenish by remember { mutableStateOf("") }
     var brokenCrackedDamaged by remember { mutableStateOf("") }
     var damaged by remember { mutableStateOf("") }
+    var damagedInput by remember { mutableStateOf("") }
+    var piercingInput by remember { mutableStateOf("") }
+    var piercingDamaged by remember { mutableStateOf("") }
     var burnt by remember { mutableStateOf("") }
     var sour by remember { mutableStateOf("") }
     var moldy by remember { mutableStateOf("") }
@@ -54,6 +57,7 @@ fun ClassificationInputScreen(
         humidity = ""
         greenish = ""
         brokenCrackedDamaged = ""
+        piercingDamaged = ""
         damaged = ""
         burnt = ""
         sour = ""
@@ -64,7 +68,7 @@ fun ClassificationInputScreen(
         shriveled = ""
     }
 
-    val numericFields = setOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14) // Indices of numeric fields
+    val numericFields = setOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16) // Indices of numeric fields
 
     val fields = listOf(
         SampleInputField("Grão", grain) { grain = it },
@@ -106,8 +110,21 @@ fun ClassificationInputScreen(
         SampleInputField("Chochos", shriveled) {
             if (it.isEmpty() || it.toFloatOrNull() != null) shriveled = it
         },
-        SampleInputField("Danificados", damaged) {
-            if (it.isEmpty() || it.toFloatOrNull() != null) damaged = it
+        SampleInputField("Picados", piercingInput) { newValue ->
+            piercingInput = newValue // Store raw input
+            val parsedPiercing = newValue.toFloatOrNull() ?: 0f
+            piercingDamaged = (parsedPiercing / 4f).toString()
+        },
+        SampleInputField("Danificados", damagedInput) { newValue ->
+            // Only allow numeric input
+            if (newValue.isEmpty() || newValue.toFloatOrNull() != null) {
+                damagedInput = newValue // Store raw input
+
+                // Calculate damaged (sum with piercingDamaged)
+                val parsedDamaged = newValue.toFloatOrNull() ?: 0f
+                val parsedPiercing = piercingDamaged.toFloatOrNull() ?: 0f
+                damaged = (parsedDamaged + parsedPiercing).toString()
+            }
         },
         SampleInputField("Esverdeados", greenish) {
             if (it.isEmpty() || it.toFloatOrNull() != null) greenish = it
@@ -129,24 +146,56 @@ fun ClassificationInputScreen(
         }
 
         itemsIndexed(fields) { index, field ->
-            OutlinedTextField(
-                value = field.value,
-                onValueChange = field.onValueChange,
-                label = { Text(field.label) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 4.dp),
-                keyboardOptions = if (index in numericFields) {
-                    KeyboardOptions(keyboardType = KeyboardType.Number)
-                } else {
-                    KeyboardOptions.Default
-                },
-                isError = when(index) {
-                    1 -> field.value.isNotEmpty() && field.value.toIntOrNull() == null
-                    in 2..14 -> field.value.isNotEmpty() && field.value.toFloatOrNull() == null
-                    else -> false
+            if (field.label == "Picados") {
+                // Custom layout for "Picados" field + calculation
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp)
+                ) {
+                    // Input Field
+                    OutlinedTextField(
+                        value = field.value,
+                        onValueChange = field.onValueChange,
+                        label = { Text(field.label) },
+                        modifier = Modifier.fillMaxWidth(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        isError = field.value.isNotEmpty() && field.value.toFloatOrNull() == null
+                    )
+
+                    // Calculation Result
+                    Text(
+                        text = if (piercingInput.isNotEmpty()) {
+                            "$piercingInput / 4 = $piercingDamaged"
+                        } else {
+                            "" // Hide when empty
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(start = 16.dp, top = 4.dp)
+                    )
                 }
-            )
+            } else {
+                OutlinedTextField(
+                    value = field.value,
+                    onValueChange = field.onValueChange,
+                    label = { Text(field.label) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp),
+                    keyboardOptions = if (index in numericFields) {
+                        KeyboardOptions(keyboardType = KeyboardType.Number)
+                    } else {
+                        KeyboardOptions.Default
+                    },
+                    isError = when(index) {
+                        1 -> field.value.isNotEmpty() && field.value.toIntOrNull() == null
+                        in 2..14 -> field.value.isNotEmpty() && field.value.toFloatOrNull() == null
+                        else -> false
+                    }
+                )
+            }
+
         }
 
         item {
