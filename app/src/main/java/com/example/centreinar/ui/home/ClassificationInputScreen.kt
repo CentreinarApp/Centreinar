@@ -13,6 +13,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 
 import com.example.centreinar.Sample
+import java.math.RoundingMode
 
 @Composable
 fun ClassificationInputScreen(
@@ -205,21 +206,95 @@ fun ClassificationInputScreen(
                     val sample = Sample(
                         grain = grain,
                         group = group.toIntOrNull() ?: 0,
-                        lotWeight = lotWeight.toFloatOrNull() ?: 0f,
-                        sampleWeight = sampleWeight.toFloatOrNull() ?: 0f,
-                        cleanWeight = cleanWeight.toFloatOrNull() ?: 0f,
-                        foreignMattersAndImpurities = foreignMatters.toFloatOrNull() ?: 0f,
-                        humidity = humidity.toFloatOrNull() ?: 0f,
-                        greenish = greenish.toFloatOrNull() ?: 0f,
-                        brokenCrackedDamaged = brokenCrackedDamaged.toFloatOrNull() ?: 0f,
-                        damaged = damaged.toFloatOrNull() ?: 0f,
-                        burnt = burnt.toFloatOrNull() ?: 0f,
-                        sour = sour.toFloatOrNull() ?: 0f,
-                        moldy = moldy.toFloatOrNull() ?: 0f,
-                        fermented = fermented.toFloatOrNull() ?: 0f,
-                        germinated = germinated.toFloatOrNull() ?: 0f,
-                        immature = immature.toFloatOrNull() ?: 0f,
-                        shriveled = shriveled.toFloatOrNull() ?: 0f
+                        lotWeight = lotWeight
+                            .toBigDecimalOrNull()
+                            ?.setScale(2, RoundingMode.HALF_UP)
+                            ?.toFloat()
+                            ?: 0f,
+
+                        sampleWeight = sampleWeight
+                            .toBigDecimalOrNull()
+                            ?.setScale(2, RoundingMode.HALF_UP)
+                            ?.toFloat()
+                            ?: 0f,
+
+                        cleanWeight = cleanWeight
+                            .toBigDecimalOrNull()
+                            ?.setScale(2, RoundingMode.HALF_UP)
+                            ?.toFloat()
+                            ?: 0f,
+
+                        foreignMattersAndImpurities = foreignMatters
+                            .toBigDecimalOrNull()
+                            ?.setScale(2, RoundingMode.HALF_UP)
+                            ?.toFloat()
+                            ?: 0f,
+
+                        humidity = humidity
+                            .toBigDecimalOrNull()
+                            ?.setScale(2, RoundingMode.HALF_UP)
+                            ?.toFloat()
+                            ?: 0f,
+
+                        greenish = greenish
+                            .toBigDecimalOrNull()
+                            ?.setScale(2, RoundingMode.HALF_UP)
+                            ?.toFloat()
+                            ?: 0f,
+
+                        brokenCrackedDamaged = brokenCrackedDamaged
+                            .toBigDecimalOrNull()
+                            ?.setScale(2, RoundingMode.HALF_UP)
+                            ?.toFloat()
+                            ?: 0f,
+
+                        damaged = damaged
+                            .toBigDecimalOrNull()
+                            ?.setScale(2, RoundingMode.HALF_UP)
+                            ?.toFloat()
+                            ?: 0f,
+
+                        burnt = burnt
+                            .toBigDecimalOrNull()
+                            ?.setScale(2, RoundingMode.HALF_UP)
+                            ?.toFloat()
+                            ?: 0f,
+
+                        sour = sour
+                            .toBigDecimalOrNull()
+                            ?.setScale(2, RoundingMode.HALF_UP)
+                            ?.toFloat()
+                            ?: 0f,
+
+                        moldy = moldy
+                            .toBigDecimalOrNull()
+                            ?.setScale(2, RoundingMode.HALF_UP)
+                            ?.toFloat()
+                            ?: 0f,
+
+                        fermented = fermented
+                            .toBigDecimalOrNull()
+                            ?.setScale(2, RoundingMode.HALF_UP)
+                            ?.toFloat()
+                            ?: 0f,
+
+                        germinated = germinated
+                            .toBigDecimalOrNull()
+                            ?.setScale(2, RoundingMode.HALF_UP)
+                            ?.toFloat()
+                            ?: 0f,
+
+                        immature = immature
+                            .toBigDecimalOrNull()
+                            ?.setScale(2, RoundingMode.HALF_UP)
+                            ?.toFloat()
+                            ?: 0f,
+
+                        shriveled = shriveled
+                            .toBigDecimalOrNull()
+                            ?.setScale(2, RoundingMode.HALF_UP)
+                            ?.toFloat()
+                            ?: 0f
 
                     )
                     viewModel.classifySample(sample)
