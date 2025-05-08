@@ -24,7 +24,7 @@ class ClassificationRepositoryImpl @Inject constructor(
 
         val limitMap = getLimitsForGrain(sample.grain,sample.group,limitSource)
 
-        val grain = sample.grain
+
         val limitImpuritiesList = limitMap["impurities"]?: emptyList()
         val limitBrokenList = limitMap["broken"]?: emptyList()
         val limitGreenishList = limitMap["greenish"]?: emptyList()
@@ -54,9 +54,23 @@ class ClassificationRepositoryImpl @Inject constructor(
         val burntOrSourType = tools.findCategoryForValue(limitBurntOrSourList, percentageBurntOrSour)
         val spoiledType = tools.findCategoryForValue(limitSpoiledList, percentageSpoiled)
 
-        val finalType = listOf(brokenType, greenishType, moldyType, burntType, burntOrSourType, spoiledType).maxOrNull() ?: 0
+        var finalType = listOf(brokenType, greenishType, moldyType, burntType, burntOrSourType, spoiledType).maxOrNull() ?: 0
 
+        var isDisqualify = false
 
+        if(sample.group == 1){
+            if(percentageBurntOrSour+percentageMoldy > 12){
+                isDisqualify = true
+            }
+        }
+        if(sample.group == 2){
+            if(percentageBurntOrSour+percentageMoldy > 40){
+                isDisqualify = true
+            }
+        }
+        if(isDisqualify){
+            finalType = 0
+        }
 
         val classification = Classification(
             grain = sample.grain,
@@ -76,7 +90,7 @@ class ClassificationRepositoryImpl @Inject constructor(
             burnt = burntType,
             burntOrSour = burntOrSourType,
             spoiled = spoiledType,
-            finalType = finalType
+            finalType = finalType,
         )
 
         return classificationDao.insert(classification)
