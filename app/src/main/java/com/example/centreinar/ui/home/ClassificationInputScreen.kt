@@ -1,9 +1,12 @@
 package com.example.centreinar.ui.home
 
+import ClassificationTable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -11,7 +14,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-
 import com.example.centreinar.Sample
 import java.math.RoundingMode
 
@@ -22,7 +24,7 @@ fun ClassificationInputScreen(
     // State from ViewModel
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
-    val resultText by viewModel.text.collectAsState()
+    val classification by viewModel.classification.collectAsState()
 
     // Local form state
     var grain by remember { mutableStateOf("") }
@@ -67,6 +69,7 @@ fun ClassificationInputScreen(
         germinated = ""
         immature = ""
         shriveled = ""
+        //viewModel.resetClassification()
     }
 
     val numericFields = setOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16) // Indices of numeric fields
@@ -135,6 +138,7 @@ fun ClassificationInputScreen(
         },
 
     )
+
 
     LazyColumn(
         modifier = Modifier
@@ -323,23 +327,31 @@ fun ClassificationInputScreen(
         item {
             Spacer(modifier = Modifier.height(16.dp))
 
-            if (error != null) {
-                Text(
-                    text = error ?: "",
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(vertical = 8.dp)
-                )
-            }
+            when {
+                isLoading -> {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
+                }
 
-            if (resultText != null) {
-                Column {
+                error != null -> {
                     Text(
-                        text = "  $resultText",
-                        style = MaterialTheme.typography.bodyLarge,
+                        text = error!!,
+                        color = MaterialTheme.colorScheme.error,
                         modifier = Modifier.padding(vertical = 8.dp)
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
+                }
+
+                classification != null -> {
+                    ClassificationTable(
+                        classification = classification!!,
+                        modifier = Modifier.padding(vertical = 16.dp)
+                    )
                     Button(
                         onClick = { clearForm() },
                         modifier = Modifier.fillMaxWidth()
@@ -352,7 +364,7 @@ fun ClassificationInputScreen(
     }
 }
 
-data class SampleInputField(
+    data class SampleInputField(
     val label: String,
     val value: String,
     val onValueChange: (String) -> Unit
