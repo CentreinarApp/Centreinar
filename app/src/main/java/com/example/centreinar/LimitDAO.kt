@@ -30,6 +30,9 @@ interface LimitDao{
     @Query("SELECT * FROM limits WHERE grain = :grain AND type = :tipo AND `group` = :group AND source = :limitSource")
     suspend fun getLimitsByType(grain:String,group: Int,tipo:Int, limitSource: Int): Limit
 
+    @Query("SELECT type,impuritiesLowerLim AS lowerL , impuritiesUpLim AS upperL FROM limits WHERE grain = :grain AND `group` = :group AND source = :limitSource")
+    suspend fun getLimitsForImpurities(grain:String,group:Int,limitSource: Int):List<LimitCategory>
+
     @Query("SELECT type,brokenCrackedDamagedLowerLim AS lowerL ,brokenCrackedDamagedUpLim AS upperL FROM limits WHERE grain = :grain AND `group` = :group AND source = :limitSource")
     suspend fun getLimitsForBrokenCrackedDamaged(grain:String,group:Int,limitSource: Int):List<LimitCategory>
 

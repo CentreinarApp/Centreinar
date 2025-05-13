@@ -24,8 +24,8 @@ class ClassificationRepositoryImpl @Inject constructor(
 
         val limitMap = getLimitsForGrain(sample.grain,sample.group,limitSource)
 
-        val grain = sample.grain
 
+        val limitImpuritiesList = limitMap["impurities"]?: emptyList()
         val limitBrokenList = limitMap["broken"]?: emptyList()
         val limitGreenishList = limitMap["greenish"]?: emptyList()
         val limitMoldyList = limitMap["moldy"]?: emptyList()
@@ -42,10 +42,11 @@ class ClassificationRepositoryImpl @Inject constructor(
         val percentageBurnt = tools.calculateDefectPercentage(sample.burnt, cleanWeight)
         val percentageBurntOrSour = tools.calculateDefectPercentage(sample.sour + sample.burnt,cleanWeight)
         val percentageSpoiled = tools.calculateDefectPercentage(
-            sample.moldy + sample.fermented + sample.sour + sample.germinated + sample.immature,
+            sample.moldy + sample.fermented + sample.sour + sample.burnt  + sample.germinated + sample.immature + sample.shriveled + sample.damaged,
             cleanWeight
         )
 
+        val impuritiesType = tools.findCategoryForValue(limitImpuritiesList, percentageImpurities)
         val brokenType = tools.findCategoryForValue(limitBrokenList, percentageBroken)
         val greenishType = tools.findCategoryForValue(limitGreenishList, percentageGreenish)
         val moldyType = tools.findCategoryForValue(limitMoldyList, percentageMoldy)
@@ -53,9 +54,23 @@ class ClassificationRepositoryImpl @Inject constructor(
         val burntOrSourType = tools.findCategoryForValue(limitBurntOrSourList, percentageBurntOrSour)
         val spoiledType = tools.findCategoryForValue(limitSpoiledList, percentageSpoiled)
 
-        val finalType = listOf(brokenType, greenishType, moldyType, burntType, burntOrSourType, spoiledType).maxOrNull() ?: 0
+        var finalType = listOf(brokenType, greenishType, moldyType, burntType, burntOrSourType, spoiledType,impuritiesType).maxOrNull() ?: 0
 
-        val impuritiesType = if (percentageImpurities > 1) 7 else finalType
+        var isDisqualify = false
+
+        if(sample.group == 1){
+            if(percentageBurntOrSour+percentageMoldy > 12){
+                isDisqualify = true
+            }
+        }
+        if(sample.group == 2){
+            if(percentageBurntOrSour+percentageMoldy > 40){
+                isDisqualify = true
+            }
+        }
+        if(isDisqualify){
+            finalType = 0
+        }
 
         val classification = Classification(
             grain = sample.grain,
@@ -75,7 +90,7 @@ class ClassificationRepositoryImpl @Inject constructor(
             burnt = burntType,
             burntOrSour = burntOrSourType,
             spoiled = spoiledType,
-            finalType = finalType
+            finalType = finalType,
         )
 
         return classificationDao.insert(classification)
@@ -96,6 +111,7 @@ class ClassificationRepositoryImpl @Inject constructor(
     override suspend fun getLimitsForGrain(grain: String, group: Int, limitSource: Int): Map<String, List<LimitCategory>>{
 
             return mapOf(
+                "impurities" to limitDao.getLimitsForImpurities(grain,group,limitSource),
                 "broken" to limitDao.getLimitsForBrokenCrackedDamaged(grain, group,limitSource),
                 "greenish" to limitDao.getLimitsForGreenish(grain, group, limitSource),
                 "burnt" to limitDao.getLimitsForBurnt(grain, group,limitSource),
@@ -104,5 +120,44 @@ class ClassificationRepositoryImpl @Inject constructor(
                 "spoiled" to limitDao.getLimitsForSpoiledTotal(grain, group,limitSource)
             )
 
+    }
+
+    override suspend fun getObservations(classification: Classification): String {
+        var observation: String = ""
+        if(classification.finalType == 0 || classification.finalType == 7) {
+
+            if (classification.foreignMatters == 7){
+                observation += "Matéria Estranhas e Impurezas fora de tipo \n"
+            }
+            if (classification.burnt == 7){
+                observation += "Queimados fora de tipo \n"
+            }
+            if (classification.burntOrSour == 7){
+                observation += "Ardidos e Queimados fora de tipo \n"
+            }
+            if (classification.moldy == 7){
+                observation += "Mofados fora de tipo \n"
+            }
+            if (classification.spoiled == 7){
+                observation += "Total de Avariados fora de tipo \n"
+            }
+            if (classification.greenish == 7){
+                observation += "Esverdeados fora de tipo \n"
+            }
+            if (classification.brokenCrackedDamaged == 7){
+                observation += "Partidos, Quebrados e Amassados fora de tipo \n"
+            }
+
+            if(classification.finalType == 0){
+                observation += "Desclassificado pois soma de defeitos graves ultrapassa o limite de "
+                if(classification.group == 1){
+                    observation+= "12%.\n"
+                }
+                else {
+                    observation+= "40%.\n"
+                }
+            }
+        }
+        return observation
     }
 }
