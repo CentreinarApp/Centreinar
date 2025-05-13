@@ -39,9 +39,5 @@ interface DisqualificationDao {
     suspend fun getById(id: Int): Disqualification?
 
     @Query("SELECT * FROM Disqualification WHERE classificationId = :classificationId")
-    suspend fun getByClassificationId(classificationId: Int): List<Disqualification>
-
-    // Additional query examples
-    @Query("SELECT * FROM Disqualification WHERE toxicGrains = :toxic")
-    suspend fun getByToxicGrains(toxic: Boolean): List<Disqualification>
+    suspend fun getByClassificationId(classificationId: Int): Disqualification
 }
