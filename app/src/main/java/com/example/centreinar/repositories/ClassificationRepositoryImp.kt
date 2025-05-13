@@ -130,32 +130,42 @@ class ClassificationRepositoryImpl @Inject constructor(
 
     override suspend fun setObservations(classification: Classification): String {
         var observation = ""
+        val disqualification = disqualificationDao.getByClassificationId(classification.id)
+        var count = 1
         if(classification.finalType == 0 || classification.finalType == 7) {
 
             if (classification.foreignMatters == 7){
-                observation += "Matéria Estranhas e Impurezas fora de tipo \n"
+                observation += "$count - Matéria Estranhas e Impurezas fora de tipo \n"
+                count++
             }
             if (classification.burnt == 7){
-                observation += "Queimados fora de tipo \n"
+                observation += "$count - Queimados fora de tipo \n"
+                count++
             }
             if (classification.burntOrSour == 7){
-                observation += "Ardidos e Queimados fora de tipo \n"
+                observation += "$count - Ardidos e Queimados fora de tipo \n"
+                count++
             }
             if (classification.moldy == 7){
-                observation += "Mofados fora de tipo \n"
+                observation += "$count - Mofados fora de tipo \n"
+                count++
             }
             if (classification.spoiled == 7){
-                observation += "Total de Avariados fora de tipo \n"
+                observation += "$count - Total de Avariados fora de tipo \n"
+                count++
             }
             if (classification.greenish == 7){
-                observation += "Esverdeados fora de tipo \n"
+                observation += "$count - Esverdeados fora de tipo \n"
+                count++
             }
             if (classification.brokenCrackedDamaged == 7){
-                observation += "Partidos, Quebrados e Amassados fora de tipo \n"
+                observation += "$count - Partidos, Quebrados e Amassados fora de tipo \n"
+                count++
             }
 
             if(classification.finalType == 0){
-                observation += "Desclassificado pois soma de defeitos graves ultrapassa o limite de "
+                observation += "$count - Desclassificado pois soma de defeitos graves ultrapassa o limite de "
+                count++
                 if(classification.group == 1){
                     observation+= "12%.\n"
                 }
@@ -164,6 +174,24 @@ class ClassificationRepositoryImpl @Inject constructor(
                 }
             }
         }
+
+        if (disqualification.badConservation){
+            observation +="$count - Desclassificado devido ao mal estado de conservação.\n"
+            count++
+        }
+        if(disqualification.strangeSmell){
+            observation +="$count - Desclassificado devido a presença de odor estranho no produto.\n"
+            count++
+        }
+        if(disqualification.toxicGrains){
+            observation +="$count - Desclassificado devido a presença de sementes toxicas.\n"
+            count++
+        }
+        if(disqualification.insects){
+            observation +="$count - Desclassificado devido a presença de insetos vivos, mortos ou partes desses no produto.\n"
+            count++
+        }
+
         return observation
     }
 
@@ -189,7 +217,7 @@ class ClassificationRepositoryImpl @Inject constructor(
         return colorClassification
     }
 
-    override suspend fun setDisqualification(classificationId: Int,badConservation: Boolean, graveDefectSum: Boolean, strangeSmell: Boolean, toxicGrains: Boolean): Long {
+    override suspend fun setDisqualification(classificationId: Int,badConservation: Boolean, graveDefectSum: Boolean, strangeSmell: Boolean, toxicGrains: Boolean, insects:Boolean): Long {
 
        return disqualificationDao.insert(
            Disqualification(
@@ -197,8 +225,9 @@ class ClassificationRepositoryImpl @Inject constructor(
             badConservation = badConservation,
             graveDefectSum = graveDefectSum,
             strangeSmell = strangeSmell,
-            toxicGrains = toxicGrains
+            toxicGrains = toxicGrains, insects = insects
            )
        )
     }
+
 }

@@ -45,6 +45,7 @@ interface ClassificationRepository {
         badConservation: Boolean,
         graveDefectSum: Boolean,
         strangeSmell: Boolean,
-        toxicGrains: Boolean
+        toxicGrains: Boolean,
+        insects: Boolean
     ): Long
 }
