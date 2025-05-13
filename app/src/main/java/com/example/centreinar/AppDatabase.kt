@@ -10,7 +10,8 @@ import androidx.room.RoomDatabase
         Sample::class,
         Discount::class,
         InputDiscount::class,
-        ColorClassification::class
+        ColorClassification::class,
+        Disqualification::class
     ],
     version = 4,
     exportSchema = false
@@ -22,4 +23,5 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun discountDao(): DiscountDao
     abstract fun inputDiscountDao(): InputDiscountDao
     abstract fun colorClassificationDao():ColorClassificationDao
+    abstract fun disqualificationDao():DisqualificationDao
 }

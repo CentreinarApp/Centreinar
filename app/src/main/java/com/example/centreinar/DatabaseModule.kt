@@ -52,14 +52,16 @@ object RepositoryModule {
         classificationDao: ClassificationDao,
         sampleDao: SampleDao,
         tools: Utilities,
-        colorClassificationDao: ColorClassificationDao
+        colorClassificationDao: ColorClassificationDao,
+        disqualificationDao: DisqualificationDao
     ): ClassificationRepository {
         return ClassificationRepositoryImpl(
             limitDao,
             classificationDao,
             sampleDao,
             tools,
-            colorClassificationDao
+            colorClassificationDao,
+            disqualificationDao
         )
     }
 
@@ -70,7 +72,7 @@ object RepositoryModule {
         classificationDao: ClassificationDao,
         sampleDao: SampleDao,
         discountDao: DiscountDao,
-        tools: Utilities
+        tools: Utilities,
     ): DiscountRepository {
         return DiscountRepositoryImp(
             limitDao,
