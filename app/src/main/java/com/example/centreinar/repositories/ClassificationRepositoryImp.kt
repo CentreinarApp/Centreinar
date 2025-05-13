@@ -54,7 +54,7 @@ class ClassificationRepositoryImpl @Inject constructor(
         val burntOrSourType = tools.findCategoryForValue(limitBurntOrSourList, percentageBurntOrSour)
         val spoiledType = tools.findCategoryForValue(limitSpoiledList, percentageSpoiled)
 
-        var finalType = listOf(brokenType, greenishType, moldyType, burntType, burntOrSourType, spoiledType).maxOrNull() ?: 0
+        var finalType = listOf(brokenType, greenishType, moldyType, burntType, burntOrSourType, spoiledType,impuritiesType).maxOrNull() ?: 0
 
         var isDisqualify = false
 
@@ -120,5 +120,44 @@ class ClassificationRepositoryImpl @Inject constructor(
                 "spoiled" to limitDao.getLimitsForSpoiledTotal(grain, group,limitSource)
             )
 
+    }
+
+    override suspend fun getObservations(classification: Classification): String {
+        var observation: String = ""
+        if(classification.finalType == 0 || classification.finalType == 7) {
+
+            if (classification.foreignMatters == 7){
+                observation += "Matéria Estranhas e Impurezas fora de tipo \n"
+            }
+            if (classification.burnt == 7){
+                observation += "Queimados fora de tipo \n"
+            }
+            if (classification.burntOrSour == 7){
+                observation += "Ardidos e Queimados fora de tipo \n"
+            }
+            if (classification.moldy == 7){
+                observation += "Mofados fora de tipo \n"
+            }
+            if (classification.spoiled == 7){
+                observation += "Total de Avariados fora de tipo \n"
+            }
+            if (classification.greenish == 7){
+                observation += "Esverdeados fora de tipo \n"
+            }
+            if (classification.brokenCrackedDamaged == 7){
+                observation += "Partidos, Quebrados e Amassados fora de tipo \n"
+            }
+
+            if(classification.finalType == 0){
+                observation += "Desclassificado pois soma de defeitos graves ultrapassa o limite de "
+                if(classification.group == 1){
+                    observation+= "12%.\n"
+                }
+                else {
+                    observation+= "40%.\n"
+                }
+            }
+        }
+        return observation
     }
 }
