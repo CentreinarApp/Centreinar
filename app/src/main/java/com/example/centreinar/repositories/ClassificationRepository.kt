@@ -11,4 +11,5 @@ interface ClassificationRepository {
     suspend fun getClassification(id: Int): Classification?
     suspend fun getLimitsForGrain(grain: String, group: Int, limitSource: Int): Map<String, List<LimitCategory>>
     suspend fun getObservations(classification: Classification):String
+    suspend fun getClass(classification: Classification,yellow:Float,otherColors:Float):String
 }

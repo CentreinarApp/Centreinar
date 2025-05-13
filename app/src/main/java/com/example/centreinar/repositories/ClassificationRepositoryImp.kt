@@ -123,7 +123,7 @@ class ClassificationRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getObservations(classification: Classification): String {
-        var observation: String = ""
+        var observation = ""
         if(classification.finalType == 0 || classification.finalType == 7) {
 
             if (classification.foreignMatters == 7){
@@ -159,5 +159,18 @@ class ClassificationRepositoryImpl @Inject constructor(
             }
         }
         return observation
+    }
+
+    override suspend fun getClass(classification: Classification, yellow: Float, otherColors: Float):String {
+
+        val sample: Sample = getSample(classification.sampleId)!!
+        val otherColorsPercentage = tools.calculateDefectPercentage(otherColors, sample.cleanWeight)
+
+        if(otherColorsPercentage > 10.0f) {
+            return "Misturado"
+        }
+        else {
+            return "Amarela"
+        }
     }
 }
