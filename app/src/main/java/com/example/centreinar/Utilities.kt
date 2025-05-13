@@ -1,6 +1,7 @@
 package com.example.centreinar
 
 import com.example.centreinar.LimitCategory
+import java.math.RoundingMode
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -17,7 +18,11 @@ class Utilities @Inject constructor()  {
     }
 
     fun calculateDefectPercentage(defect: Float, weight: Float): Float {
-        return (defect * 100) / weight
+       val percentage: Float = (defect * 100) / weight
+        return percentage
+            .toBigDecimal()
+            .setScale(2, RoundingMode.HALF_UP)
+            .toFloat()
     }
 
     fun calculateDifference(defect:Float,defectTolerance:Float): Float{

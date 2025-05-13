@@ -1,31 +1,63 @@
 package com.example.centreinar.ui
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.collectAsState
-import androidx.compose.ui.Alignment.Companion.Center
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavController
 import com.example.centreinar.ui.home.HomeViewModel
 
 @Composable
 fun HomeScreen(
+    navController: NavController,
     viewModel: HomeViewModel = hiltViewModel()
 ) {
-    val text by viewModel.text.collectAsState()
-
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Center
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
     ) {
-        Text(
-            text = text ?: "Loading...",
-            modifier = Modifier.padding(16.dp)
-        )
+        // Classification Button
+        Button(
+            onClick = { navController.navigate("classification") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(80.dp)
+                .padding(vertical = 8.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+        ) {
+            Text(
+                text = "Classificação de Grãos",
+                style = MaterialTheme.typography.titleMedium
+            )
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Discount Calculation Button
+        Button(
+            onClick = { navController.navigate("discount") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(80.dp)
+                .padding(vertical = 8.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+            )
+        ) {
+            Text(
+                text = "Cálculo de Descontos",
+                style = MaterialTheme.typography.titleMedium
+            )
+        }
     }
 }

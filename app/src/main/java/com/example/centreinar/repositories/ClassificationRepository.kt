@@ -10,4 +10,5 @@ interface ClassificationRepository {
     suspend fun setSample(grain: String,group: Int, sampleWeight: Float, lotWeight: Float, foreignMattersAndImpurities: Float, humidity: Float,greenish: Float,brokenCrackedDamaged: Float,burnt: Float, sour: Float,moldy: Float, fermented: Float,germinated: Float,immature: Float): Sample
     suspend fun getClassification(id: Int): Classification?
     suspend fun getLimitsForGrain(grain: String, group: Int, limitSource: Int): Map<String, List<LimitCategory>>
+    suspend fun getObservations(classification: Classification):String
 }
