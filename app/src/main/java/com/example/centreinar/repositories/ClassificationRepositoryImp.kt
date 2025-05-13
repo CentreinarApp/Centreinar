@@ -2,6 +2,8 @@ package com.example.centreinar.repositories
 
 import com.example.centreinar.Classification
 import com.example.centreinar.ClassificationDao
+import com.example.centreinar.ColorClassification
+import com.example.centreinar.ColorClassificationDao
 import com.example.centreinar.LimitCategory
 import com.example.centreinar.LimitDao
 import com.example.centreinar.Sample
@@ -16,7 +18,9 @@ class ClassificationRepositoryImpl @Inject constructor(
     private val limitDao: LimitDao,
     private val classificationDao: ClassificationDao,
     private val sampleDao: SampleDao,
-    private val tools : Utilities
+    private val tools : Utilities,
+    private val colorClassificationDao: ColorClassificationDao
+
 
 ) : ClassificationRepository {
 
@@ -161,16 +165,25 @@ class ClassificationRepositoryImpl @Inject constructor(
         return observation
     }
 
-    override suspend fun getClass(classification: Classification, yellow: Float, otherColors: Float):String {
+    override suspend fun setClass(classification: Classification, yellow: Float, otherColors: Float):ColorClassification {
 
         val sample: Sample = getSample(classification.sampleId)!!
         val otherColorsPercentage = tools.calculateDefectPercentage(otherColors, sample.cleanWeight)
-
+        var framingClass = " "
         if(otherColorsPercentage > 10.0f) {
-            return "Misturado"
+            framingClass = "Misturada"
         }
         else {
-            return "Amarela"
+            framingClass = "Amarela"
         }
+        val colorClassification = ColorClassification(
+            grain = sample.grain,
+            classificationId = classification.id,
+            yellowPercentage =  tools.calculateDefectPercentage(yellow, sample.cleanWeight),
+           otherColorPercentage = otherColorsPercentage,
+            framingClass = framingClass
+        )
+        colorClassificationDao.insert(colorClassification)
+        return colorClassification
     }
 }
