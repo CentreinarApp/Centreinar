@@ -16,6 +16,8 @@ data class Disqualification(
     val graveDefectSum:Boolean,
     @ColumnInfo(name = "strangeSmell")
     val strangeSmell:Boolean,
+    @ColumnInfo(name = "insects")
+    val insects:Boolean,
     @ColumnInfo(name = "toxicGrains")
     val toxicGrains:Boolean,
 )
