@@ -37,6 +37,8 @@ object DatabaseModule {
     @Provides fun sampleDao(db: AppDatabase) = db.sampleDao()
     @Provides fun discountDao(db: AppDatabase) = db.discountDao()
     @Provides fun inputDiscountDao(db: AppDatabase) = db.inputDiscountDao()
+    @Provides fun colorClassificationDao(db: AppDatabase) = db.colorClassificationDao()
+
 }
 
 @Module
@@ -49,13 +51,15 @@ object RepositoryModule {
         limitDao: LimitDao,
         classificationDao: ClassificationDao,
         sampleDao: SampleDao,
-        tools: Utilities
+        tools: Utilities,
+        colorClassificationDao: ColorClassificationDao
     ): ClassificationRepository {
         return ClassificationRepositoryImpl(
             limitDao,
             classificationDao,
             sampleDao,
-            tools
+            tools,
+            colorClassificationDao
         )
     }
 
