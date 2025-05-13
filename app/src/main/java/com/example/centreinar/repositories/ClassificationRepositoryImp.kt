@@ -4,6 +4,8 @@ import com.example.centreinar.Classification
 import com.example.centreinar.ClassificationDao
 import com.example.centreinar.ColorClassification
 import com.example.centreinar.ColorClassificationDao
+import com.example.centreinar.Disqualification
+import com.example.centreinar.DisqualificationDao
 import com.example.centreinar.LimitCategory
 import com.example.centreinar.LimitDao
 import com.example.centreinar.Sample
@@ -19,8 +21,8 @@ class ClassificationRepositoryImpl @Inject constructor(
     private val classificationDao: ClassificationDao,
     private val sampleDao: SampleDao,
     private val tools : Utilities,
-    private val colorClassificationDao: ColorClassificationDao
-
+    private val colorClassificationDao: ColorClassificationDao,
+    private val disqualificationDao: DisqualificationDao
 
 ) : ClassificationRepository {
 
@@ -126,7 +128,7 @@ class ClassificationRepositoryImpl @Inject constructor(
 
     }
 
-    override suspend fun getObservations(classification: Classification): String {
+    override suspend fun setObservations(classification: Classification): String {
         var observation = ""
         if(classification.finalType == 0 || classification.finalType == 7) {
 
@@ -185,5 +187,18 @@ class ClassificationRepositoryImpl @Inject constructor(
         )
         colorClassificationDao.insert(colorClassification)
         return colorClassification
+    }
+
+    override suspend fun setDisqualification(classificationId: Int,badConservation: Boolean, graveDefectSum: Boolean, strangeSmell: Boolean, toxicGrains: Boolean): Long {
+
+       return disqualificationDao.insert(
+           Disqualification(
+            classificationId = classificationId,
+            badConservation = badConservation,
+            graveDefectSum = graveDefectSum,
+            strangeSmell = strangeSmell,
+            toxicGrains = toxicGrains
+           )
+       )
     }
 }

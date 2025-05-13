@@ -2,6 +2,7 @@ package com.example.centreinar.repositories
 
 import com.example.centreinar.Classification
 import com.example.centreinar.ColorClassification
+import com.example.centreinar.Disqualification
 import com.example.centreinar.Sample
 import com.example.centreinar.LimitCategory
 
@@ -32,10 +33,18 @@ interface ClassificationRepository {
         limitSource: Int
     ): Map<String, List<LimitCategory>>
 
-    suspend fun getObservations(classification: Classification): String
+    suspend fun setObservations(classification: Classification): String
     suspend fun setClass(
         classification: Classification,
         yellow: Float,
         otherColors: Float
     ): ColorClassification
+
+    suspend fun setDisqualification(
+        classificationId: Int,
+        badConservation: Boolean,
+        graveDefectSum: Boolean,
+        strangeSmell: Boolean,
+        toxicGrains: Boolean
+    ): Long
 }
