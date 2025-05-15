@@ -4,20 +4,22 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
-@Entity(tableName = "Disqualification")
+@Entity(
+    tableName = "Disqualification"
+)
 data class Disqualification(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
     @ColumnInfo(name = "classificationId")
     val classificationId:Int,
     @ColumnInfo(name = "badConservation")
-    val badConservation:Boolean,
+    val badConservation:Int,
     @ColumnInfo(name = "graveDefectSum")
-    val graveDefectSum:Boolean,
+    val graveDefectSum:Int,
     @ColumnInfo(name = "strangeSmell")
-    val strangeSmell:Boolean,
+    val strangeSmell:Int,
     @ColumnInfo(name = "insects")
-    val insects:Boolean,
+    val insects:Int,
     @ColumnInfo(name = "toxicGrains")
-    val toxicGrains:Boolean,
+    val toxicGrains:Int,
 )
