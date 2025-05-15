@@ -30,6 +30,7 @@ class ClassificationRepositoryImpl @Inject constructor(
 
         val limitMap = getLimitsForGrain(sample.grain,sample.group,limitSource)
 
+        val sampleId = setSample(sample)
 
         val limitImpuritiesList = limitMap["impurities"]?: emptyList()
         val limitBrokenList = limitMap["broken"]?: emptyList()
@@ -81,7 +82,7 @@ class ClassificationRepositoryImpl @Inject constructor(
         val classification = Classification(
             grain = sample.grain,
             group = sample.group,
-            sampleId = sample.id,
+            sampleId = sampleId.toInt(),
             foreignMattersPercentage = percentageImpurities,
             brokenCrackedDamagedPercentage = percentageBroken,
             greenishPercentage = percentageGreenish,
@@ -110,6 +111,9 @@ class ClassificationRepositoryImpl @Inject constructor(
         return Sample(grain = grain,group = group , sampleWeight = sampleWeight,lotWeight = lotWeight, foreignMattersAndImpurities = foreignMattersAndImpurities, humidity = humidity, greenish = greenish, brokenCrackedDamaged = brokenCrackedDamaged, burnt = burnt, sour = sour,moldy = moldy, fermented = fermented,germinated = germinated,immature = immature)
     }
 
+    override suspend fun setSample(sample: Sample): Long {
+        return sampleDao.insert(sample)
+    }
     override suspend fun getClassification(id: Int): Classification? {
         return classificationDao.getById(id)
     }

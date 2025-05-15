@@ -25,7 +25,7 @@ interface ClassificationRepository {
         germinated: Float,
         immature: Float
     ): Sample
-
+    suspend fun setSample(sample: Sample):Long
     suspend fun getClassification(id: Int): Classification?
     suspend fun getLimitsForGrain(
         grain: String,
