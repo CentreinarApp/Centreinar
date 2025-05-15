@@ -38,6 +38,7 @@ object DatabaseModule {
     @Provides fun discountDao(db: AppDatabase) = db.discountDao()
     @Provides fun inputDiscountDao(db: AppDatabase) = db.inputDiscountDao()
     @Provides fun colorClassificationDao(db: AppDatabase) = db.colorClassificationDao()
+    @Provides fun disqualificationDao(db: AppDatabase) = db.disqualificationDao()
 
 }
 
@@ -52,14 +53,16 @@ object RepositoryModule {
         classificationDao: ClassificationDao,
         sampleDao: SampleDao,
         tools: Utilities,
-        colorClassificationDao: ColorClassificationDao
+        colorClassificationDao: ColorClassificationDao,
+        disqualificationDao: DisqualificationDao
     ): ClassificationRepository {
         return ClassificationRepositoryImpl(
             limitDao,
             classificationDao,
             sampleDao,
             tools,
-            colorClassificationDao
+            colorClassificationDao,
+            disqualificationDao
         )
     }
 
@@ -70,7 +73,9 @@ object RepositoryModule {
         classificationDao: ClassificationDao,
         sampleDao: SampleDao,
         discountDao: DiscountDao,
-        tools: Utilities
+        tools: Utilities,
+        colorClassificationDao: ColorClassificationDao,
+        disqualificationDao: DisqualificationDao
     ): DiscountRepository {
         return DiscountRepositoryImp(
             limitDao,

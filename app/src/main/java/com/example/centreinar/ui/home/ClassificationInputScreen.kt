@@ -340,7 +340,7 @@ fun BasicInfoTab(
             OutlinedTextField(
                 value = sampleWeight,
                 onValueChange = onSampleWeightChange,
-                label = { Text("Peso da amostra (g)") },
+                label = { Text("Peso da amostra de trabalho (g)") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth())
         }
@@ -471,7 +471,11 @@ fun OtherDefectsTab(
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth())
             Text(
-                text = if (damagedInput.isNotEmpty()) "$damagedInput + ${(piercingInput.toFloatOrNull()?.div(4) ?: 0)} = ${damagedInput +(piercingInput.toFloatOrNull()?.div(4) ?: 0)}"
+                text = if (damagedInput.isNotEmpty()){
+                    "$damagedInput + ${(piercingInput.toFloatOrNull()?.div(4) ?: 0)} = ${(damagedInput.toFloatOrNull())?.plus(
+                        (piercingInput.toFloatOrNull()?.div(4)!!)
+                    )}"
+                }
                 else "",
                 style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier.padding(start = 16.dp))
