@@ -42,10 +42,10 @@ interface ClassificationRepository {
 
     suspend fun setDisqualification(
         classificationId: Int,
-        badConservation: Boolean,
-        graveDefectSum: Boolean,
-        strangeSmell: Boolean,
-        toxicGrains: Boolean,
-        insects: Boolean
+        badConservation: Int,
+        graveDefectSum: Int,
+        strangeSmell: Int,
+        toxicGrains: Int,
+        insects: Int
     ): Long
 }

@@ -175,19 +175,19 @@ class ClassificationRepositoryImpl @Inject constructor(
             }
         }
 
-        if (disqualification.badConservation){
+        if (disqualification.badConservation == 1){
             observation +="$count - Desclassificado devido ao mal estado de conservação.\n"
             count++
         }
-        if(disqualification.strangeSmell){
+        if(disqualification.strangeSmell == 1){
             observation +="$count - Desclassificado devido a presença de odor estranho no produto.\n"
             count++
         }
-        if(disqualification.toxicGrains){
+        if(disqualification.toxicGrains == 1){
             observation +="$count - Desclassificado devido a presença de sementes toxicas.\n"
             count++
         }
-        if(disqualification.insects){
+        if(disqualification.insects == 1){
             observation +="$count - Desclassificado devido a presença de insetos vivos, mortos ou partes desses no produto.\n"
             count++
         }
@@ -217,7 +217,7 @@ class ClassificationRepositoryImpl @Inject constructor(
         return colorClassification
     }
 
-    override suspend fun setDisqualification(classificationId: Int,badConservation: Boolean, graveDefectSum: Boolean, strangeSmell: Boolean, toxicGrains: Boolean, insects:Boolean): Long {
+    override suspend fun setDisqualification(classificationId: Int,badConservation: Int, graveDefectSum: Int, strangeSmell: Int, toxicGrains: Int, insects:Int): Long {
 
        return disqualificationDao.insert(
            Disqualification(
