@@ -175,19 +175,19 @@ class ClassificationRepositoryImpl @Inject constructor(
             }
         }
 
-        if (disqualification.badConservation == 1){
+        if (disqualification.badConservation == 0){
             observation +="$count - Desclassificado devido ao mal estado de conservação.\n"
             count++
         }
-        if(disqualification.strangeSmell == 1){
+        if(disqualification.strangeSmell == 0){
             observation +="$count - Desclassificado devido a presença de odor estranho no produto.\n"
             count++
         }
-        if(disqualification.toxicGrains == 1){
+        if(disqualification.toxicGrains == 0){
             observation +="$count - Desclassificado devido a presença de sementes toxicas.\n"
             count++
         }
-        if(disqualification.insects == 1){
+        if(disqualification.insects == 0){
             observation +="$count - Desclassificado devido a presença de insetos vivos, mortos ou partes desses no produto.\n"
             count++
         }
