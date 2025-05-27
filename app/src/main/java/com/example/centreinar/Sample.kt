@@ -23,10 +23,10 @@ data class Sample(
     val id: Int = 0,
 
     @ColumnInfo(name = "grain")
-    val grain: String ="",
+    var grain: String ="",
 
     @ColumnInfo(name = "group")
-    val group: Int = 0,
+    var group: Int = 0,
 
     @ColumnInfo(name = "lotWeight")
     val lotWeight: Float = 0.0f,
