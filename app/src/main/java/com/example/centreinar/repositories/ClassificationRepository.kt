@@ -48,4 +48,21 @@ interface ClassificationRepository {
         toxicGrains: Int,
         insects: Int
     ): Long
+
+    suspend fun setLimit(
+        grain:String,
+        group:Int,
+        type:Int,
+        impurities:Float,
+        brokenCrackedDamaged: Float,
+        greenish: Float,
+        burnt:Float,
+        burntOrSour:Float,
+        moldy:Float,
+        spoiled:Float
+    ): Long
+
+    suspend fun getLastLimitSource():Int
+
+
 }

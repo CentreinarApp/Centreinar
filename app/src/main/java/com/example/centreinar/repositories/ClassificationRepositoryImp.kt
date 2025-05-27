@@ -6,6 +6,7 @@ import com.example.centreinar.ColorClassification
 import com.example.centreinar.ColorClassificationDao
 import com.example.centreinar.Disqualification
 import com.example.centreinar.DisqualificationDao
+import com.example.centreinar.Limit
 import com.example.centreinar.LimitCategory
 import com.example.centreinar.LimitDao
 import com.example.centreinar.Sample
@@ -213,7 +214,7 @@ class ClassificationRepositoryImpl @Inject constructor(
         val colorClassification = ColorClassification(
             grain = sample.grain,
             classificationId = classification.id,
-            yellowPercentage =  tools.calculateDefectPercentage(yellow, sample.cleanWeight),
+            yellowPercentage =  tools.calculateDefectPercentage(yellow, sample.cleanWeight), // CHANGE
            otherColorPercentage = otherColorsPercentage,
             framingClass = framingClass
         )
@@ -229,9 +230,50 @@ class ClassificationRepositoryImpl @Inject constructor(
             badConservation = badConservation,
             graveDefectSum = graveDefectSum,
             strangeSmell = strangeSmell,
-            toxicGrains = toxicGrains, insects = insects
+            toxicGrains = toxicGrains,
+               insects = insects
            )
        )
     }
 
+    override suspend fun setLimit(
+        grain:String,
+        group:Int,
+        type:Int,
+        impurities:Float,
+        brokenCrackedDamaged: Float,
+        greenish: Float,
+        burnt:Float,
+        burntOrSour:Float,
+        moldy:Float,
+        spoiled:Float
+    ):Long {
+        val lastSource = limitDao.getLastSource()
+        val source = lastSource + 1
+        val limit = Limit(
+            source = source,
+            grain = grain,
+            group = group,
+            type = type,
+            impuritiesLowerLim = 0.0f,
+            impuritiesUpLim = impurities,
+            brokenCrackedDamagedLowerLim = 0.0f,
+            brokenCrackedDamagedUpLim = brokenCrackedDamaged,
+            greenishLowerLim = 0.0f,
+            greenishUpLim = greenish,
+            burntLowerLim = 0.0f,
+            burntUpLim = burnt,
+            burntOrSourLowerLim = 0.0f,
+            burntOrSourUpLim = burntOrSour,
+            moldyLowerLim = 0.0f,
+            moldyUpLim = moldy,
+            spoiledTotalLowerLim = 0.0f,
+            spoiledTotalUpLim = spoiled
+        )
+        return limitDao.insertLimit(limit)
+    }
+
+    override suspend fun getLastLimitSource():Int {
+        return limitDao.getLastSource()
+    }
 }
