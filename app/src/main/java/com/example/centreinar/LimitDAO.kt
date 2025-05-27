@@ -10,7 +10,7 @@ interface LimitDao{
     suspend fun getAllLimits(): List<Limit>
 
     @Insert
-    suspend fun insertLimit(limit: Limit)
+    suspend fun insertLimit(limit: Limit): Long
 
     @Delete
     suspend fun deleteLimit(limit: Limit)
@@ -51,4 +51,6 @@ interface LimitDao{
     @Query("SELECT type,spoiledTotalLowerLim AS lowerL ,spoiledTotalUpLim AS upperL FROM limits WHERE grain = :grain AND `group` = :group AND source = :limitSource")
     suspend fun getLimitsForSpoiledTotal(grain:String,group:Int,limitSource: Int):List<LimitCategory>
 
+    @Query("SELECT source FROM limits ORDER BY source DESC LIMIT 1")
+    suspend fun getLastSource():Int
 }
