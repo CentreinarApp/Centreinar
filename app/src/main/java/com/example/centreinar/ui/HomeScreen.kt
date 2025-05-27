@@ -24,7 +24,7 @@ fun HomeScreen(
     ) {
         // Classification Button
         Button(
-            onClick = { navController.navigate("classification") },
+            onClick = { navController.navigate("grainSelection") },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(80.dp)
