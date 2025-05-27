@@ -1,9 +1,13 @@
 package com.example.centreinar.ui.home
 
 import android.util.Log
+import androidx.compose.runtime.mutableStateOf
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.compose.saveable
 import com.example.centreinar.Classification
+import com.example.centreinar.Limit
 import com.example.centreinar.repositories.ClassificationRepository
 import com.example.centreinar.Sample
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -15,7 +19,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
-    private val repository: ClassificationRepository
+    private val repository: ClassificationRepository,
+    savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
     private val _classification = MutableStateFlow<Classification?>(null)
@@ -26,14 +31,48 @@ class HomeViewModel @Inject constructor(
 
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
+//
+//    private val _selectedGrain = MutableStateFlow<String?>(null)
+//    val selectedGrain: StateFlow<String?> = _selectedGrain.asStateFlow()
+//
+//    private val _selectedGroup = MutableStateFlow<Int?>(null)
+//    val selectedGroup: StateFlow<Int?> = _selectedGroup.asStateFlow()
+//
+//    private val _selectedOfficial = MutableStateFlow<Boolean?>(null)
+//    val selectedOfficial : StateFlow<Boolean?> = _selectedOfficial.asStateFlow()
+//
+
+    var selectedGrain by savedStateHandle.saveable {
+        mutableStateOf<String?>(null)
+    }
+
+    var selectedGroup by savedStateHandle.saveable {
+        mutableStateOf<Int?>(null)
+    }
+
+    var isOfficial by savedStateHandle.saveable {
+        mutableStateOf<Boolean?>(null)
+    }
 
     fun classifySample(sample: Sample) {
+        val grain = selectedGrain?:' '
+        val group = selectedGroup?:0
+        val isOfficial = isOfficial
+
         viewModelScope.launch {
             try {
                 _isLoading.value = true
                 _error.value = null
+                sample.grain = grain.toString()
+                sample.group = group
 
-                val resultId = repository.classifySample(sample, 0)
+                var source = 0
+
+                if(isOfficial == false){
+                    source = repository.getLastLimitSource()
+                }
+
+                val resultId = repository.classifySample(sample, source)
                 val resultClassification = repository.getClassification(resultId.toInt())
                 _classification.value = resultClassification
             } catch (e: Exception) {
@@ -43,5 +82,58 @@ class HomeViewModel @Inject constructor(
                 _isLoading.value = false
             }
         }
+    }
+
+    fun setLimit(
+                 impurities:Float,
+                 brokenCrackedDamaged: Float,
+                 greenish: Float,
+                 burnt:Float,
+                 burntOrSour:Float,
+                 moldy:Float,
+                 spoiled:Float) {
+
+        val grain = selectedGrain?:' '
+        val group = selectedGroup?:0
+
+        if (grain == null || group == null) {
+            Log.e("HomeViewModel", "Grain or group not selected")
+            return
+        }
+        viewModelScope.launch {
+            try {
+                _isLoading.value = true
+                _error.value = null
+                repository.setLimit(grain.toString(),group,1,impurities,brokenCrackedDamaged, greenish, burnt, burntOrSour, moldy, spoiled)
+
+            } catch (e: Exception) {
+                _error.value = e.message ?: "Unknown error"
+                Log.e("SampleInput", "Classification failed", e)
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun setDisqualification(badConservation: Int, strangeSmell: Int , insects: Int, toxicGrains: Int){
+        viewModelScope.launch {
+            try{
+                repository.setDisqualification(0,badConservation,0,strangeSmell,toxicGrains,insects)
+            } catch (e: Exception) {
+                _error.value = e.message ?: "Unknown error"
+                Log.e("SetDisqualification", "Disqualification failed", e)
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun logCurrentState() {
+        Log.d("ViewModelState", """
+            Current State:
+            Grain: ${selectedGrain.toString()}
+            Group: ${selectedGroup}
+            Official: ${isOfficial}
+        """.trimIndent())
     }
 }
