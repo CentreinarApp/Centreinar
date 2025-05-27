@@ -14,11 +14,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavController
 import com.example.centreinar.Sample
 import java.math.RoundingMode
 
 @Composable
 fun ClassificationInputScreen(
+    navController: NavController,
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val tabTitles = listOf("Informação Básica", "Defeitos 1", "Defeitos 2", "Defeitos 3", "Resultado")
@@ -30,8 +32,8 @@ fun ClassificationInputScreen(
     val classification by viewModel.classification.collectAsState()
 
     // Form state variables
-    var grain by remember { mutableStateOf("") }
-    var group by remember { mutableStateOf("") }
+    //var grain by remember { mutableStateOf("") }
+    //var group by remember { mutableStateOf("") }
     var lotWeight by remember { mutableStateOf("") }
     var sampleWeight by remember { mutableStateOf("") }
     var foreignMatters by remember { mutableStateOf("") }
@@ -51,8 +53,8 @@ fun ClassificationInputScreen(
     var shriveled by remember { mutableStateOf("") }
 
     fun clearForm() {
-        grain = ""
-        group = ""
+        //grain = ""
+        //group = ""
         lotWeight = ""
         sampleWeight = ""
         foreignMatters = ""
@@ -87,10 +89,10 @@ fun ClassificationInputScreen(
         // Tab content
         when (selectedTab) {
             0 -> BasicInfoTab(
-                grain = grain,
-                onGrainChange = { grain = it },
-                group = group,
-                onGroupChange = { group = it },
+//                grain = grain,
+//                onGrainChange = { grain = it },
+//                group = group,
+//                onGroupChange = { group = it },
                 humidity = humidity,
                 onHumidityChange = { humidity = it },
                 foreignMatters = foreignMatters,
@@ -223,8 +225,10 @@ fun ClassificationInputScreen(
                     // If we're on the last input tab (index = tabs-1), submit first
                     if (selectedTab == tabTitles.lastIndex - 1) {
                         val sample = Sample(
-                            grain = grain,
-                            group = group.toIntOrNull() ?: 0,
+                            //CHANGE
+                            //are now input before
+                            grain = "Outro",
+                            group = 0,
                             lotWeight = lotWeight
                                 .toBigDecimalOrNull()
                                 ?.setScale(2, RoundingMode.HALF_UP)
@@ -298,10 +302,10 @@ fun ClassificationInputScreen(
 
 @Composable
 fun BasicInfoTab(
-    grain: String,
-    onGrainChange: (String) -> Unit,
-    group: String,
-    onGroupChange: (String) -> Unit,
+//    grain: String,
+//    onGrainChange: (String) -> Unit,
+//    group: String,
+//    onGroupChange: (String) -> Unit,
     onLotWeightChange: (String) -> Unit,
     sampleWeight: String,
     onSampleWeightChange: (String) -> Unit,
@@ -313,21 +317,21 @@ fun BasicInfoTab(
 
 ) {
     LazyColumn(modifier = Modifier.padding(16.dp)) {
-        item {
-            OutlinedTextField(
-                value = grain,
-                onValueChange = onGrainChange,
-                label = { Text("Grão") },
-                modifier = Modifier.fillMaxWidth())
-        }
-        item {
-            OutlinedTextField(
-                value = group,
-                onValueChange = onGroupChange,
-                label = { Text("Grupo") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.fillMaxWidth())
-        }
+//        item {
+//            OutlinedTextField(
+//                value = grain,
+//                onValueChange = onGrainChange,
+//                label = { Text("Grão") },
+//                modifier = Modifier.fillMaxWidth())
+//        }
+//        item {
+//            OutlinedTextField(
+//                value = group,
+//                onValueChange = onGroupChange,
+//                label = { Text("Grupo") },
+//                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+//                modifier = Modifier.fillMaxWidth())
+//        }
         item {
             OutlinedTextField(
                 value = lotWeight,
