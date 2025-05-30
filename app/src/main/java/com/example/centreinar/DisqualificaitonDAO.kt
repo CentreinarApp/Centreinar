@@ -22,7 +22,10 @@ interface DisqualificationDao {
     suspend fun update(disqualification: Disqualification)
 
     @Query("UPDATE Disqualification SET graveDefectSum = :newValue WHERE id = :id")
-    suspend fun updateGraveDefectSum(id: Int, newValue: Boolean)
+    suspend fun updateGraveDefectSum(id: Int, newValue: Int)
+
+    @Query("UPDATE Disqualification SET classificationId = :classificationId WHERE id = :id")
+    suspend fun updateClassificationId(id: Int, classificationId: Int)
 
     // Delete operations
     @Delete
@@ -40,4 +43,11 @@ interface DisqualificationDao {
 
     @Query("SELECT * FROM Disqualification WHERE classificationId = :classificationId")
     suspend fun getByClassificationId(classificationId: Int): Disqualification
+
+    @Query("SELECT * FROM Disqualification ORDER BY id DESC LIMIT 1")
+    suspend fun getLastDisqualification(): Disqualification
+
+    @Query("SELECT id FROM Disqualification ORDER BY id DESC LIMIT 1")
+    suspend fun getLastDisqualificationId(): Int
+
 }
