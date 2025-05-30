@@ -54,38 +54,20 @@ fun LimitInputScreen(
             .fillMaxSize()
             .padding(32.dp)
     ) {
+        Text(
+            "Insira os limites de tolerância",
+            style = MaterialTheme.typography.headlineSmall,
+            color = MaterialTheme.colorScheme.onBackground
+        )
 
-
-
+        Spacer(modifier = Modifier.height(24.dp))
 
         // Impurities
         NumberInputField(
             value = impurities,
             onValueChange = { impurities = it },
-            label = "Impurezas (%)",
+            label = "Matéria estranha e Impurezas (%)",
             focusRequester = impuritiesFocus,
-            nextFocus = brokenFocus
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Broken/Cracked/Damaged
-        NumberInputField(
-            value = brokenCrackedDamaged,
-            onValueChange = { brokenCrackedDamaged = it },
-            label = "Quebrados/Trincados/Danificados (%)",
-            focusRequester = brokenFocus,
-            nextFocus = greenishFocus
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Greenish
-        NumberInputField(
-            value = greenish,
-            onValueChange = { greenish = it },
-            label = "Esverdeados (%)",
-            focusRequester = greenishFocus,
             nextFocus = burntFocus
         )
 
@@ -106,11 +88,10 @@ fun LimitInputScreen(
         NumberInputField(
             value = burntOrSour,
             onValueChange = { burntOrSour = it },
-            label = "Ardidos ou Queimados (%)",
+            label = "Ardidos e Queimados (%)",
             focusRequester = burntOrSourFocus,
             nextFocus = moldyFocus
         )
-
         Spacer(modifier = Modifier.height(16.dp))
 
         // Moldy
@@ -124,14 +105,36 @@ fun LimitInputScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Spoiled (last field)
-        OutlinedTextField(
+        // spoiled
+        NumberInputField(
             value = spoiled,
-            onValueChange = { spoiled = sanitizeFloatInput(it) },
-            label = { Text("Avariados (%)") },
+            onValueChange = { spoiled = it },
+            label = "Total de Avariados (%)",
+            focusRequester = spoiledFocus,
+            nextFocus = greenishFocus
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // greenish
+        NumberInputField(
+            value = greenish,
+            onValueChange = { greenish = it },
+            label = "Esverdeados (%)",
+            focusRequester = greenishFocus,
+            nextFocus = brokenFocus
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // broken
+        OutlinedTextField(
+            value = brokenCrackedDamaged,
+            onValueChange = { brokenCrackedDamaged = it },
+            label = { Text("Partidos, Quebrados e Amassados (%)") },
             modifier = Modifier
                 .fillMaxWidth()
-                .focusRequester(spoiledFocus),
+                .focusRequester(brokenFocus),
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Number,
                 imeAction = ImeAction.Done
@@ -177,7 +180,7 @@ fun LimitInputScreen(
                         moldy = moldy.toFloat(),
                         spoiled = spoiled.toFloat()
                     )
-                    navController.navigate("classification")
+                    navController.navigate("disqualification")
                 } catch (e: NumberFormatException) {
                     errorMessage = "Valores numéricos inválidos detectados"
                 }
