@@ -36,7 +36,7 @@ interface ColorClassificationDao {
     suspend fun getById(id: Int): ColorClassification?
 
     @Query("SELECT * FROM ColorClassification WHERE classificationId = :classificationId")
-    suspend fun getByClassificationId(classificationId: Int): List<ColorClassification>
+    suspend fun getByClassificationId(classificationId: Int): ColorClassification
 
     @Query("SELECT * FROM ColorClassification WHERE `class` = :framingClass")
     suspend fun getByFramingClass(framingClass: String): List<ColorClassification>
