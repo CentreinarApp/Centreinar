@@ -64,5 +64,9 @@ interface ClassificationRepository {
 
     suspend fun getLastLimitSource():Int
 
+    suspend fun updateDisqualification(classificationId:Int,finalType:Int)
+
+    suspend fun getObservations(idClassification:Int):String
+
 
 }

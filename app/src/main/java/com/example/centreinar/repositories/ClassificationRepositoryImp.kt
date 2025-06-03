@@ -1,5 +1,6 @@
 package com.example.centreinar.repositories
 
+import android.util.Log
 import com.example.centreinar.Classification
 import com.example.centreinar.ClassificationDao
 import com.example.centreinar.ColorClassification
@@ -275,5 +276,97 @@ class ClassificationRepositoryImpl @Inject constructor(
 
     override suspend fun getLastLimitSource():Int {
         return limitDao.getLastSource()
+    }
+
+    override suspend fun updateDisqualification(classificationId: Int, finalType: Int) {
+        val disqualificationId = disqualificationDao.getLastDisqualificationId()
+        var defectSum = 0
+        if(finalType == 0){
+            defectSum = 1
+        }
+        disqualificationDao.updateClassificationId(disqualificationId,classificationId)
+        disqualificationDao.updateGraveDefectSum(disqualificationId, defectSum)
+    }
+
+    override suspend fun getObservations(idClassification: Int):String{
+//        val classification = getClassification(idClassification)
+        val classification = classificationDao.getById(idClassification)
+        var response = " "
+        if (classification != null) {
+            Log.e("Observations","The classification exists")
+            if(classification.finalType == 0){
+                var percentage = 12
+                if(classification.group == 2) {percentage = 40}
+                response +="Desclassificada pois soma de defeitos graves excede o limite de $percentage%.\n "
+                Log.e("Observations","Observations: ${response}")
+            }
+            if(classification.finalType == 7){
+                if(classification.foreignMatters == 7){
+                    response+="Fora de tipo pois a porcentagem de Matéria Estranha e Impurezas excedeu o limite.\n"
+                    Log.e("Observations","Observations: ${response}")
+
+                }
+                if(classification.burnt == 7){
+                    response+="Fora de tipo pois a porcentagem de grãos queimados excedeu o limite.\n"
+                    Log.e("Observations","Observations: ${response}")
+                }
+                if(classification.burntOrSour == 7){
+                    response+="Fora de tipo pois a soma de grãos queimados e ardidos excedeu o limite.\n"
+                    Log.e("Observations","Observations: ${response}")
+                }
+
+                if(classification.moldy == 7){
+                    response+="Fora de tipo pois a porcentagem de grãos mofados excedeu o limite.\n"
+                    Log.e("Observations","Observations: ${response}")
+                }
+                if(classification.spoiled == 7){
+                    response+="Fora de tipo pois o total de grãos avariados excedeu o limite.\n"
+                    Log.e("Observations","Observations: ${response}")
+                }
+                if(classification.greenish == 7){
+                    response+="Fora de tipo pois a porcentagem de grãos esverdeados excedeu o limite.\n"
+                    Log.e("Observations","Observations: ${response}")
+
+                }
+                if(classification.brokenCrackedDamaged == 7){
+                    response+="Fora de tipo pois a porcentagem de grãos Partidos,Queimados e Amassados excedeu o limite.\n"
+                    Log.e("Observations","Observations: ${response}")
+
+                }
+            }
+            val disqualification  = disqualificationDao.getByClassificationId(classificationId = idClassification)
+            if(disqualification != null){
+                if(disqualification.insects == 1){
+                    //make two different messages in case of which group the sample is being classify in
+                    response += "Desqualificado devido a presença de insetos.\n"
+                    Log.e("Observations","Observations: ${response}")
+
+                }
+                if(disqualification.toxicGrains == 1){
+                    response += "Desqualificado devido a presença de sementes tóxicas.\n"
+                    Log.e("Observations","Observations: ${response}")
+
+                }
+                if(disqualification.strangeSmell == 1){
+                    response += "Desqualificado devido a presença de odor estranho.\n"
+                    Log.e("Observations","Observations: ${response}")
+
+                }
+                if(disqualification.badConservation == 1){
+                    response += "Desqualificado devido ao mal estado de conservação do lote.\n"
+                    Log.e("Observations","Observations: ${response}")
+                }
+            }
+            val colorClass = colorClassificationDao.getByClassificationId(idClassification)
+            if(colorClass != null){
+                if(colorClass.otherColorPercentage > 10.0f){
+                    response += "Amostra de Classe Misturada.\n"
+                    Log.e("Observations","Observations: ${response}")
+                }
+            }
+
+        }
+        Log.e("Observations","Observations: ${response}")
+        return response
     }
 }
