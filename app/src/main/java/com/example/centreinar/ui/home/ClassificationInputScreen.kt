@@ -1,6 +1,7 @@
 package com.example.centreinar.ui.home
 
 import ClassificationTable
+import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -30,6 +31,8 @@ fun ClassificationInputScreen(
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
     val classification by viewModel.classification.collectAsState()
+    val selectedGroup by viewModel.classification.collectAsState()
+    val selectedGrain  by viewModel.classification.collectAsState()
 
     // Form state variables
     //var grain by remember { mutableStateOf("") }
@@ -171,11 +174,23 @@ fun ClassificationInputScreen(
                         }
 
                         classification != null -> {
+
+
                             ClassificationTable(
                                 classification = classification!!,
                                 modifier = Modifier.fillMaxWidth()
                             )
                             Spacer(Modifier.height(16.dp))
+
+                            val observation = viewModel.observation.toString()
+
+                            ObservationCard(
+                                observation,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            Log.e("Observations","observations in screen:${observation}")
+                            Spacer(Modifier.height(16.dp))
+
                             Button(
                                 onClick = {
                                     clearForm()
@@ -224,11 +239,14 @@ fun ClassificationInputScreen(
                 Button(onClick = {
                     // If we're on the last input tab (index = tabs-1), submit first
                     if (selectedTab == tabTitles.lastIndex - 1) {
+                        val grain = viewModel.selectedGrain
+                        var group = viewModel.selectedGroup
+                        if(group == null){
+                            group = 1
+                        }
                         val sample = Sample(
-                            //CHANGE
-                            //are now input before
-                            grain = "Outro",
-                            group = 0,
+                            grain = grain.toString(),
+                            group = group,
                             lotWeight = lotWeight
                                 .toBigDecimalOrNull()
                                 ?.setScale(2, RoundingMode.HALF_UP)
