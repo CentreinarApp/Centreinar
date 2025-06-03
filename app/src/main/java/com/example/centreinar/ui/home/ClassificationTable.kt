@@ -100,8 +100,9 @@ fun ClassificationTable(
             Spacer(Modifier.height(16.dp))
             FinalTypeRow(
                 value = when (classification.finalType) {
+                    0 -> "Desclassificada"
                     7 -> "FORA DE TIPO"
-                    else -> classification.finalType.toString()
+                    else ->classification.finalType.toString()
                 }
             )
         }
