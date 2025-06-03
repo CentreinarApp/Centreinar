@@ -31,6 +31,10 @@ class HomeViewModel @Inject constructor(
 
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
+
+//    private val _observation = MutableStateFlow<String>("")
+//    val observation: StateFlow<String> = _observation
+
 //
 //    private val _selectedGrain = MutableStateFlow<String?>(null)
 //    val selectedGrain: StateFlow<String?> = _selectedGrain.asStateFlow()
@@ -53,6 +57,9 @@ class HomeViewModel @Inject constructor(
     var isOfficial by savedStateHandle.saveable {
         mutableStateOf<Boolean?>(null)
     }
+    var observation by savedStateHandle.saveable {
+        mutableStateOf<String?>(null)
+    }
 
     fun classifySample(sample: Sample) {
         val grain = selectedGrain?:' '
@@ -74,7 +81,11 @@ class HomeViewModel @Inject constructor(
 
                 val resultId = repository.classifySample(sample, source)
                 val resultClassification = repository.getClassification(resultId.toInt())
+                if (resultClassification != null) {
+                    repository.updateDisqualification(resultId.toInt(),resultClassification.finalType)
+                }
                 _classification.value = resultClassification
+                fetchObservation()
             } catch (e: Exception) {
                 _error.value = e.message ?: "Unknown error"
                 Log.e("SampleInput", "Classification failed", e)
@@ -128,12 +139,22 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    fun logCurrentState() {
-        Log.d("ViewModelState", """
-            Current State:
-            Grain: ${selectedGrain.toString()}
-            Group: ${selectedGroup}
-            Official: ${isOfficial}
-        """.trimIndent())
+    private fun fetchObservation() {
+       val classification = _classification.value
+       if (classification != null) {
+            viewModelScope.launch {
+                _isLoading.value = true
+                try {
+                    val result = repository.getObservations(classification.id)
+                    observation = result
+                    Log.e("Observations", "Observation was made: $result")
+                } catch (e: Exception) {
+                    _error.value = e.message ?: "Unknown error"
+                    Log.e("Observation", "Observation failed", e)
+                } finally {
+                    _isLoading.value = false
+                }
+            }
+        }
     }
 }
