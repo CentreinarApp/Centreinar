@@ -35,8 +35,9 @@ interface ClassificationRepository {
 
     suspend fun setObservations(classification: Classification): String
     suspend fun setClass(
-        classification: Classification,
-        yellow: Float,
+        grain:String,
+        classificationId: Int,
+        totalWeight: Float,
         otherColors: Float
     ): ColorClassification
 

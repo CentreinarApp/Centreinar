@@ -201,10 +201,9 @@ class ClassificationRepositoryImpl @Inject constructor(
         return observation
     }
 
-    override suspend fun setClass(classification: Classification, yellow: Float, otherColors: Float):ColorClassification {
+    override suspend fun setClass(grain:String, classificationId: Int, totalWeight: Float, otherColors: Float):ColorClassification {
 
-        val sample: Sample = getSample(classification.sampleId)!!
-        val otherColorsPercentage = tools.calculateDefectPercentage(otherColors, sample.cleanWeight)
+        val otherColorsPercentage = tools.calculatePercentage(otherColors, totalWeight)
         var framingClass = " "
         if(otherColorsPercentage > 10.0f) {
             framingClass = "Misturada"
@@ -212,10 +211,11 @@ class ClassificationRepositoryImpl @Inject constructor(
         else {
             framingClass = "Amarela"
         }
+
         val colorClassification = ColorClassification(
-            grain = sample.grain,
-            classificationId = classification.id,
-            yellowPercentage =  tools.calculateDefectPercentage(yellow, sample.cleanWeight), // CHANGE
+            grain = grain,
+            classificationId = classificationId,
+            yellowPercentage =  tools.calculatePercentage(totalWeight-otherColors,totalWeight),
            otherColorPercentage = otherColorsPercentage,
             framingClass = framingClass
         )
