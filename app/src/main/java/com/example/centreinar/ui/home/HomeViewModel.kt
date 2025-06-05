@@ -157,4 +157,22 @@ class HomeViewModel @Inject constructor(
             }
         }
     }
+
+    fun setClassColor(totalWeight:Float,otherColorsWeight:Float){
+        val classification = classification.value
+        val grain = selectedGrain
+        if(classification != null ){
+            viewModelScope.launch {
+                try {
+                    repository.setClass(grain!!,classification.id,totalWeight,otherColorsWeight)
+                } catch (e: Exception) {
+                    _error.value = e.message ?: "Unknown error"
+                    Log.e("ClassColor", "Class Color failed", e)
+                } finally {
+                    _isLoading.value = false
+                }
+            }
+        }
+    }
 }
+
