@@ -16,7 +16,6 @@ class Utilities @Inject constructor()  {
         }
         return 7
     }
-
     fun calculateDefectPercentage(defect: Float, weight: Float): Float {
        val percentage: Float = (defect * 100) / weight
         return percentage
@@ -30,5 +29,13 @@ class Utilities @Inject constructor()  {
             return 0f
         }
         return ((defect - defectTolerance)/ (100-defectTolerance) ) * 100
+    }
+
+    fun calculatePercentage(item:Float, weight: Float):Float{
+        val percentage: Float = (item * 100) / weight
+        return percentage
+            .toBigDecimal()
+            .setScale(2, RoundingMode.HALF_UP)
+            .toFloat()
     }
 }
