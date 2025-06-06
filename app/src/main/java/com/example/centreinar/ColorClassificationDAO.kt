@@ -40,4 +40,7 @@ interface ColorClassificationDao {
 
     @Query("SELECT * FROM ColorClassification WHERE `class` = :framingClass")
     suspend fun getByFramingClass(framingClass: String): List<ColorClassification>
+
+    @Query("SELECT * FROM ColorClassification ORDER BY id DESC LIMIT 1")
+    suspend fun getLastColorClass(): ColorClassification
 }
