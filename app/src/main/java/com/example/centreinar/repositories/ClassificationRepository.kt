@@ -64,7 +64,7 @@ interface ClassificationRepository {
     ): Long
 
     suspend fun getLastLimitSource():Int
-
+    suspend fun getLastColorClass():ColorClassification
     suspend fun updateDisqualification(classificationId:Int,finalType:Int)
 
     suspend fun getObservations(idClassification:Int):String

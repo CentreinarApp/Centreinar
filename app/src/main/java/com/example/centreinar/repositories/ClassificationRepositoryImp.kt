@@ -369,4 +369,8 @@ class ClassificationRepositoryImpl @Inject constructor(
         Log.e("Observations","Observations: ${response}")
         return response
     }
+
+    override suspend fun getLastColorClass(): ColorClassification {
+       return colorClassificationDao.getLastColorClass()
+    }
 }
