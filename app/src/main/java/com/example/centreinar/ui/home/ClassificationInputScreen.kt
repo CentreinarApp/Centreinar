@@ -18,13 +18,14 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.centreinar.Sample
 import java.math.RoundingMode
+import androidx.compose.ui.window.Dialog
 
 @Composable
 fun ClassificationInputScreen(
     navController: NavController,
     viewModel: HomeViewModel = hiltViewModel()
 ) {
-    val tabTitles = listOf("Informação Básica", "Defeitos 1", "Defeitos 2", "Defeitos 3", "Resultado")
+    val tabTitles = listOf("Informação Básica", "Defeitos 1", "Defeitos 2", "Defeitos 3")
     var selectedTab by remember { mutableStateOf(0) }
 
     // State from ViewModel
@@ -34,9 +35,11 @@ fun ClassificationInputScreen(
     val selectedGroup by viewModel.classification.collectAsState()
     val selectedGrain  by viewModel.classification.collectAsState()
 
+
     // Form state variables
     //var grain by remember { mutableStateOf("") }
     //var group by remember { mutableStateOf("") }
+    var showClassConfirmation by remember { mutableStateOf(false) }
     var lotWeight by remember { mutableStateOf("") }
     var sampleWeight by remember { mutableStateOf("") }
     var foreignMatters by remember { mutableStateOf("") }
@@ -142,81 +145,103 @@ fun ClassificationInputScreen(
                 brokenCrackedDamaged = brokenCrackedDamaged,
                 onBrokenCrackedDamagedChange = { brokenCrackedDamaged = it }
             )
-
-            4 -> {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .verticalScroll(rememberScrollState())
-                        .padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    when {
-                        isLoading -> {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .padding(32.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                CircularProgressIndicator()
-                            }
-                        }
-
-                        error != null -> {
-                            Text(
-                                text = error!!,
-                                color = MaterialTheme.colorScheme.error,
-                                modifier = Modifier
-                                    .padding(top = 16.dp)
-                                    .fillMaxWidth()
-                            )
-                        }
-
-                        classification != null -> {
-
-
-                            ClassificationTable(
-                                classification = classification!!,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                            Spacer(Modifier.height(16.dp))
-
-                            val observation = viewModel.observation.toString()
-
-                            ObservationCard(
-                                observation,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                            Log.e("Observations","observations in screen:${observation}")
-                            Spacer(Modifier.height(16.dp))
-
-                            Button(
-                                onClick = {
-                                    clearForm()
-                                    selectedTab = 0
-                                },
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Text("Nova Análise")
-                            }
-                        }
-
-                        else -> {
-                            Text(
-                                text = "Submeta os dados para ver os resultados da classificação",
-                                style = MaterialTheme.typography.bodyMedium,
-                                modifier = Modifier
-                                    .padding(top = 32.dp)
-                                    .fillMaxWidth()
-                            )
-                        }
-                    }
-                }
-            }
         }
 
+        if (showClassConfirmation) {
+            val grain = viewModel.selectedGrain
+            var group = viewModel.selectedGroup
+            if(group == null){
+                group = 1
+            }
+            val sample = Sample(
+                grain = grain.toString(),
+                group = group,
+                lotWeight = lotWeight
+                    .toBigDecimalOrNull()
+                    ?.setScale(2, RoundingMode.HALF_UP)
+                    ?.toFloat() ?: 0f,
+                sampleWeight = sampleWeight
+                    .toBigDecimalOrNull()
+                    ?.setScale(2, RoundingMode.HALF_UP)
+                    ?.toFloat() ?: 0f,
+                foreignMattersAndImpurities = foreignMatters
+                    .toBigDecimalOrNull()
+                    ?.setScale(2, RoundingMode.HALF_UP)
+                    ?.toFloat() ?: 0f,
+                humidity = humidity
+                    .toBigDecimalOrNull()
+                    ?.setScale(2, RoundingMode.HALF_UP)
+                    ?.toFloat() ?: 0f,
+                greenish = greenish
+                    .toBigDecimalOrNull()
+                    ?.setScale(2, RoundingMode.HALF_UP)
+                    ?.toFloat() ?: 0f,
+                brokenCrackedDamaged = brokenCrackedDamaged
+                    .toBigDecimalOrNull()
+                    ?.setScale(2, RoundingMode.HALF_UP)
+                    ?.toFloat() ?: 0f,
+                damaged = damaged
+                    .toBigDecimalOrNull()
+                    ?.setScale(2, RoundingMode.HALF_UP)
+                    ?.toFloat() ?: 0f,
+                burnt = burnt
+                    .toBigDecimalOrNull()
+                    ?.setScale(2, RoundingMode.HALF_UP)
+                    ?.toFloat() ?: 0f,
+                sour = sour
+                    .toBigDecimalOrNull()
+                    ?.setScale(2, RoundingMode.HALF_UP)
+                    ?.toFloat() ?: 0f,
+                moldy = moldy
+                    .toBigDecimalOrNull()
+                    ?.setScale(2, RoundingMode.HALF_UP)
+                    ?.toFloat() ?: 0f,
+                fermented = fermented
+                    .toBigDecimalOrNull()
+                    ?.setScale(2, RoundingMode.HALF_UP)
+                    ?.toFloat() ?: 0f,
+                germinated = germinated
+                    .toBigDecimalOrNull()
+                    ?.setScale(2, RoundingMode.HALF_UP)
+                    ?.toFloat() ?: 0f,
+                immature = immature
+                    .toBigDecimalOrNull()
+                    ?.setScale(2, RoundingMode.HALF_UP)
+                    ?.toFloat() ?: 0f,
+                shriveled = shriveled
+                    .toBigDecimalOrNull()
+                    ?.setScale(2, RoundingMode.HALF_UP)
+                    ?.toFloat() ?: 0f
+            )
+            viewModel.classifySample(sample)
 
+            AlertDialog(
+                onDismissRequest = { showClassConfirmation = false },
+                title = { Text("Definir classe?") },
+                text = { Text("Deseja definir classe?") },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            showClassConfirmation = false
+                            navController.navigate("colorClassInput")
+                            viewModel.doesDefineColorClass = true
+                        }
+                    ) {
+                        Text("Sim")
+                    }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = {
+                            showClassConfirmation = false
+                            navController.navigate("classificationResult")
+                        }
+                    ) {
+                        Text("Não")
+                    }
+                }
+            )
+        }
 
         // Navigation controls
         Row(
@@ -228,88 +253,24 @@ fun ClassificationInputScreen(
             // Previous button (unchanged)
             if (selectedTab > 0) {
                 Button(onClick = { selectedTab-- }) {
-                    Text("Previous")
+                    Text("Voltar")
                 }
             } else {
                 Spacer(modifier = Modifier.weight(1f))
             }
 
             // Next or Classify (merged into Next logic)
-            if (selectedTab < tabTitles.lastIndex) {
+            if (selectedTab < tabTitles.lastIndex+1) {
                 Button(onClick = {
                     // If we're on the last input tab (index = tabs-1), submit first
-                    if (selectedTab == tabTitles.lastIndex - 1) {
-                        val grain = viewModel.selectedGrain
-                        var group = viewModel.selectedGroup
-                        if(group == null){
-                            group = 1
-                        }
-                        val sample = Sample(
-                            grain = grain.toString(),
-                            group = group,
-                            lotWeight = lotWeight
-                                .toBigDecimalOrNull()
-                                ?.setScale(2, RoundingMode.HALF_UP)
-                                ?.toFloat() ?: 0f,
-                            sampleWeight = sampleWeight
-                                .toBigDecimalOrNull()
-                                ?.setScale(2, RoundingMode.HALF_UP)
-                                ?.toFloat() ?: 0f,
-                            foreignMattersAndImpurities = foreignMatters
-                                .toBigDecimalOrNull()
-                                ?.setScale(2, RoundingMode.HALF_UP)
-                                ?.toFloat() ?: 0f,
-                            humidity = humidity
-                                .toBigDecimalOrNull()
-                                ?.setScale(2, RoundingMode.HALF_UP)
-                                ?.toFloat() ?: 0f,
-                            greenish = greenish
-                                .toBigDecimalOrNull()
-                                ?.setScale(2, RoundingMode.HALF_UP)
-                                ?.toFloat() ?: 0f,
-                            brokenCrackedDamaged = brokenCrackedDamaged
-                                .toBigDecimalOrNull()
-                                ?.setScale(2, RoundingMode.HALF_UP)
-                                ?.toFloat() ?: 0f,
-                            damaged = damaged
-                                .toBigDecimalOrNull()
-                                ?.setScale(2, RoundingMode.HALF_UP)
-                                ?.toFloat() ?: 0f,
-                            burnt = burnt
-                                .toBigDecimalOrNull()
-                                ?.setScale(2, RoundingMode.HALF_UP)
-                                ?.toFloat() ?: 0f,
-                            sour = sour
-                                .toBigDecimalOrNull()
-                                ?.setScale(2, RoundingMode.HALF_UP)
-                                ?.toFloat() ?: 0f,
-                            moldy = moldy
-                                .toBigDecimalOrNull()
-                                ?.setScale(2, RoundingMode.HALF_UP)
-                                ?.toFloat() ?: 0f,
-                            fermented = fermented
-                                .toBigDecimalOrNull()
-                                ?.setScale(2, RoundingMode.HALF_UP)
-                                ?.toFloat() ?: 0f,
-                            germinated = germinated
-                                .toBigDecimalOrNull()
-                                ?.setScale(2, RoundingMode.HALF_UP)
-                                ?.toFloat() ?: 0f,
-                            immature = immature
-                                .toBigDecimalOrNull()
-                                ?.setScale(2, RoundingMode.HALF_UP)
-                                ?.toFloat() ?: 0f,
-                            shriveled = shriveled
-                                .toBigDecimalOrNull()
-                                ?.setScale(2, RoundingMode.HALF_UP)
-                                ?.toFloat() ?: 0f
-                        )
-                        viewModel.classifySample(sample)
+                    if (selectedTab == tabTitles.lastIndex) {
+                        showClassConfirmation = true
+                    } else{
+                        // Move to the next tab (or Result tab, if we just submitted)
+                        selectedTab++
                     }
-                    // Move to the next tab (or Result tab, if we just submitted)
-                    selectedTab++
                 }) {
-                    Text("Next")
+                    Text("Avançar")
                 }
             } else {
                 Spacer(modifier = Modifier.weight(1f))
