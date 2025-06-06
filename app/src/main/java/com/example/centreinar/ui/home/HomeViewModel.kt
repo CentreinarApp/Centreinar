@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.saveable
 import com.example.centreinar.Classification
+import com.example.centreinar.ColorClassification
 import com.example.centreinar.Limit
 import com.example.centreinar.repositories.ClassificationRepository
 import com.example.centreinar.Sample
@@ -16,6 +17,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
@@ -59,6 +61,9 @@ class HomeViewModel @Inject constructor(
     }
     var observation by savedStateHandle.saveable {
         mutableStateOf<String?>(null)
+    }
+    var doesDefineColorClass by savedStateHandle.saveable {
+        mutableStateOf<Boolean?>(null)
     }
 
     fun classifySample(sample: Sample) {
@@ -157,6 +162,20 @@ class HomeViewModel @Inject constructor(
             }
         }
     }
+
+    suspend fun getClassColor(): ColorClassification? { // Return a nullable type for safety
+        return try {
+            _isLoading.value = true // Show loading indicator while fetching
+            repository.getLastColorClass() // This will now wait and return the real data
+        } catch (e: Exception) {
+            _error.value = e.message ?: "Falha ao buscar a classe de cor"
+            Log.e("ClassColor", "Class Color failed", e)
+            null // Return null if there's an error
+        } finally {
+            _isLoading.value = false // Hide loading indicator
+        }
+    }
+
 
     fun setClassColor(totalWeight:Float,otherColorsWeight:Float){
         val classification = classification.value
