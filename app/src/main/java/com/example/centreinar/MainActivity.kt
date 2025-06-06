@@ -20,6 +20,8 @@
     import com.example.centreinar.ui.CentreinarTheme
     import com.example.centreinar.ui.home.ClassificationInputScreen
     import com.example.centreinar.ui.HomeScreen
+    import com.example.centreinar.ui.home.ClassificationResult
+    import com.example.centreinar.ui.home.ColorClassInput
     import com.example.centreinar.ui.home.DisqualificationScreen
     import com.example.centreinar.ui.home.OfficialOrNotOfficialScreen
 
@@ -123,6 +125,26 @@
                         hiltViewModel<HomeViewModel>(parentEntry)
                     )
                 }
+
+                composable("classificationResult") { backStackEntry ->
+                    val parentEntry = remember(backStackEntry) {
+                        navController.getBackStackEntry("main_flow")
+                    }
+                    ClassificationResult(
+                        navController,
+                        hiltViewModel<HomeViewModel>(parentEntry)
+                    )
+                }
+                composable("colorClassInput") { backStackEntry ->
+                    val parentEntry = remember(backStackEntry) {
+                        navController.getBackStackEntry("main_flow")
+                    }
+                    ColorClassInput(
+                        navController,
+                        hiltViewModel<HomeViewModel>(parentEntry)
+                    )
+                }
+
 
                 composable("discount") { /* Similar structure for discount screen */ }
             }
