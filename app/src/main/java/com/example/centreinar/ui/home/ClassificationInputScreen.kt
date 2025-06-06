@@ -6,12 +6,17 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -35,10 +40,7 @@ fun ClassificationInputScreen(
     val selectedGroup by viewModel.classification.collectAsState()
     val selectedGrain  by viewModel.classification.collectAsState()
 
-
     // Form state variables
-    //var grain by remember { mutableStateOf("") }
-    //var group by remember { mutableStateOf("") }
     var showClassConfirmation by remember { mutableStateOf(false) }
     var lotWeight by remember { mutableStateOf("") }
     var sampleWeight by remember { mutableStateOf("") }
@@ -58,9 +60,44 @@ fun ClassificationInputScreen(
     var immature by remember { mutableStateOf("") }
     var shriveled by remember { mutableStateOf("") }
 
+    // Focus requesters for each tab
+    // BasicInfoTab
+    val lotWeightFocus = remember { FocusRequester() }
+    val sampleWeightFocus = remember { FocusRequester() }
+    val humidityFocus = remember { FocusRequester() }
+    val foreignMattersFocus = remember { FocusRequester() }
+
+    // GraveDefectsTab
+    val burntFocus = remember { FocusRequester() }
+    val sourFocus = remember { FocusRequester() }
+    val moldyFocus = remember { FocusRequester() }
+
+    // OtherDefectsTab
+    val fermentedFocus = remember { FocusRequester() }
+    val germinatedFocus = remember { FocusRequester() }
+    val immatureFocus = remember { FocusRequester() }
+    val shriveledFocus = remember { FocusRequester() }
+    val piercingInputFocus = remember { FocusRequester() }
+    val damagedInputFocus = remember { FocusRequester() }
+
+    // FinalDefectsTab
+    val greenishFocus = remember { FocusRequester() }
+    val brokenCrackedDamagedFocus = remember { FocusRequester() }
+
+    // Keyboard controller
+    val keyboardController = LocalSoftwareKeyboardController.current
+
+    // Focus management based on selected tab
+    LaunchedEffect(selectedTab) {
+        when (selectedTab) {
+            0 -> lotWeightFocus.requestFocus()
+            1 -> burntFocus.requestFocus()
+            2 -> fermentedFocus.requestFocus()
+            3 -> greenishFocus.requestFocus()
+        }
+    }
+
     fun clearForm() {
-        //grain = ""
-        //group = ""
         lotWeight = ""
         sampleWeight = ""
         foreignMatters = ""
@@ -95,18 +132,18 @@ fun ClassificationInputScreen(
         // Tab content
         when (selectedTab) {
             0 -> BasicInfoTab(
-//                grain = grain,
-//                onGrainChange = { grain = it },
-//                group = group,
-//                onGroupChange = { group = it },
-                humidity = humidity,
-                onHumidityChange = { humidity = it },
-                foreignMatters = foreignMatters,
-                onForeignMattersChange = { foreignMatters = it },
                 lotWeight = lotWeight,
                 onLotWeightChange = { lotWeight = it },
                 sampleWeight = sampleWeight,
                 onSampleWeightChange = { sampleWeight = it },
+                humidity = humidity,
+                onHumidityChange = { humidity = it },
+                foreignMatters = foreignMatters,
+                onForeignMattersChange = { foreignMatters = it },
+                lotWeightFocus = lotWeightFocus,
+                sampleWeightFocus = sampleWeightFocus,
+                humidityFocus = humidityFocus,
+                foreignMattersFocus = foreignMattersFocus
             )
 
             1 -> GraveDefectsTab(
@@ -115,7 +152,10 @@ fun ClassificationInputScreen(
                 sour = sour,
                 onSourChange = { sour = it },
                 moldy = moldy,
-                onMoldyChange = { moldy = it }
+                onMoldyChange = { moldy = it },
+                burntFocus = burntFocus,
+                sourFocus = sourFocus,
+                moldyFocus = moldyFocus
             )
 
             2 -> OtherDefectsTab(
@@ -135,22 +175,30 @@ fun ClassificationInputScreen(
                 damagedInput = damagedInput,
                 onDamagedInputChange = {
                     damagedInput = it
-                    damaged = ((it.toFloat() ?: (0f + piercingDamaged.toFloat()) ?: 0f)).toString()
-                }
+                    damaged = ((it.toFloatOrNull() ?: 0f) + (piercingDamaged.toFloatOrNull() ?: 0f)).toString()
+                },
+                fermentedFocus = fermentedFocus,
+                germinatedFocus = germinatedFocus,
+                immatureFocus = immatureFocus,
+                shriveledFocus = shriveledFocus,
+                piercingInputFocus = piercingInputFocus,
+                damagedInputFocus = damagedInputFocus
             )
 
             3 -> FinalDefectsTab(
                 greenish = greenish,
                 onGreenishChange = { greenish = it },
                 brokenCrackedDamaged = brokenCrackedDamaged,
-                onBrokenCrackedDamagedChange = { brokenCrackedDamaged = it }
+                onBrokenCrackedDamagedChange = { brokenCrackedDamaged = it },
+                greenishFocus = greenishFocus,
+                brokenCrackedDamagedFocus = brokenCrackedDamagedFocus
             )
         }
 
         if (showClassConfirmation) {
             val grain = viewModel.selectedGrain
             var group = viewModel.selectedGroup
-            if(group == null){
+            if (group == null) {
                 group = 1
             }
             val sample = Sample(
@@ -250,7 +298,6 @@ fun ClassificationInputScreen(
                 .padding(16.dp),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            // Previous button (unchanged)
             if (selectedTab > 0) {
                 Button(onClick = { selectedTab-- }) {
                     Text("Voltar")
@@ -259,21 +306,14 @@ fun ClassificationInputScreen(
                 Spacer(modifier = Modifier.weight(1f))
             }
 
-            // Next or Classify (merged into Next logic)
-            if (selectedTab < tabTitles.lastIndex+1) {
-                Button(onClick = {
-                    // If we're on the last input tab (index = tabs-1), submit first
-                    if (selectedTab == tabTitles.lastIndex) {
-                        showClassConfirmation = true
-                    } else{
-                        // Move to the next tab (or Result tab, if we just submitted)
-                        selectedTab++
-                    }
-                }) {
+            if (selectedTab < tabTitles.lastIndex) {
+                Button(onClick = { selectedTab++ }) {
                     Text("Avançar")
                 }
             } else {
-                Spacer(modifier = Modifier.weight(1f))
+                Button(onClick = { showClassConfirmation = true }) {
+                    Text("Classificar")
+                }
             }
         }
     }
@@ -281,10 +321,7 @@ fun ClassificationInputScreen(
 
 @Composable
 fun BasicInfoTab(
-//    grain: String,
-//    onGrainChange: (String) -> Unit,
-//    group: String,
-//    onGroupChange: (String) -> Unit,
+    lotWeight: String,
     onLotWeightChange: (String) -> Unit,
     sampleWeight: String,
     onSampleWeightChange: (String) -> Unit,
@@ -292,56 +329,47 @@ fun BasicInfoTab(
     onHumidityChange: (String) -> Unit,
     foreignMatters: String,
     onForeignMattersChange: (String) -> Unit,
-    lotWeight: String,
-
+    lotWeightFocus: FocusRequester,
+    sampleWeightFocus: FocusRequester,
+    humidityFocus: FocusRequester,
+    foreignMattersFocus: FocusRequester
 ) {
     LazyColumn(modifier = Modifier.padding(16.dp)) {
-//        item {
-//            OutlinedTextField(
-//                value = grain,
-//                onValueChange = onGrainChange,
-//                label = { Text("Grão") },
-//                modifier = Modifier.fillMaxWidth())
-//        }
-//        item {
-//            OutlinedTextField(
-//                value = group,
-//                onValueChange = onGroupChange,
-//                label = { Text("Grupo") },
-//                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-//                modifier = Modifier.fillMaxWidth())
-//        }
         item {
-            OutlinedTextField(
+            NumberInputField(
                 value = lotWeight,
                 onValueChange = onLotWeightChange,
-                label = { Text("Peso do lote (kg)") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.fillMaxWidth())
+                label = "Peso do lote (kg)",
+                focusRequester = lotWeightFocus,
+                nextFocus = sampleWeightFocus
+            )
         }
         item {
-            OutlinedTextField(
+            NumberInputField(
                 value = sampleWeight,
                 onValueChange = onSampleWeightChange,
-                label = { Text("Peso da amostra de trabalho (g)") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.fillMaxWidth())
+                label = "Peso da amostra de trabalho (g)",
+                focusRequester = sampleWeightFocus,
+                nextFocus = humidityFocus
+            )
         }
         item {
-            OutlinedTextField(
+            NumberInputField(
                 value = humidity,
                 onValueChange = onHumidityChange,
-                label = { Text("Umidade") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.fillMaxWidth())
+                label = "Umidade (%) ",
+                focusRequester = humidityFocus,
+                nextFocus = foreignMattersFocus
+            )
         }
         item {
-            OutlinedTextField(
+            NumberInputField(
                 value = foreignMatters,
                 onValueChange = onForeignMattersChange,
-                label = { Text("Matéria Estranha e Impurezas") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.fillMaxWidth())
+                label = "Matéria Estranha e Impurezas (g)",
+                focusRequester = foreignMattersFocus,
+                nextFocus = null
+            )
         }
     }
 }
@@ -353,32 +381,38 @@ fun GraveDefectsTab(
     sour: String,
     onSourChange: (String) -> Unit,
     moldy: String,
-    onMoldyChange: (String) -> Unit
+    onMoldyChange: (String) -> Unit,
+    burntFocus: FocusRequester,
+    sourFocus: FocusRequester,
+    moldyFocus: FocusRequester
 ) {
     LazyColumn(modifier = Modifier.padding(16.dp)) {
         item {
-            OutlinedTextField(
+            NumberInputField(
                 value = burnt,
                 onValueChange = onBurntChange,
-                label = { Text("Queimados") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.fillMaxWidth())
+                label = "Queimados (g)",
+                focusRequester = burntFocus,
+                nextFocus = sourFocus
+            )
         }
         item {
-            OutlinedTextField(
+            NumberInputField(
                 value = sour,
                 onValueChange = onSourChange,
-                label = { Text("Ardidos") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.fillMaxWidth())
+                label = "Ardidos (g)",
+                focusRequester = sourFocus,
+                nextFocus = moldyFocus
+            )
         }
         item {
-            OutlinedTextField(
+            NumberInputField(
                 value = moldy,
                 onValueChange = onMoldyChange,
-                label = { Text("Mofados") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.fillMaxWidth())
+                label = "Mofados (g)",
+                focusRequester = moldyFocus,
+                nextFocus = null
+            )
         }
     }
 }
@@ -397,48 +431,59 @@ fun OtherDefectsTab(
     onPiercingInputChange: (String) -> Unit,
     damagedInput: String,
     onDamagedInputChange: (String) -> Unit,
+    fermentedFocus: FocusRequester,
+    germinatedFocus: FocusRequester,
+    immatureFocus: FocusRequester,
+    shriveledFocus: FocusRequester,
+    piercingInputFocus: FocusRequester,
+    damagedInputFocus: FocusRequester
 ) {
     LazyColumn(modifier = Modifier.padding(16.dp)) {
         item {
-            OutlinedTextField(
+            NumberInputField(
                 value = fermented,
                 onValueChange = onFermentedChange,
-                label = { Text("Fermentados") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.fillMaxWidth())
+                label = "Fermentados (g)",
+                focusRequester = fermentedFocus,
+                nextFocus = germinatedFocus
+            )
         }
         item {
-            OutlinedTextField(
+            NumberInputField(
                 value = germinated,
                 onValueChange = onGerminatedChange,
-                label = { Text("Germinados") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.fillMaxWidth())
+                label = "Germinados (g)",
+                focusRequester = germinatedFocus,
+                nextFocus = immatureFocus
+            )
         }
         item {
-            OutlinedTextField(
+            NumberInputField(
                 value = immature,
                 onValueChange = onImmatureChange,
-                label = { Text("Imaturos") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.fillMaxWidth())
+                label = "Imaturos (g)",
+                focusRequester = immatureFocus,
+                nextFocus = shriveledFocus
+            )
         }
         item {
-            OutlinedTextField(
+            NumberInputField(
                 value = shriveled,
                 onValueChange = onShriveledChange,
-                label = { Text("Chochos") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.fillMaxWidth())
+                label = "Chochos (g)",
+                focusRequester = shriveledFocus,
+                nextFocus = piercingInputFocus
+            )
         }
         item {
             Column(Modifier.fillMaxWidth()) {
-                OutlinedTextField(
+                NumberInputField(
                     value = piercingInput,
                     onValueChange = onPiercingInputChange,
-                    label = { Text("Picados") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.fillMaxWidth())
+                    label = "Picados (g)",
+                    focusRequester = piercingInputFocus,
+                    nextFocus = damagedInputFocus
+                )
                 Text(
                     text = if (piercingInput.isNotEmpty()) "$piercingInput / 4 = ${(piercingInput.toFloatOrNull()?.div(4) ?: 0)}"
                     else "",
@@ -447,19 +492,17 @@ fun OtherDefectsTab(
             }
         }
         item {
-            OutlinedTextField(
+            NumberInputField(
                 value = damagedInput,
                 onValueChange = onDamagedInputChange,
-                label = { Text("Danificados por outras pragas") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.fillMaxWidth())
+                label = "Danificados por outras pragas (g)",
+                focusRequester = damagedInputFocus,
+                nextFocus = null
+            )
             Text(
-                text = if (damagedInput.isNotEmpty()){
-                    "$damagedInput + ${(piercingInput.toFloatOrNull()?.div(4) ?: 0)} = ${(damagedInput.toFloatOrNull())?.plus(
-                        (piercingInput.toFloatOrNull()?.div(4)!!)
-                    )}"
-                }
-                else "",
+                text = if (damagedInput.isNotEmpty() && piercingInput.isNotEmpty()) {
+                    "$damagedInput + ${(piercingInput.toFloatOrNull()?.div(4) ?: 0)} = ${(damagedInput.toFloatOrNull() ?: 0f) + (piercingInput.toFloatOrNull()?.div(4) ?: 0f)}"
+                } else "",
                 style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier.padding(start = 16.dp))
         }
@@ -471,24 +514,85 @@ fun FinalDefectsTab(
     greenish: String,
     onGreenishChange: (String) -> Unit,
     brokenCrackedDamaged: String,
-    onBrokenCrackedDamagedChange: (String) -> Unit
+    onBrokenCrackedDamagedChange: (String) -> Unit,
+    greenishFocus: FocusRequester,
+    brokenCrackedDamagedFocus: FocusRequester
 ) {
     LazyColumn(modifier = Modifier.padding(16.dp)) {
         item {
-            OutlinedTextField(
+            NumberInputField(
                 value = greenish,
                 onValueChange = onGreenishChange,
-                label = { Text("Esverdeados") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.fillMaxWidth())
+                label = "Esverdeados (g)",
+                focusRequester = greenishFocus,
+                nextFocus = brokenCrackedDamagedFocus
+            )
         }
         item {
-            OutlinedTextField(
+            NumberInputField(
                 value = brokenCrackedDamaged,
                 onValueChange = onBrokenCrackedDamagedChange,
-                label = { Text("Partidos, Quebrados e Amassados") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.fillMaxWidth())
+                label = "Partidos, Quebrados e Amassados (g)",
+                focusRequester = brokenCrackedDamagedFocus,
+                nextFocus = null
+            )
         }
     }
+}
+
+@Composable
+private fun NumberInputField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    focusRequester: FocusRequester,
+    nextFocus: FocusRequester?
+) {
+    val keyboardController = LocalSoftwareKeyboardController.current
+
+    OutlinedTextField(
+        value = value,
+        onValueChange = { onValueChange(sanitizeFloatInput(it)) },
+        label = { Text(label) },
+        modifier = Modifier
+            .fillMaxWidth()
+            .focusRequester(focusRequester),
+        keyboardOptions = KeyboardOptions(
+            keyboardType = KeyboardType.Number,
+            imeAction = if (nextFocus != null) ImeAction.Next else ImeAction.Done
+        ),
+        keyboardActions = KeyboardActions(
+            onNext = { nextFocus?.requestFocus() },
+            onDone = { keyboardController?.hide() }
+        ),
+        singleLine = true
+    )
+}
+
+private fun sanitizeFloatInput(input: String): String {
+    if (input.isEmpty()) return input
+
+    // Filter non-digit/non-decimal characters
+    var filtered = input.filter { it.isDigit() || it == '.' }
+
+    // Handle multiple decimals
+    val decimalCount = filtered.count { it == '.' }
+    if (decimalCount > 1) {
+        val firstDecimalIndex = filtered.indexOfFirst { it == '.' }
+        // Get the part after the first decimal point
+        val afterDecimal = filtered.substring(firstDecimalIndex + 1)
+        // Remove any additional decimals from the part after the first decimal
+        filtered = filtered.replaceRange(
+            firstDecimalIndex + 1,
+            filtered.length,
+            afterDecimal.replace(".", "")
+        )
+    }
+
+    // Prevent leading zero issues
+    if (filtered.startsWith("00") && !filtered.startsWith("0.")) {
+        filtered = "0" + filtered.drop(2)
+    }
+
+    return filtered
 }
