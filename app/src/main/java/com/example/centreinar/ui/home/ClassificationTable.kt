@@ -76,16 +76,15 @@ fun ClassificationTable(
                         textAlign = TextAlign.End
                     )
                 }
-
                 // Table Rows
                 listOf(
-                    Triple("Matéria Estranha e Impurezas", classification.foreignMattersPercentage, classification.foreignMatters),
-                    Triple("Partidos, Quebrados e Amassados", classification.brokenCrackedDamagedPercentage, classification.brokenCrackedDamaged),
-                    Triple("Esverdeados", classification.greenishPercentage, classification.greenish),
-                    Triple("Mofados", classification.moldyPercentage, classification.moldy),
-                    Triple("Queimados", classification.burntPercentage, classification.burnt),
-                    Triple("Ardidos e Queimados", classification.burntOrSourPercentage, classification.burntOrSour),
-                    Triple("Total de Avariados", classification.spoiledPercentage, classification.spoiled)
+                    Triple("Matéria Estranha e Impurezas", classification.foreignMattersPercentage, typeNumberToString(classification.foreignMatters)),
+                    Triple("Queimados", classification.burntPercentage, typeNumberToString(classification.burnt)),
+                    Triple("Ardidos e Queimados", classification.burntOrSourPercentage, typeNumberToString(classification.burntOrSour)),
+                    Triple("Mofados", classification.moldyPercentage, typeNumberToString(classification.moldy)),
+                    Triple("Total de Avariados", classification.spoiledPercentage, typeNumberToString(classification.spoiled)),
+                    Triple("Esverdeados", classification.greenishPercentage, typeNumberToString(classification.greenish)),
+                    Triple("Partidos, Quebrados e Amassados", classification.brokenCrackedDamagedPercentage, typeNumberToString(classification.brokenCrackedDamaged))
                 ).forEachIndexed { index, (label, percentage, quantity) ->
                     TableRow(
                         label = label,
@@ -99,11 +98,7 @@ fun ClassificationTable(
             // Final Type
             Spacer(Modifier.height(16.dp))
             FinalTypeRow(
-                value = when (classification.finalType) {
-                    0 -> "Desclassificada"
-                    7 -> "FORA DE TIPO"
-                    else ->classification.finalType.toString()
-                }
+                value = typeNumberToString(classification.finalType)
             )
         }
     }
@@ -113,7 +108,7 @@ fun ClassificationTable(
 private fun TableRow(
     label: String,
     percentage: Float,
-    quantity: Int,
+    quantity: String,
     isLast: Boolean = false
 ) {
     Row(
@@ -190,4 +185,13 @@ private fun TableHeader(title: String) {
         modifier = Modifier.padding(vertical = 8.dp),
         color = MaterialTheme.colorScheme.outline
     )
+}
+fun typeNumberToString(typeNum:Int):String{
+    if(typeNum == 0){
+        return "Desclassificado"
+    }
+    if(typeNum == 7){
+        return "Fora de Tipo"
+    }
+    return typeNum.toString()
 }
