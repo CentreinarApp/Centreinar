@@ -35,7 +35,7 @@ fun ClassColorResult(
         shape = MaterialTheme.shapes.medium
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            TableHeader("RESULTADO DA CLASSIFICAÇÃO")
+            TableHeader("Classe")
 
             // Two-column table
             Column(
@@ -65,8 +65,8 @@ fun ClassColorResult(
 
                 // Table Rows
                 listOf(
-                    Pair("Grãos Amarelos", classification.yellowPercentage),
-                    Pair("Grãos Misturados", classification.otherColorPercentage)
+                    Pair("Amarelas", classification.yellowPercentage),
+                    Pair("Outras Cores", classification.otherColorPercentage)
                 ).forEachIndexed { index, (label, percentage) ->
                     TwoColumnTableRow(
                         label = label,
