@@ -78,6 +78,25 @@ fun ClassificationResult(
             }
 
             classification != null -> {
+
+                if (viewModel.doesDefineColorClass == true && colorClassificationResult != null) {
+                    SimplifiedResultsTable(
+                        classification!!.finalType.toString(),
+                        colorClassificationResult!!.framingClass,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+                else
+                {
+                    SimplifiedResultsTable(
+                        classification!!.finalType.toString(),
+                        "Não Definida",
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
+                Spacer(Modifier.height(16.dp))
+
                 ClassificationTable(
                     classification = classification!!,
                     modifier = Modifier.fillMaxWidth()
