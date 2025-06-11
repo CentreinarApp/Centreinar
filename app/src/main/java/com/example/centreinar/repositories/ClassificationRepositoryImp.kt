@@ -338,22 +338,22 @@ class ClassificationRepositoryImpl @Inject constructor(
             if(disqualification != null){
                 if(disqualification.insects == 1){
                     //make two different messages in case of which group the sample is being classify in
-                    response += "Desqualificado devido a presença de insetos.\n"
+                    response += "Desclassificado devido a presença de insetos.\n"
                     Log.e("Observations","Observations: ${response}")
 
                 }
                 if(disqualification.toxicGrains == 1){
-                    response += "Desqualificado devido a presença de sementes tóxicas.\n"
+                    response += "Desclassificado devido a presença de sementes tóxicas.\n"
                     Log.e("Observations","Observations: ${response}")
 
                 }
                 if(disqualification.strangeSmell == 1){
-                    response += "Desqualificado devido a presença de odor estranho.\n"
+                    response += "Desclassificado devido a presença de odor estranho.\n"
                     Log.e("Observations","Observations: ${response}")
 
                 }
                 if(disqualification.badConservation == 1){
-                    response += "Desqualificado devido ao mal estado de conservação do lote.\n"
+                    response += "Desclassificado devido ao mal estado de conservação do lote.\n"
                     Log.e("Observations","Observations: ${response}")
                 }
             }
