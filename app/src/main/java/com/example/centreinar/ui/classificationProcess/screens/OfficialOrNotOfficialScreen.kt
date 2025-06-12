@@ -1,4 +1,4 @@
-package com.example.centreinar.ui.home.screens
+package com.example.centreinar.ui.classificationProcess.screens
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -17,13 +17,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.example.centreinar.ui.home.viewmodel.HomeViewModel
+import com.example.centreinar.ui.classificationProcess.viewmodel.ClassificationViewModel
 
 
 @Composable
 public fun OfficialOrNotOfficialScreen(
     navController: NavController,
-    viewModel: HomeViewModel = hiltViewModel()
+    viewModel: ClassificationViewModel = hiltViewModel()
 ) {
     Column(
         modifier = Modifier

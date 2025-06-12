@@ -13,16 +13,16 @@
     import androidx.navigation.compose.composable
     import androidx.navigation.compose.rememberNavController
     import androidx.navigation.navigation
-    import com.example.centreinar.ui.home.screens.ClassificationInputScreen
-    import com.example.centreinar.ui.home.screens.ClassificationResult
-    import com.example.centreinar.ui.home.screens.ColorClassInput
-    import com.example.centreinar.ui.home.screens.DisqualificationScreen
-    import com.example.centreinar.ui.home.screens.GrainScreen
-    import com.example.centreinar.ui.home.screens.GroupSelectionScreen
-    import com.example.centreinar.ui.home.screens.HomeScreen
-    import com.example.centreinar.ui.home.screens.LimitInputScreen
-    import com.example.centreinar.ui.home.screens.OfficialOrNotOfficialScreen
-    import com.example.centreinar.ui.home.viewmodel.HomeViewModel
+    import com.example.centreinar.ui.classificationProcess.screens.ClassificationInputScreen
+    import com.example.centreinar.ui.classificationProcess.screens.ClassificationResult
+    import com.example.centreinar.ui.classificationProcess.screens.ColorClassInput
+    import com.example.centreinar.ui.classificationProcess.screens.DisqualificationScreen
+    import com.example.centreinar.ui.classificationProcess.screens.GrainScreen
+    import com.example.centreinar.ui.classificationProcess.screens.GroupSelectionScreen
+    import com.example.centreinar.ui.classificationProcess.screens.HomeScreen
+    import com.example.centreinar.ui.classificationProcess.screens.LimitInputScreen
+    import com.example.centreinar.ui.classificationProcess.screens.OfficialOrNotOfficialScreen
+    import com.example.centreinar.ui.classificationProcess.viewmodel.ClassificationViewModel
     import com.example.centreinar.ui.theme.CentreinarTheme
     import dagger.hilt.android.AndroidEntryPoint
 
@@ -57,7 +57,7 @@
                     }
                     HomeScreen(
                         navController,
-                        hiltViewModel<HomeViewModel>(parentEntry)
+                        hiltViewModel<ClassificationViewModel>(parentEntry)
                     )
                 }
 
@@ -67,7 +67,7 @@
                     }
                     GrainScreen(
                         navController,
-                        hiltViewModel<HomeViewModel>(parentEntry)
+                        hiltViewModel<ClassificationViewModel>(parentEntry)
                     )
                 }
 
@@ -77,7 +77,7 @@
                     }
                     GroupSelectionScreen(
                         navController,
-                        hiltViewModel<HomeViewModel>(parentEntry)
+                        hiltViewModel<ClassificationViewModel>(parentEntry)
                     )
                 }
 
@@ -87,7 +87,7 @@
                     }
                     OfficialOrNotOfficialScreen(
                         navController,
-                        hiltViewModel<HomeViewModel>(parentEntry)
+                        hiltViewModel<ClassificationViewModel>(parentEntry)
                     )
                 }
 
@@ -97,7 +97,7 @@
                     }
                     LimitInputScreen(
                         navController,
-                        hiltViewModel<HomeViewModel>(parentEntry)
+                        hiltViewModel<ClassificationViewModel>(parentEntry)
                     )
                 }
 
@@ -107,7 +107,7 @@
                     }
                     DisqualificationScreen(
                         navController,
-                        hiltViewModel<HomeViewModel>(parentEntry)
+                        hiltViewModel<ClassificationViewModel>(parentEntry)
                     )
                 }
 
@@ -117,7 +117,7 @@
                     }
                     ClassificationInputScreen(
                         navController,
-                        hiltViewModel<HomeViewModel>(parentEntry)
+                        hiltViewModel<ClassificationViewModel>(parentEntry)
                     )
                 }
 
@@ -127,7 +127,7 @@
                     }
                     ClassificationResult(
                         navController,
-                        hiltViewModel<HomeViewModel>(parentEntry)
+                        hiltViewModel<ClassificationViewModel>(parentEntry)
                     )
                 }
                 composable("colorClassInput") { backStackEntry ->
@@ -136,7 +136,7 @@
                     }
                     ColorClassInput(
                         navController,
-                        hiltViewModel<HomeViewModel>(parentEntry)
+                        hiltViewModel<ClassificationViewModel>(parentEntry)
                     )
                 }
 

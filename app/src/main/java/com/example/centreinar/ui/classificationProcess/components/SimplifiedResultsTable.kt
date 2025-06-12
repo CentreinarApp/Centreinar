@@ -1,4 +1,4 @@
-package com.example.centreinar.ui.home.components
+package com.example.centreinar.ui.classificationProcess.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Card
 import androidx.compose.material3.Divider
@@ -20,13 +19,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.example.centreinar.ColorClassification
 
 @Composable
-fun ClassColorResult(
-    classification: ColorClassification,
+fun SimplifiedResultsTable(
+    finalType:String,
+    colorClass:String,
     modifier: Modifier = Modifier
-) {
+){
     Card(
         modifier = modifier
             .padding(16.dp)
@@ -34,7 +33,7 @@ fun ClassColorResult(
         shape = MaterialTheme.shapes.medium
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            TableHeader("Classe")
+            TableHeader("Resultados da Classificação")
 
             // Two-column table
             Column(
@@ -53,7 +52,7 @@ fun ClassColorResult(
                     // Empty header for first column
                     Spacer(Modifier.weight(2f))
                     Text(
-                        "%",
+                        " ",
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -64,79 +63,19 @@ fun ClassColorResult(
 
                 // Table Rows
                 listOf(
-                    Pair("Amarelas", classification.yellowPercentage),
-                    Pair("Outras Cores", classification.otherColorPercentage)
-                ).forEachIndexed { index, (label, percentage) ->
+                    Pair("Tipo Final:", finalType),
+                    Pair("Classe:", colorClass)
+                ).forEachIndexed { index, (label, data) ->
                     TwoColumnTableRow(
                         label = label,
-                        percentage = percentage,
-                        isLast = index == 1
+                        data = data
                     )
                 }
             }
-
-            // Final Class Row
-            Spacer(Modifier.height(16.dp))
-            FinalClassRow(value = classification.framingClass)
         }
     }
 }
 
-@Composable
-private fun TwoColumnTableRow(
-    label: String,
-    percentage: Float,
-    isLast: Boolean = false
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 12.dp, horizontal = 16.dp),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyLarge,
-            modifier = Modifier.weight(2f),
-            color = MaterialTheme.colorScheme.onSurface
-        )
-
-        Text(
-            text = "%.2f%%".format(percentage),
-            style = MaterialTheme.typography.bodyLarge,
-            modifier = Modifier.weight(1f),
-            textAlign = TextAlign.End,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-    }
-
-    if (!isLast) {
-        Divider(
-            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f),
-            thickness = 1.dp
-        )
-    }
-}
-
-@Composable
-private fun FinalClassRow(value: String) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.secondaryContainer)
-            .padding(16.dp),
-        horizontalArrangement = Arrangement.Center
-    ) {
-        Text(
-            text = "Classe Final: $value",
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSecondaryContainer
-        )
-    }
-}
-
-// Reuse your existing TableHeader composable
 @Composable
 private fun TableHeader(title: String) {
     Box(
@@ -156,4 +95,33 @@ private fun TableHeader(title: String) {
         modifier = Modifier.padding(vertical = 8.dp),
         color = MaterialTheme.colorScheme.outline
     )
+}
+
+@Composable
+private fun TwoColumnTableRow(
+    label: String,
+    data: String
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 12.dp, horizontal = 16.dp),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.weight(2f),
+            color = MaterialTheme.colorScheme.onSurface
+        )
+
+        Text(
+            text = data,
+            style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.weight(1f),
+            textAlign = TextAlign.End,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+    }
+
 }

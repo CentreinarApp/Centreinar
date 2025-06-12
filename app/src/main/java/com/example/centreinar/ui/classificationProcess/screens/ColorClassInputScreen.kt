@@ -1,5 +1,4 @@
-package com.example.centreinar.ui.home.screens
-
+package com.example.centreinar.ui.classificationProcess.screens
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -28,47 +27,37 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.example.centreinar.ui.home.viewmodel.HomeViewModel
+import com.example.centreinar.ui.classificationProcess.viewmodel.ClassificationViewModel
 
 @Composable
-fun LimitInputScreen(
+fun ColorClassInput(
     navController: NavController,
-    viewModel: HomeViewModel = hiltViewModel()
-) {
-
-    // State variables
-    var impurities by remember { mutableStateOf("") }
-    var brokenCrackedDamaged by remember { mutableStateOf("") }
-    var greenish by remember { mutableStateOf("") }
-    var burnt by remember { mutableStateOf("") }
-    var burntOrSour by remember { mutableStateOf("") }
-    var moldy by remember { mutableStateOf("") }
-    var spoiled by remember { mutableStateOf("") }
+    viewModel: ClassificationViewModel = hiltViewModel()
+){
+    //state values
+    var totalWeight by remember { mutableStateOf("") }
+    var otherColorsWeight by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
-    // Focus requesters
-    val impuritiesFocus = remember { FocusRequester() }
-    val brokenFocus = remember { FocusRequester() }
-    val greenishFocus = remember { FocusRequester() }
-    val burntFocus = remember { FocusRequester() }
-    val burntOrSourFocus = remember { FocusRequester() }
-    val moldyFocus = remember { FocusRequester() }
-    val spoiledFocus = remember { FocusRequester() }
 
-    // Get keyboard controller
+
+    // Focus requesters
+    var totalWeightFocus = remember { FocusRequester() }
+    var otherColorsFocus = remember { FocusRequester() }
+
+
     val keyboardController = LocalSoftwareKeyboardController.current
 
     LaunchedEffect(Unit) {
-        impuritiesFocus.requestFocus()
+        totalWeightFocus.requestFocus()
     }
-
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(32.dp)
     ) {
         Text(
-            "Insira os limites de tolerância",
+            "Insira os dados para obter a classe",
             style = MaterialTheme.typography.headlineSmall,
             color = MaterialTheme.colorScheme.onBackground
         )
@@ -77,77 +66,23 @@ fun LimitInputScreen(
 
         // Impurities
         NumberInputField(
-            value = impurities,
-            onValueChange = { impurities = it },
-            label = "Matéria estranha e Impurezas (%)",
-            focusRequester = impuritiesFocus,
-            nextFocus = burntFocus
+            value = totalWeight,
+            onValueChange = { totalWeight = it },
+            label = "Peso da amostra isenta de defeitos(g)",
+            focusRequester = totalWeightFocus,
+            nextFocus = otherColorsFocus
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
         // Burnt
-        NumberInputField(
-            value = burnt,
-            onValueChange = { burnt = it },
-            label = "Queimados (%)",
-            focusRequester = burntFocus,
-            nextFocus = burntOrSourFocus
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Burnt or Sour
-        NumberInputField(
-            value = burntOrSour,
-            onValueChange = { burntOrSour = it },
-            label = "Ardidos e Queimados (%)",
-            focusRequester = burntOrSourFocus,
-            nextFocus = moldyFocus
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Moldy
-        NumberInputField(
-            value = moldy,
-            onValueChange = { moldy = it },
-            label = "Mofados (%)",
-            focusRequester = moldyFocus,
-            nextFocus = spoiledFocus
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // spoiled
-        NumberInputField(
-            value = spoiled,
-            onValueChange = { spoiled = it },
-            label = "Total de Avariados (%)",
-            focusRequester = spoiledFocus,
-            nextFocus = greenishFocus
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // greenish
-        NumberInputField(
-            value = greenish,
-            onValueChange = { greenish = it },
-            label = "Esverdeados (%)",
-            focusRequester = greenishFocus,
-            nextFocus = brokenFocus
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // broken
         OutlinedTextField(
-            value = brokenCrackedDamaged,
-            onValueChange = { brokenCrackedDamaged = it },
-            label = { Text("Partidos, Quebrados e Amassados (%)") },
+            value = otherColorsWeight,
+            onValueChange = { otherColorsWeight = it },
+            label = { Text("Peso dos grãos não amarelos(g)") },
             modifier = Modifier
                 .fillMaxWidth()
-                .focusRequester(brokenFocus),
+                .focusRequester(otherColorsFocus),
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Number,
                 imeAction = ImeAction.Done
@@ -173,8 +108,7 @@ fun LimitInputScreen(
         Button(
             onClick = {
                 val allFields = listOf(
-                    impurities, brokenCrackedDamaged, greenish,
-                    burnt, burntOrSour, moldy, spoiled
+                    totalWeight,otherColorsWeight
                 )
 
                 // Validate all fields
@@ -184,27 +118,19 @@ fun LimitInputScreen(
                 }
 
                 try {
-                    viewModel.setLimit(
-                        impurities = impurities.toFloat(),
-                        brokenCrackedDamaged = brokenCrackedDamaged.toFloat(),
-                        greenish = greenish.toFloat(),
-                        burnt = burnt.toFloat(),
-                        burntOrSour = burntOrSour.toFloat(),
-                        moldy = moldy.toFloat(),
-                        spoiled = spoiled.toFloat()
-                    )
-                    navController.navigate("disqualification")
+                    viewModel.setClassColor(totalWeight.toFloat(),otherColorsWeight.toFloat())
+                    navController.navigate("classificationResult")
                 } catch (e: NumberFormatException) {
                     errorMessage = "Valores numéricos inválidos detectados"
                 }
             },
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Enviar Limites")
+            Text("Enviar")
         }
+
     }
 }
-
 
 @Composable
 private fun NumberInputField(

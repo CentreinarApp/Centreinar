@@ -1,4 +1,4 @@
-package com.example.centreinar.ui.home.screens
+package com.example.centreinar.ui.classificationProcess.screens
 
 import android.util.Log
 import androidx.compose.foundation.layout.Box
@@ -27,16 +27,16 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.centreinar.ColorClassification
-import com.example.centreinar.ui.home.components.ClassColorResult
-import com.example.centreinar.ui.home.components.ClassificationTable
-import com.example.centreinar.ui.home.components.ObservationCard
-import com.example.centreinar.ui.home.components.SimplifiedResultsTable
-import com.example.centreinar.ui.home.viewmodel.HomeViewModel
+import com.example.centreinar.ui.classificationProcess.components.ClassColorResult
+import com.example.centreinar.ui.classificationProcess.components.ClassificationTable
+import com.example.centreinar.ui.classificationProcess.components.ObservationCard
+import com.example.centreinar.ui.classificationProcess.components.SimplifiedResultsTable
+import com.example.centreinar.ui.classificationProcess.viewmodel.ClassificationViewModel
 
 @Composable
 fun ClassificationResult(
     navController: NavController,
-    viewModel: HomeViewModel = hiltViewModel()
+    viewModel: ClassificationViewModel = hiltViewModel()
 ){
     val classification by viewModel.classification.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()

@@ -1,4 +1,4 @@
-package com.example.centreinar.ui.home.components
+package com.example.centreinar.ui.classificationProcess.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border

@@ -1,4 +1,4 @@
-package com.example.centreinar.ui.home.viewmodel
+package com.example.centreinar.ui.classificationProcess.viewmodel
 
 import android.util.Log
 import androidx.compose.runtime.mutableStateOf
@@ -19,7 +19,7 @@ import javax.inject.Inject
 
 
 @HiltViewModel
-class HomeViewModel @Inject constructor(
+class ClassificationViewModel @Inject constructor(
     private val repository: ClassificationRepository,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
