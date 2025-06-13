@@ -31,11 +31,12 @@ class Utilities @Inject constructor()  {
         return ((defect - defectTolerance)/ (100-defectTolerance) ) * 100
     }
 
-    fun calculatePercentage(item:Float, weight: Float):Float{
-        val percentage: Float = (item * 100) / weight
-        return percentage
-            .toBigDecimal()
-            .setScale(2, RoundingMode.HALF_UP)
-            .toFloat()
+    fun calculatePercentage(partialValue: Float, totalValue: Float): Float {
+        // Handle invalid cases first
+        if (totalValue <= 0f || totalValue.isNaN() || partialValue.isNaN()) {
+            return 0f
+        }
+
+        return (partialValue / totalValue) * 100
     }
 }

@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.centreinar.ui.classificationProcess.viewmodel.ClassificationViewModel
+import com.example.centreinar.util.Utilities
 
 @Composable
 fun ColorClassInput(
@@ -45,6 +46,7 @@ fun ColorClassInput(
     var totalWeightFocus = remember { FocusRequester() }
     var otherColorsFocus = remember { FocusRequester() }
 
+    val result = calculateResult(totalWeight, otherColorsWeight)
 
     val keyboardController = LocalSoftwareKeyboardController.current
 
@@ -64,7 +66,7 @@ fun ColorClassInput(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Impurities
+
         NumberInputField(
             value = totalWeight,
             onValueChange = { totalWeight = it },
@@ -75,7 +77,7 @@ fun ColorClassInput(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Burnt
+
         OutlinedTextField(
             value = otherColorsWeight,
             onValueChange = { otherColorsWeight = it },
@@ -94,6 +96,22 @@ fun ColorClassInput(
             ),
             singleLine = true
         )
+        Spacer(modifier = Modifier.height(24.dp))
+
+        //just display result
+        OutlinedTextField(
+            value = result,
+            onValueChange = {},
+            label = { Text("Peso dos grãos amarelos (g)") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .focusRequester(otherColorsFocus),
+            singleLine = true,
+            enabled = true,
+            readOnly = true
+        )
+
+
 
         errorMessage?.let {
             Text(
@@ -107,22 +125,16 @@ fun ColorClassInput(
 
         Button(
             onClick = {
-                val allFields = listOf(
-                    totalWeight,otherColorsWeight
-                )
+                val tWeight = totalWeight.toFloatOrNull()
+                val oWeight = otherColorsWeight.toFloatOrNull()
 
-                // Validate all fields
-                if (allFields.any { it.isEmpty() || it == "." }) {
+                if (tWeight == null || oWeight == null) {
                     errorMessage = "Por favor preencha todos os campos com valores válidos"
                     return@Button
                 }
 
-                try {
-                    viewModel.setClassColor(totalWeight.toFloat(),otherColorsWeight.toFloat())
-                    navController.navigate("classificationResult")
-                } catch (e: NumberFormatException) {
-                    errorMessage = "Valores numéricos inválidos detectados"
-                }
+                viewModel.setClassColor(tWeight, oWeight)
+                navController.navigate("classificationResult")
             },
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -186,4 +198,9 @@ private fun sanitizeFloatInput(input: String): String {
     }
 
     return filtered
+}
+private fun calculateResult(num1: String, num2: String): String {
+    val n1 = num1.toFloatOrNull() ?: 0.0f
+    val n2 = num2.toFloatOrNull() ?: 0.0f
+    return (n1 - n2).toString()
 }
