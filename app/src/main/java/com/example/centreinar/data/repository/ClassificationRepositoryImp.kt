@@ -372,4 +372,24 @@ class ClassificationRepositoryImpl @Inject constructor(
     override suspend fun getLastColorClass(): ColorClassification {
        return colorClassificationDao.getLastColorClass()
     }
+
+    override suspend fun getLimitOfType1Official(group: Int, grain: String): Map<String, Float> {
+        val limit = limitDao.getLimitsByType(grain,group,1,0)
+        return mapOf(
+            "impuritiesLowerLim" to limit.impuritiesLowerLim,
+            "impuritiesUpLim" to limit.impuritiesUpLim,
+            "brokenLowerLim" to limit.brokenCrackedDamagedLowerLim,
+            "brokenUpLim" to limit.brokenCrackedDamagedUpLim,
+            "greenishLowerLim" to limit.greenishLowerLim,
+            "greenishUpLim" to limit.greenishUpLim,
+            "burntLowerLim" to limit.burntLowerLim,
+            "burntUpLim" to limit.burntUpLim,
+            "burntOrSourLowerLim" to limit.burntOrSourLowerLim,
+            "burntOrSourUpLim" to limit.burntOrSourUpLim,
+            "moldyLowerLim" to limit.moldyLowerLim,
+            "moldyUpLim" to limit.moldyUpLim,
+            "spoiledTotalLowerLim" to limit.spoiledTotalLowerLim,
+            "spoiledTotalUpLim" to limit.spoiledTotalUpLim
+        )
+    }
 }

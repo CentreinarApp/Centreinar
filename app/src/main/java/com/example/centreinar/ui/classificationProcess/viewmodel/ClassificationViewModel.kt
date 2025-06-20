@@ -33,6 +33,9 @@ class ClassificationViewModel @Inject constructor(
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
+    private val _defaultLimits = MutableStateFlow<Map<String, Float>?>(null)
+    val defaultLimits: StateFlow<Map<String, Float>?> = _defaultLimits.asStateFlow()
+
 //    private val _observation = MutableStateFlow<String>("")
 //    val observation: StateFlow<String> = _observation
 
@@ -192,5 +195,22 @@ class ClassificationViewModel @Inject constructor(
             }
         }
     }
+
+    fun loadDefaultLimits(){
+        viewModelScope.launch {
+            val grain = selectedGrain?.toString() ?: ""
+            val group = selectedGroup ?: 0
+            try {
+                _defaultLimits.value = repository.getLimitOfType1Official(
+                    grain = grain,
+                    group = group
+                )
+            } catch (e: Exception) {
+                _error.value = e.message ?: "Unknown error"
+                Log.e("ClassColor", "Class Color failed", e)
+            }
+        }
+    }
+    //
 }
 
