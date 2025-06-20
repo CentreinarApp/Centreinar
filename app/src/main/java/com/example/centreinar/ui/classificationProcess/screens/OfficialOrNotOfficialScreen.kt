@@ -35,7 +35,7 @@ public fun OfficialOrNotOfficialScreen(
         Button(
             onClick = {
                 viewModel.isOfficial = true
-                navController.navigate("disqualification") },
+                navController.navigate("limitInput") },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(80.dp)

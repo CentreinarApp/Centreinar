@@ -27,6 +27,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.example.centreinar.ui.classificationProcess.viewmodel.ClassificationViewModel
 
@@ -35,6 +36,8 @@ fun LimitInputScreen(
     navController: NavController,
     viewModel: ClassificationViewModel = hiltViewModel()
 ) {
+    // Collect default limits from ViewModel
+    val defaultLimits by viewModel.defaultLimits.collectAsStateWithLifecycle()
 
     // State variables
     var impurities by remember { mutableStateOf("") }
@@ -45,6 +48,8 @@ fun LimitInputScreen(
     var moldy by remember { mutableStateOf("") }
     var spoiled by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var defaultsSet by remember { mutableStateOf(false) } // Track if defaults are set
+    val isEditable = viewModel.isOfficial != true
 
     // Focus requesters
     val impuritiesFocus = remember { FocusRequester() }
@@ -59,7 +64,20 @@ fun LimitInputScreen(
     val keyboardController = LocalSoftwareKeyboardController.current
 
     LaunchedEffect(Unit) {
+        viewModel.loadDefaultLimits()
         impuritiesFocus.requestFocus()
+    }
+    LaunchedEffect(defaultLimits) {
+        if (defaultLimits != null && !defaultsSet) {
+            impurities = defaultLimits?.get("impuritiesUpLim")?.toString() ?: ""
+            brokenCrackedDamaged = defaultLimits?.get("brokenUpLim")?.toString() ?: ""
+            greenish = defaultLimits?.get("greenishUpLim")?.toString() ?: ""
+            burnt = defaultLimits?.get("burntUpLim")?.toString() ?: ""
+            burntOrSour = defaultLimits?.get("burntOrSourUpLim")?.toString() ?: ""
+            moldy = defaultLimits?.get("moldyUpLim")?.toString() ?: ""
+            spoiled = defaultLimits?.get("spoiledTotalUpLim")?.toString() ?: ""
+            defaultsSet = true
+        }
     }
 
     Column(
@@ -67,12 +85,20 @@ fun LimitInputScreen(
             .fillMaxSize()
             .padding(32.dp)
     ) {
-        Text(
-            "Insira os limites de tolerância",
-            style = MaterialTheme.typography.headlineSmall,
-            color = MaterialTheme.colorScheme.onBackground
-        )
-
+        if(isEditable) {
+            Text(
+                "Insira os limites de tolerância",
+                style = MaterialTheme.typography.headlineSmall,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+        }
+        else{
+            Text(
+                "Limites de tolerância",
+                style = MaterialTheme.typography.headlineSmall,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+        }
         Spacer(modifier = Modifier.height(24.dp))
 
         // Impurities
@@ -81,7 +107,8 @@ fun LimitInputScreen(
             onValueChange = { impurities = it },
             label = "Matéria estranha e Impurezas (%)",
             focusRequester = impuritiesFocus,
-            nextFocus = burntFocus
+            nextFocus = burntFocus,
+            enabled = isEditable
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -92,7 +119,8 @@ fun LimitInputScreen(
             onValueChange = { burnt = it },
             label = "Queimados (%)",
             focusRequester = burntFocus,
-            nextFocus = burntOrSourFocus
+            nextFocus = burntOrSourFocus,
+            enabled = isEditable
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -103,7 +131,8 @@ fun LimitInputScreen(
             onValueChange = { burntOrSour = it },
             label = "Ardidos e Queimados (%)",
             focusRequester = burntOrSourFocus,
-            nextFocus = moldyFocus
+            nextFocus = moldyFocus,
+            enabled = isEditable
         )
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -113,7 +142,8 @@ fun LimitInputScreen(
             onValueChange = { moldy = it },
             label = "Mofados (%)",
             focusRequester = moldyFocus,
-            nextFocus = spoiledFocus
+            nextFocus = spoiledFocus,
+            enabled = isEditable
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -124,7 +154,8 @@ fun LimitInputScreen(
             onValueChange = { spoiled = it },
             label = "Total de Avariados (%)",
             focusRequester = spoiledFocus,
-            nextFocus = greenishFocus
+            nextFocus = greenishFocus,
+            enabled = isEditable
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -135,29 +166,21 @@ fun LimitInputScreen(
             onValueChange = { greenish = it },
             label = "Esverdeados (%)",
             focusRequester = greenishFocus,
-            nextFocus = brokenFocus
+            nextFocus = brokenFocus,
+            enabled = isEditable
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
         // broken
-        OutlinedTextField(
+        NumberInputField(
             value = brokenCrackedDamaged,
-            onValueChange = { brokenCrackedDamaged = it },
-            label = { Text("Partidos, Quebrados e Amassados (%)") },
-            modifier = Modifier
-                .fillMaxWidth()
-                .focusRequester(brokenFocus),
-            keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Number,
-                imeAction = ImeAction.Done
-            ),
-            keyboardActions = KeyboardActions(
-                onDone = {
-                    keyboardController?.hide()
-                }
-            ),
-            singleLine = true
+            onValueChange = { if (isEditable) brokenCrackedDamaged = it },
+            label = "Partidos, Quebrados e Amassados (%)",
+            focusRequester = brokenFocus,
+            nextFocus = null,
+            onDone = { keyboardController?.hide() },
+            enabled = isEditable
         )
 
         errorMessage?.let {
@@ -183,24 +206,31 @@ fun LimitInputScreen(
                     return@Button
                 }
 
-                try {
-                    viewModel.setLimit(
-                        impurities = impurities.toFloat(),
-                        brokenCrackedDamaged = brokenCrackedDamaged.toFloat(),
-                        greenish = greenish.toFloat(),
-                        burnt = burnt.toFloat(),
-                        burntOrSour = burntOrSour.toFloat(),
-                        moldy = moldy.toFloat(),
-                        spoiled = spoiled.toFloat()
-                    )
-                    navController.navigate("disqualification")
-                } catch (e: NumberFormatException) {
-                    errorMessage = "Valores numéricos inválidos detectados"
+                if(isEditable){
+                    try {
+                        viewModel.setLimit(
+                            impurities = toFloat(impurities),
+                            brokenCrackedDamaged = toFloat(brokenCrackedDamaged),
+                            greenish = toFloat(greenish),
+                            burnt = toFloat(burnt),
+                            burntOrSour = toFloat(burntOrSour),
+                            moldy = toFloat(moldy),
+                            spoiled = toFloat(spoiled)
+                        )
+                    } catch (e: NumberFormatException) {
+                        errorMessage = "Valores numéricos inválidos detectados"
+                    }
                 }
+                navController.navigate("disqualification")
             },
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Enviar Limites")
+            if(isEditable){
+                Text("Enviar Limites")
+            }
+            else{
+                Text("Próximo")
+            }
         }
     }
 }
@@ -212,25 +242,28 @@ private fun NumberInputField(
     onValueChange: (String) -> Unit,
     label: String,
     focusRequester: FocusRequester,
-    nextFocus: FocusRequester
+    nextFocus: FocusRequester? = null,
+    onDone: (() -> Unit)? = null,
+    enabled: Boolean = true
 ) {
     OutlinedTextField(
         value = value,
-        onValueChange = { newValue ->
-            onValueChange(sanitizeFloatInput(newValue))
-        },
+        onValueChange = onValueChange,
         label = { Text(label) },
         modifier = Modifier
             .fillMaxWidth()
             .focusRequester(focusRequester),
         keyboardOptions = KeyboardOptions(
             keyboardType = KeyboardType.Number,
-            imeAction = ImeAction.Next
+            imeAction = if (nextFocus != null) ImeAction.Next else ImeAction.Done
         ),
         keyboardActions = KeyboardActions(
-            onNext = { nextFocus.requestFocus() }
+            onNext = { nextFocus?.requestFocus() },
+            onDone = { onDone?.invoke() }
         ),
-        singleLine = true
+        singleLine = true,
+        enabled = enabled,
+        readOnly = !enabled
     )
 }
 
@@ -260,4 +293,12 @@ private fun sanitizeFloatInput(input: String): String {
     }
 
     return filtered
+}
+
+private fun toFloat(value : String): Float {
+    var valueFloat = value.toFloat()
+    if(valueFloat == 0.0f){
+        valueFloat = 100.0f
+    }
+    return valueFloat
 }

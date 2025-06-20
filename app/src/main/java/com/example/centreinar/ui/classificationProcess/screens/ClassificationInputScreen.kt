@@ -110,26 +110,6 @@ fun ClassificationInputScreen(
         }
     }
 
-    fun clearForm() {
-        lotWeight = ""
-        sampleWeight = ""
-        foreignMatters = ""
-        humidity = ""
-        greenish = ""
-        brokenCrackedDamaged = ""
-        damaged = ""
-        damagedInput = ""
-        piercingInput = ""
-        piercingDamaged = ""
-        burnt = ""
-        sour = ""
-        moldy = ""
-        fermented = ""
-        germinated = ""
-        immature = ""
-        shriveled = ""
-    }
-
     Column(modifier = Modifier.fillMaxSize()) {
         // Tab navigation
         TabRow(selectedTabIndex = selectedTab) {
@@ -184,12 +164,15 @@ fun ClassificationInputScreen(
                 onPiercingInputChange = {
                     piercingInput = it
                     piercingDamaged = (it.toFloatOrNull()?.div(4)?.toString() ?: "")
+                    // Recalculate damaged when piercing changes
+                    damaged = calculateDamagedSum(damagedInput, piercingDamaged)
                 },
                 damagedInput = damagedInput,
                 onDamagedInputChange = {
                     damagedInput = it
-                    damaged = ((it.toFloatOrNull() ?: 0f) + (piercingDamaged.toFloatOrNull() ?: 0f)).toString()
+                    damaged = calculateDamagedSum(it, piercingDamaged)
                 },
+                damaged = damaged, // Added missing parameter
                 fermentedFocus = fermentedFocus,
                 germinatedFocus = germinatedFocus,
                 immatureFocus = immatureFocus,
@@ -444,6 +427,7 @@ fun OtherDefectsTab(
     onPiercingInputChange: (String) -> Unit,
     damagedInput: String,
     onDamagedInputChange: (String) -> Unit,
+    damaged: String, // Added missing parameter
     fermentedFocus: FocusRequester,
     germinatedFocus: FocusRequester,
     immatureFocus: FocusRequester,
@@ -497,27 +481,48 @@ fun OtherDefectsTab(
                     focusRequester = piercingInputFocus,
                     nextFocus = damagedInputFocus
                 )
-                Text(
-                    text = if (piercingInput.isNotEmpty()) "$piercingInput / 4 = ${(piercingInput.toFloatOrNull()?.div(4) ?: 0)}"
-                    else "",
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(start = 16.dp))
             }
         }
-        item {
-            NumberInputField(
-                value = damagedInput,
-                onValueChange = onDamagedInputChange,
-                label = "Danificados por outras pragas (g)",
-                focusRequester = damagedInputFocus,
-                nextFocus = null
-            )
+        item{
             Text(
-                text = if (damagedInput.isNotEmpty() && piercingInput.isNotEmpty()) {
-                    "$damagedInput + ${(piercingInput.toFloatOrNull()?.div(4) ?: 0)} = ${(damagedInput.toFloatOrNull() ?: 0f) + (piercingInput.toFloatOrNull()?.div(4) ?: 0f)}"
+                text = if (piercingInput.isNotEmpty()) {
+                    val value = piercingInput.toFloatOrNull() ?: 0f
+                    val result = value / 4
+                    "$value / 4 = ${"%.2f".format(result)}"
                 } else "",
                 style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(start = 16.dp))
+                modifier = Modifier.padding(start = 16.dp)
+            )
+        }
+        item {
+            Column(Modifier.fillMaxWidth()) {
+                NumberInputField(
+                    value = damagedInput,
+                    onValueChange = onDamagedInputChange,
+                    label = "Danificados por outras pragas (g)",
+                    focusRequester = damagedInputFocus,
+                    nextFocus = null
+                )
+                Text(
+                    text = if (damagedInput.isNotEmpty() || piercingInput.isNotEmpty()) {
+                        val dValue = damagedInput.toFloatOrNull() ?: 0f
+                        val pValue = piercingInput.toFloatOrNull()?.div(4) ?: 0f
+                        val sum = dValue + pValue
+                        "$dValue + $pValue = ${"%.2f".format(sum)}"
+                    } else "",
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(start = 16.dp) )
+            }
+        }
+        item { // Wrapped in item
+            OutlinedTextField(
+                value = damaged,
+                onValueChange = {},
+                label = { Text("Soma de Grãos Danificados (g)") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                enabled = false
+            )
         }
     }
 }
@@ -608,4 +613,11 @@ private fun sanitizeFloatInput(input: String): String {
     }
 
     return filtered
+}
+
+private fun calculateDamagedSum(damagedInput: String, piercingDamaged: String): String {
+    val dInput = damagedInput.toFloatOrNull() ?: 0f
+    val pDamaged = piercingDamaged.toFloatOrNull() ?: 0f
+    val sum = dInput + pDamaged
+    return "%.2f".format(sum)
 }
