@@ -2,6 +2,7 @@ package com.example.centreinar.data.repository
 
 import com.example.centreinar.Classification
 import com.example.centreinar.ColorClassification
+import com.example.centreinar.Limit
 import com.example.centreinar.Sample
 import com.example.centreinar.domain.model.LimitCategory
 
@@ -66,6 +67,7 @@ interface ClassificationRepository {
     suspend fun getLastColorClass():ColorClassification
     suspend fun updateDisqualification(classificationId:Int,finalType:Int)
     suspend fun getLimitOfType1Official(group:Int,grain:String):Map<String,Float>
+    suspend fun getLimit(grain:String,group: Int,tipo:Int,source:Int): Limit
     suspend fun getObservations(idClassification:Int):String
 
 

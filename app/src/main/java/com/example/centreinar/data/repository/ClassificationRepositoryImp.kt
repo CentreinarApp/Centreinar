@@ -392,4 +392,8 @@ class ClassificationRepositoryImpl @Inject constructor(
             "spoiledTotalUpLim" to limit.spoiledTotalUpLim
         )
     }
+
+    override suspend fun getLimit(grain: String, group: Int, tipo: Int, source: Int):Limit {
+        return limitDao.getLimitsByType(grain,group,tipo,source)
+    }
 }
