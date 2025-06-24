@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.saveable
 import com.example.centreinar.Classification
 import com.example.centreinar.ColorClassification
+import com.example.centreinar.Limit
 import com.example.centreinar.Sample
 import com.example.centreinar.data.repository.ClassificationRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -35,6 +36,9 @@ class ClassificationViewModel @Inject constructor(
 
     private val _defaultLimits = MutableStateFlow<Map<String, Float>?>(null)
     val defaultLimits: StateFlow<Map<String, Float>?> = _defaultLimits.asStateFlow()
+
+    private val _lastUsedLimit = MutableStateFlow<Limit?>(null)
+    val lastUsedLimit: StateFlow<Limit?> = _lastUsedLimit.asStateFlow()
 
 //    private val _observation = MutableStateFlow<String>("")
 //    val observation: StateFlow<String> = _observation
@@ -211,6 +215,27 @@ class ClassificationViewModel @Inject constructor(
             }
         }
     }
-    //
+
+    fun loadLastUsedLimit(){
+        viewModelScope.launch {
+            val grain = selectedGrain?.toString() ?: ""
+            val group = selectedGroup ?: 0
+            try {
+                if(isOfficial == true){
+                    _lastUsedLimit.value = repository.getLimit(grain,group,1,0)
+                }
+
+                else{
+                    val source = repository.getLastLimitSource()
+                    _lastUsedLimit.value = repository.getLimit(grain,group,1,source)
+                }
+
+            } catch (e: Exception) {
+                _error.value = e.message ?: "Unknown error"
+                Log.e("UsedLimit", "Limit hasn't been loaded", e)
+            }
+        }
+    }
+
 }
 
