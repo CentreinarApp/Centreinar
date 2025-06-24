@@ -104,8 +104,7 @@ fun ColorClassInput(
             onValueChange = {},
             label = { Text("Peso dos grãos amarelos (g)") },
             modifier = Modifier
-                .fillMaxWidth()
-                .focusRequester(otherColorsFocus),
+                .fillMaxWidth(),
             singleLine = true,
             enabled = true,
             readOnly = true
