@@ -80,6 +80,11 @@ fun ClassificationTable(
                     Triple("Queimados", classification.burntPercentage, typeNumberToString(classification.burnt)),
                     Triple("Ardidos e Queimados", classification.burntOrSourPercentage, typeNumberToString(classification.burntOrSour)),
                     Triple("Mofados", classification.moldyPercentage, typeNumberToString(classification.moldy)),
+                    Triple("Fermentados",classification.fermentedPercentage,"-"),
+                    Triple("Germinados",classification.germinatedPercentage,"-"),
+                    Triple("Imaturos",classification.immaturePercentage,"-"),
+                    Triple("Chochos",classification.shriveledPercentage,"-"),
+                    Triple("Fermentados",classification.fermentedPercentage,"-"),
                     Triple("Total de Avariados", classification.spoiledPercentage, typeNumberToString(classification.spoiled)),
                     Triple("Esverdeados", classification.greenishPercentage, typeNumberToString(classification.greenish)),
                     Triple("Partidos, Quebrados e Amassados", classification.brokenCrackedDamagedPercentage, typeNumberToString(classification.brokenCrackedDamaged))
