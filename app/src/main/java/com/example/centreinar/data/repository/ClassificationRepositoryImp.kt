@@ -133,73 +133,6 @@ class ClassificationRepositoryImpl @Inject constructor(
 
     }
 
-    override suspend fun setObservations(classification: Classification): String {
-        var observation = ""
-        val disqualification = disqualificationDao.getByClassificationId(classification.id)
-        var count = 1
-        if(classification.finalType == 0 || classification.finalType == 7) {
-
-            if (classification.foreignMatters == 7){
-                observation += "$count - Matéria Estranhas e Impurezas fora de tipo \n"
-                count++
-            }
-            if (classification.burnt == 7){
-                observation += "$count - Queimados fora de tipo \n"
-                count++
-            }
-            if (classification.burntOrSour == 7){
-                observation += "$count - Ardidos e Queimados fora de tipo \n"
-                count++
-            }
-            if (classification.moldy == 7){
-                observation += "$count - Mofados fora de tipo \n"
-                count++
-            }
-            if (classification.spoiled == 7){
-                observation += "$count - Total de Avariados fora de tipo \n"
-                count++
-            }
-            if (classification.greenish == 7){
-                observation += "$count - Esverdeados fora de tipo \n"
-                count++
-            }
-            if (classification.brokenCrackedDamaged == 7){
-                observation += "$count - Partidos, Quebrados e Amassados fora de tipo \n"
-                count++
-            }
-
-            if(classification.finalType == 0){
-                observation += "$count - Desclassificado pois soma de defeitos graves ultrapassa o limite de "
-                count++
-                if(classification.group == 1){
-                    observation+= "12%.\n"
-                }
-                else {
-                    observation+= "40%.\n"
-                }
-            }
-        }
-
-        if (disqualification.badConservation == 0){
-            observation +="$count - Desclassificado devido ao mal estado de conservação.\n"
-            count++
-        }
-        if(disqualification.strangeSmell == 0){
-            observation +="$count - Desclassificado devido a presença de odor estranho no produto.\n"
-            count++
-        }
-        if(disqualification.toxicGrains == 0){
-            observation +="$count - Desclassificado devido a presença de sementes toxicas.\n"
-            count++
-        }
-        if(disqualification.insects == 0){
-            observation +="$count - Desclassificado devido a presença de insetos vivos, mortos ou partes desses no produto.\n"
-            count++
-        }
-
-        return observation
-    }
-
     override suspend fun setClass(grain:String, classificationId: Int, totalWeight: Float, otherColors: Float):ColorClassification {
 
         val otherColorsPercentage = tools.calculatePercentage(otherColors, totalWeight)
@@ -287,8 +220,8 @@ class ClassificationRepositoryImpl @Inject constructor(
         disqualificationDao.updateGraveDefectSum(disqualificationId, defectSum)
     }
 
-    override suspend fun getObservations(idClassification: Int):String{
-//        val classification = getClassification(idClassification)
+    override suspend fun getObservations(idClassification: Int, colorClass:ColorClassification?):String{
+
         val classification = classificationDao.getById(idClassification)
         var response = " "
         if (classification != null) {
@@ -333,6 +266,7 @@ class ClassificationRepositoryImpl @Inject constructor(
 
                 }
             }
+
             val disqualification  = disqualificationDao.getByClassificationId(classificationId = idClassification)
             if(disqualification != null){
                 if(disqualification.insects == 1){
@@ -356,11 +290,13 @@ class ClassificationRepositoryImpl @Inject constructor(
                     Log.e("Observations","Observations: ${response}")
                 }
             }
-            val colorClass = colorClassificationDao.getByClassificationId(idClassification)
-            if(colorClass != null){
-                if(colorClass.otherColorPercentage > 10.0f){
+            val colorClassification = getLastColorClass()
+
+            // Safe null check before accessing properties
+            if (colorClassification != null){
+                if( colorClassification.otherColorPercentage > 10.0f) {
                     response += "Amostra de Classe Misturada.\n"
-                    Log.e("Observations","Observations: ${response}")
+                    Log.e("Observations", "Observations: $response")
                 }
             }
 
@@ -369,7 +305,7 @@ class ClassificationRepositoryImpl @Inject constructor(
         return response
     }
 
-    override suspend fun getLastColorClass(): ColorClassification {
+    override suspend fun getLastColorClass(): ColorClassification? {
        return colorClassificationDao.getLastColorClass()
     }
 
@@ -395,5 +331,9 @@ class ClassificationRepositoryImpl @Inject constructor(
 
     override suspend fun getLimit(grain: String, group: Int, tipo: Int, source: Int):Limit {
         return limitDao.getLimitsByType(grain,group,tipo,source)
+    }
+
+    override suspend fun getDisqualificationByClassificationId(idClassification: Int): Disqualification? {
+        return disqualificationDao.getByClassificationId(classificationId = idClassification)
     }
 }
