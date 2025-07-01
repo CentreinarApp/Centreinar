@@ -54,6 +54,13 @@ class ClassificationRepositoryImpl @Inject constructor(
             cleanWeight
         )
 
+        val percentageDamaged = tools.calculateDefectPercentage(sample.damaged,cleanWeight)
+        val percentageSour =tools.calculateDefectPercentage(sample.sour,cleanWeight)
+        val percentageFermented = tools.calculateDefectPercentage(sample.fermented,cleanWeight)
+        val percentageGerminated = tools.calculateDefectPercentage(sample.germinated,cleanWeight)
+        val percentageImmature = tools.calculateDefectPercentage(sample.immature,cleanWeight)
+        val percentageShriveled = tools.calculateDefectPercentage(sample.shriveled,cleanWeight)
+
         val impuritiesType = tools.findCategoryForValue(limitImpuritiesList, percentageImpurities)
         val brokenType = tools.findCategoryForValue(limitBrokenList, percentageBroken)
         val greenishType = tools.findCategoryForValue(limitGreenishList, percentageGreenish)
@@ -91,6 +98,12 @@ class ClassificationRepositoryImpl @Inject constructor(
             burntPercentage = percentageBurnt,
             burntOrSourPercentage = percentageBurntOrSour,
             spoiledPercentage = percentageSpoiled,
+            damagedPercentage = percentageDamaged,
+            sourPercentage = percentageSour,
+            fermentedPercentage = percentageFermented,
+            germinatedPercentage = percentageGerminated,
+            immaturePercentage = percentageImmature,
+            shriveledPercentage = percentageShriveled,
             foreignMatters = impuritiesType,
             brokenCrackedDamaged = brokenType,
             greenish = greenishType,

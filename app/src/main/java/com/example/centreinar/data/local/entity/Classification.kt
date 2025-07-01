@@ -41,6 +41,24 @@ data class Classification(
     @ColumnInfo(name = "spoiledPercentage")
     val spoiledPercentage: Float = 0.0f,
 
+    @ColumnInfo(name = "damagedPercentage")
+    val damagedPercentage: Float = 0.0f,
+
+    @ColumnInfo(name = "sourPercentage")
+    val sourPercentage: Float = 0.0f,
+
+    @ColumnInfo(name = "fermentedPercentage")
+    val fermentedPercentage: Float = 0.0f,
+
+    @ColumnInfo(name = "germinatedPercentage")
+    val germinatedPercentage: Float = 0.0f,
+
+    @ColumnInfo(name = "immaturePercentage")
+    val immaturePercentage: Float = 0.0f,
+
+    @ColumnInfo(name = "shriveledPercentage")
+    val shriveledPercentage: Float = 0.0f,
+
     @ColumnInfo(name = "foreignMatters")
     val foreignMatters: Int = 0,
 
