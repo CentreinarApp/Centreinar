@@ -52,11 +52,14 @@ fun ClassificationResult(
 
     //val doesDefineColorClass = viewModel.doesDefineColorClass
     var colorClassificationResult by remember { mutableStateOf<ColorClassification?>(null) }
+    var observation by remember { mutableStateOf<String?>(null) }
+
 
     // When doesDefineColorClass becomes true, call the suspend function
     if (viewModel.doesDefineColorClass == true) {
         LaunchedEffect(Unit) {
             colorClassificationResult = viewModel.getClassColor()
+            observation = viewModel.getObservations(colorClassificationResult)
         }
     }
     Box(
@@ -134,13 +137,13 @@ fun ClassificationResult(
                             modifier = Modifier.fillMaxWidth()
                         )
                     }
+                    if(observation != null){
+                        ObservationCard(
+                            observation!!,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
 
-                    val observation = viewModel.observation.toString()
-
-                    ObservationCard(
-                        observation,
-                        modifier = Modifier.fillMaxWidth()
-                    )
 
                     Log.e("Observations", "observations in screen:${observation}")
                     Spacer(Modifier.height(16.dp))

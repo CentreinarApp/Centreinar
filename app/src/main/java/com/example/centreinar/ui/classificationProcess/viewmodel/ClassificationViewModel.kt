@@ -40,20 +40,6 @@ class ClassificationViewModel @Inject constructor(
     private val _lastUsedLimit = MutableStateFlow<Limit?>(null)
     val lastUsedLimit: StateFlow<Limit?> = _lastUsedLimit.asStateFlow()
 
-//    private val _observation = MutableStateFlow<String>("")
-//    val observation: StateFlow<String> = _observation
-
-//
-//    private val _selectedGrain = MutableStateFlow<String?>(null)
-//    val selectedGrain: StateFlow<String?> = _selectedGrain.asStateFlow()
-//
-//    private val _selectedGroup = MutableStateFlow<Int?>(null)
-//    val selectedGroup: StateFlow<Int?> = _selectedGroup.asStateFlow()
-//
-//    private val _selectedOfficial = MutableStateFlow<Boolean?>(null)
-//    val selectedOfficial : StateFlow<Boolean?> = _selectedOfficial.asStateFlow()
-//
-
     var selectedGrain by savedStateHandle.saveable {
         mutableStateOf<String?>(null)
     }
@@ -96,7 +82,7 @@ class ClassificationViewModel @Inject constructor(
                     repository.updateDisqualification(resultId.toInt(),resultClassification.finalType)
                 }
                 _classification.value = resultClassification
-                fetchObservation()
+                //fetchObservation()
             } catch (e: Exception) {
                 _error.value = e.message ?: "Unknown error"
                 Log.e("SampleInput", "Classification failed", e)
@@ -150,25 +136,6 @@ class ClassificationViewModel @Inject constructor(
         }
     }
 
-    private fun fetchObservation() {
-       val classification = _classification.value
-       if (classification != null) {
-            viewModelScope.launch {
-                _isLoading.value = true
-                try {
-                    val result = repository.getObservations(classification.id)
-                    observation = result
-                    Log.e("Observations", "Observation was made: $result")
-                } catch (e: Exception) {
-                    _error.value = e.message ?: "Unknown error"
-                    Log.e("Observation", "Observation failed", e)
-                } finally {
-                    _isLoading.value = false
-                }
-            }
-        }
-    }
-
     suspend fun getClassColor(): ColorClassification? { // Return a nullable type for safety
         return try {
             _isLoading.value = true // Show loading indicator while fetching
@@ -183,20 +150,18 @@ class ClassificationViewModel @Inject constructor(
     }
 
 
-    fun setClassColor(totalWeight:Float,otherColorsWeight:Float){
-        val classification = classification.value
-        val grain = selectedGrain
-        if(classification != null ){
-            viewModelScope.launch {
-                try {
-                    repository.setClass(grain!!,classification.id,totalWeight,otherColorsWeight)
-                } catch (e: Exception) {
-                    _error.value = e.message ?: "Unknown error"
-                    Log.e("ClassColor", "Class Color failed", e)
-                } finally {
-                    _isLoading.value = false
-                }
+    fun setClassColor(totalWeight: Float, otherColorsWeight: Float) {
+        viewModelScope.launch {
+            val grain = selectedGrain ?: run {
+                _error.value = "Grain not selected"
+                return@launch
             }
+            val classificationId = classification.value?.id ?: run {
+                _error.value = "Classification not complete"
+                return@launch
+            }
+
+            repository.setClass(grain, classificationId, totalWeight, otherColorsWeight)
         }
     }
 
@@ -237,5 +202,12 @@ class ClassificationViewModel @Inject constructor(
         }
     }
 
+    suspend fun getObservations(colorClass:ColorClassification?):String{
+        val classification = _classification.value ?: return "Erro na Classificação"
+        if(doesDefineColorClass == true){
+            return repository.getObservations(classification.id,colorClass)
+        }
+        else return repository.getObservations(idClassification = classification.id)
+    }
 }
 
