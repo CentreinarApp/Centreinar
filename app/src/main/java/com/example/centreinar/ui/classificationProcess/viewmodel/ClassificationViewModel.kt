@@ -58,6 +58,23 @@ class ClassificationViewModel @Inject constructor(
         mutableStateOf<Boolean?>(null)
     }
 
+
+    fun clearStates() {
+        // Reset StateFlow values
+        _classification.value = null
+        _isLoading.value = false
+        _error.value = null
+        _defaultLimits.value = null
+        _lastUsedLimit.value = null
+
+        // Reset savedStateHandle properties
+        selectedGrain = null
+        selectedGroup = null
+        isOfficial = null
+        observation = null
+        doesDefineColorClass = null
+    }
+
     fun classifySample(sample: Sample) {
         val grain = selectedGrain?:' '
         val group = selectedGroup?:0

@@ -151,6 +151,7 @@ fun ClassificationResult(
                     Button(
                         onClick = {
                             navController.navigate("home")
+                            viewModel.clearStates()
                         },
                         modifier = Modifier.fillMaxWidth()
                     ) {
