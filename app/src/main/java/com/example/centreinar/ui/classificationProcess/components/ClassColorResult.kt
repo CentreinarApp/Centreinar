@@ -64,7 +64,7 @@ fun ClassColorResult(
 
                 // Table Rows
                 listOf(
-                    Pair("Amarelas", classification.yellowPercentage),
+                    Pair("Amarela", classification.yellowPercentage),
                     Pair("Outras Cores", classification.otherColorPercentage)
                 ).forEachIndexed { index, (label, percentage) ->
                     TwoColumnTableRow(
