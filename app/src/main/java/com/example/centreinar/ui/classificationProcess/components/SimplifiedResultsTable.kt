@@ -63,7 +63,7 @@ fun SimplifiedResultsTable(
 
                 // Table Rows
                 listOf(
-                    Pair("Tipo Final:", finalType),
+                    Pair("Tipo Final:", getFinalType(finalType)),
                     Pair("Classe:", colorClass)
                 ).forEachIndexed { index, (label, data) ->
                     TwoColumnTableRow(
@@ -124,4 +124,10 @@ private fun TwoColumnTableRow(
         )
     }
 
+}
+
+fun getFinalType(finalType:String):String{
+    if(finalType == "0") return "Desclassificada"
+    if(finalType == "7") return "Fora de Tipo"
+    return finalType
 }
