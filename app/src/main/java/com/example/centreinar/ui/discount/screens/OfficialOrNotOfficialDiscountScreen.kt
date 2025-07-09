@@ -21,7 +21,7 @@ import androidx.navigation.NavController
 
 
 @Composable
-public fun OfficialOrNotOfficialScreen(
+public fun OfficialOrNotOfficialDiscountScreen(
     navController: NavController,
     viewModel: DiscountViewModel = hiltViewModel()
 ) {
@@ -35,7 +35,7 @@ public fun OfficialOrNotOfficialScreen(
         Button(
             onClick = {
                 viewModel.isOfficial = true
-                navController.navigate("limitInput") },
+                navController.navigate("limitInputDiscount") },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(80.dp)
@@ -53,7 +53,7 @@ public fun OfficialOrNotOfficialScreen(
         Button(
             onClick = {
                 viewModel.isOfficial = false
-                navController.navigate("limitInput")
+                navController.navigate("limitInputDiscount")
             },
             modifier = Modifier
                 .fillMaxWidth()

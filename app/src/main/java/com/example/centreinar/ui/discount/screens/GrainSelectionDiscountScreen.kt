@@ -21,7 +21,7 @@ import androidx.navigation.NavController
 import com.example.centreinar.ui.discount.viewmodel.DiscountViewModel
 
 @Composable
-fun GrainScreen(
+fun GrainSelectionDiscountScreen(
     navController: NavController,
     viewModel: DiscountViewModel = hiltViewModel()
 ) {
@@ -35,7 +35,7 @@ fun GrainScreen(
         Button(
             onClick = {
                 viewModel.selectedGrain = "Soja"
-                navController.navigate("groupSelection")
+                navController.navigate("groupSelectionDiscount")
             },
             modifier = Modifier
                 .fillMaxWidth()
@@ -54,7 +54,7 @@ fun GrainScreen(
         Button(
             onClick = {
                 viewModel.selectedGrain = "Milho"
-                navController.navigate("groupSelection")
+                navController.navigate("groupSelectionDiscount")
             },
             modifier = Modifier
                 .fillMaxWidth()

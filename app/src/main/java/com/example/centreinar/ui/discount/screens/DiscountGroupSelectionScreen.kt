@@ -21,7 +21,7 @@ import com.example.centreinar.ui.discount.viewmodel.DiscountViewModel
 
 
 @Composable
-public fun GroupSelectionScreen(
+fun DiscountGroupSelectionScreen(
     navController: NavController,
     viewModel: DiscountViewModel = hiltViewModel()
 ) {
