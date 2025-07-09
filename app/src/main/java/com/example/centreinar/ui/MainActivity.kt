@@ -23,6 +23,9 @@
     import com.example.centreinar.ui.classificationProcess.screens.LimitInputScreen
     import com.example.centreinar.ui.classificationProcess.screens.OfficialOrNotOfficialScreen
     import com.example.centreinar.ui.classificationProcess.viewmodel.ClassificationViewModel
+    import com.example.centreinar.ui.discount.screens.DiscountGroupSelectionScreen
+    import com.example.centreinar.ui.discount.screens.GrainSelectionDiscountScreen
+    import com.example.centreinar.ui.discount.screens.OfficialOrNotOfficialDiscountScreen
     import com.example.centreinar.ui.discount.screens.discountInputScreen
     import com.example.centreinar.ui.discount.viewmodel.DiscountViewModel
     import com.example.centreinar.ui.theme.CentreinarTheme
@@ -141,6 +144,7 @@
                         hiltViewModel<ClassificationViewModel>(parentEntry)
                     )
                 }
+
                 composable("discount") {backStackEntry ->
                     val parentEntry = remember(backStackEntry) {
                         navController.getBackStackEntry("main_flow")
@@ -149,8 +153,46 @@
                         navController,
                         hiltViewModel<DiscountViewModel>(parentEntry)
                     )
-
                 }
+                composable("grainSelectionDiscount") { backStackEntry ->
+                    val parentEntry = remember(backStackEntry) {
+                        navController.getBackStackEntry("main_flow")
+                    }
+                    GrainSelectionDiscountScreen(
+                        navController,
+                        hiltViewModel<DiscountViewModel>(parentEntry)
+                    )
+                }
+
+                composable("groupSelectionDiscount") { backStackEntry ->
+                    val parentEntry = remember(backStackEntry) {
+                        navController.getBackStackEntry("main_flow")
+                    }
+                    DiscountGroupSelectionScreen(
+                        navController,
+                        hiltViewModel<DiscountViewModel>(parentEntry)
+                    )
+                }
+
+                composable("officialOrNotDiscount") { backStackEntry ->
+                    val parentEntry = remember(backStackEntry) {
+                        navController.getBackStackEntry("main_flow")
+                    }
+                    OfficialOrNotOfficialDiscountScreen(
+                        navController,
+                        hiltViewModel<DiscountViewModel>(parentEntry)
+                    )
+                }
+                composable("discountLimitInput") { backStackEntry ->
+                    val parentEntry = remember(backStackEntry) {
+                        navController.getBackStackEntry("main_flow")
+                    }
+                    DiscountLimitInputScreen(
+                        navController,
+                        hiltViewModel<DiscountViewModel>(parentEntry)
+                    )
+                }
+
             }
         }
     }
