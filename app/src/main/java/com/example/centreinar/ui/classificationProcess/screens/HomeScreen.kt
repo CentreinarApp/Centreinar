@@ -53,7 +53,7 @@ fun HomeScreen(
 
         // Discount Calculation Button
         Button(
-            onClick = { navController.navigate("discount") },
+            onClick = { navController.navigate("grainSelectionDiscount") },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(80.dp)
