@@ -162,4 +162,65 @@ class DiscountRepositoryImp @Inject constructor(
     ): Float {
        return ((100 - deductionValue)/100 * classificationLoss)
     }
+
+    override suspend fun setLimit(
+        grain:String,
+        group:Int,
+        type:Int,
+        impurities:Float,
+        brokenCrackedDamaged: Float,
+        greenish: Float,
+        burnt:Float,
+        burntOrSour:Float,
+        moldy:Float,
+        spoiled:Float
+    ):Long {
+        val lastSource = limitDao.getLastSource()
+        val source = lastSource + 1
+        val limit = Limit(
+            source = source,
+            grain = grain,
+            group = group,
+            type = type,
+            impuritiesLowerLim = 0.0f,
+            impuritiesUpLim = impurities,
+            brokenCrackedDamagedLowerLim = 0.0f,
+            brokenCrackedDamagedUpLim = brokenCrackedDamaged,
+            greenishLowerLim = 0.0f,
+            greenishUpLim = greenish,
+            burntLowerLim = 0.0f,
+            burntUpLim = burnt,
+            burntOrSourLowerLim = 0.0f,
+            burntOrSourUpLim = burntOrSour,
+            moldyLowerLim = 0.0f,
+            moldyUpLim = moldy,
+            spoiledTotalLowerLim = 0.0f,
+            spoiledTotalUpLim = spoiled
+        )
+        return limitDao.insertLimit(limit)
+    }
+
+    override suspend fun getLimit(grain: String, group: Int, tipo: Int, source: Int):Limit {
+        return limitDao.getLimitsByType(grain,group,tipo,source)
+    }
+
+    override suspend fun getLimitOfType1Official(group: Int, grain: String): Map<String, Float> {
+        val limit = limitDao.getLimitsByType(grain,group,1,0)
+        return mapOf(
+            "impuritiesLowerLim" to limit.impuritiesLowerLim,
+            "impuritiesUpLim" to limit.impuritiesUpLim,
+            "brokenLowerLim" to limit.brokenCrackedDamagedLowerLim,
+            "brokenUpLim" to limit.brokenCrackedDamagedUpLim,
+            "greenishLowerLim" to limit.greenishLowerLim,
+            "greenishUpLim" to limit.greenishUpLim,
+            "burntLowerLim" to limit.burntLowerLim,
+            "burntUpLim" to limit.burntUpLim,
+            "burntOrSourLowerLim" to limit.burntOrSourLowerLim,
+            "burntOrSourUpLim" to limit.burntOrSourUpLim,
+            "moldyLowerLim" to limit.moldyLowerLim,
+            "moldyUpLim" to limit.moldyUpLim,
+            "spoiledTotalLowerLim" to limit.spoiledTotalLowerLim,
+            "spoiledTotalUpLim" to limit.spoiledTotalUpLim
+        )
+    }
 }
