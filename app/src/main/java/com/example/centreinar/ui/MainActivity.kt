@@ -24,6 +24,7 @@
     import com.example.centreinar.ui.classificationProcess.screens.OfficialOrNotOfficialScreen
     import com.example.centreinar.ui.classificationProcess.viewmodel.ClassificationViewModel
     import com.example.centreinar.ui.discount.screens.DiscountGroupSelectionScreen
+    import com.example.centreinar.ui.discount.screens.DiscountLimitInputScreen
     import com.example.centreinar.ui.discount.screens.GrainSelectionDiscountScreen
     import com.example.centreinar.ui.discount.screens.OfficialOrNotOfficialDiscountScreen
     import com.example.centreinar.ui.discount.screens.discountInputScreen

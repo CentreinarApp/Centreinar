@@ -37,7 +37,7 @@ fun DiscountLimitInputScreen(
     viewModel: DiscountViewModel = hiltViewModel()
 ) {
     // Collect default limits from ViewModel
-   // val defaultLimits by viewModel.defaultLimits.collectAsStateWithLifecycle()
+   val defaultLimits by viewModel.defaultLimits.collectAsStateWithLifecycle()
 
     // State variables
     var impurities by remember { mutableStateOf("") }
@@ -64,21 +64,21 @@ fun DiscountLimitInputScreen(
     val keyboardController = LocalSoftwareKeyboardController.current
 
     LaunchedEffect(Unit) {
-    //    viewModel.loadDefaultLimits()
+        viewModel.loadDefaultLimits()
         impuritiesFocus.requestFocus()
     }
-//    LaunchedEffect(defaultLimits) {
-//        if (defaultLimits != null && !defaultsSet) {
-//            impurities = defaultLimits?.get("impuritiesUpLim")?.toString() ?: ""
-//            brokenCrackedDamaged = defaultLimits?.get("brokenUpLim")?.toString() ?: ""
-//            greenish = defaultLimits?.get("greenishUpLim")?.toString() ?: ""
-//            burnt = defaultLimits?.get("burntUpLim")?.toString() ?: ""
-//            burntOrSour = defaultLimits?.get("burntOrSourUpLim")?.toString() ?: ""
-//            moldy = defaultLimits?.get("moldyUpLim")?.toString() ?: ""
-//            spoiled = defaultLimits?.get("spoiledTotalUpLim")?.toString() ?: ""
-//            defaultsSet = true
-//        }
-//    }
+    LaunchedEffect(defaultLimits) {
+        if (defaultLimits != null && !defaultsSet) {
+            impurities = defaultLimits?.get("impuritiesUpLim")?.toString() ?: ""
+            brokenCrackedDamaged = defaultLimits?.get("brokenUpLim")?.toString() ?: ""
+            greenish = defaultLimits?.get("greenishUpLim")?.toString() ?: ""
+            burnt = defaultLimits?.get("burntUpLim")?.toString() ?: ""
+            burntOrSour = defaultLimits?.get("burntOrSourUpLim")?.toString() ?: ""
+            moldy = defaultLimits?.get("moldyUpLim")?.toString() ?: ""
+            spoiled = defaultLimits?.get("spoiledTotalUpLim")?.toString() ?: ""
+            defaultsSet = true
+        }
+    }
 
     Column(
         modifier = Modifier

@@ -51,6 +51,7 @@ class ClassificationViewModel @Inject constructor(
     var isOfficial by savedStateHandle.saveable {
         mutableStateOf<Boolean?>(null)
     }
+
     var observation by savedStateHandle.saveable {
         mutableStateOf<String?>(null)
     }
