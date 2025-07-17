@@ -1,5 +1,6 @@
 package com.example.centreinar.data.repository
 
+import androidx.compose.ui.Modifier
 import com.example.centreinar.Discount
 import com.example.centreinar.InputDiscount
 import com.example.centreinar.Limit
@@ -68,6 +69,8 @@ class DiscountRepositoryImp @Inject constructor(
         var classificationDiscount  = 0.0f
         var deduction = 0.0f
 
+
+
         if(doesClassificationLoss){
 
             burntLoss = tools.calculateDifference(sample.burnt,limit["burnt"]!!)
@@ -115,11 +118,18 @@ class DiscountRepositoryImp @Inject constructor(
         val finalDiscountPrice = classificationDiscountPrice + impuritiesAndHumidityLossPrice
         val finalWeightPrice = sample.lotPrice - finalDiscountPrice
 
+        // Discount weight
+        burntLoss  = burntLoss * lotWeight / 100
+        burntOrSourLoss = burntOrSourLoss * lotWeight / 100
+        brokenLoss = brokenLoss * lotWeight / 100
+        greenishLoss = greenishLoss  * lotWeight / 100
+        moldyLoss = moldyLoss  * lotWeight / 100
+        spoiledLoss = spoiledLoss  * lotWeight / 100
 
         val discount =
         Discount(
             inputDiscountId = sample.id,
-           impuritiesLoss = impuritiesLoss, humidityLoss = humidityLoss, technicalLoss =  technicalLoss, burntLoss =  burntLoss,
+           impuritiesLoss = impuritiesLossFinal, humidityLoss = humidityLossFinal, technicalLoss =  technicalLoss, burntLoss =  burntLoss,
            burntOrSourLoss = burntOrSourLoss, moldyLoss =  moldyLoss, spoiledLoss = spoiledLoss, classificationDiscount = classificationDiscount,
            greenishLoss = greenishLoss, brokenLoss = brokenLoss,
             burntLossPrice = burntLossPrice, burntOrSourLossPrice = burntOrSourLossPrice, brokenLossPrice = brokenLossPrice, greenishLossPrice = greenishLossPrice,
