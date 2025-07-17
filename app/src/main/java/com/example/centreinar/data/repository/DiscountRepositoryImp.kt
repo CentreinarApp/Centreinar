@@ -96,9 +96,9 @@ class DiscountRepositoryImp @Inject constructor(
 
         //prices
 
-        val impuritiesLossPrice = (lotPrice * impuritiesLoss/100) / lotWeight
-        val humidityLossPrice= ((lotPrice-impuritiesLossPrice) * humidityLoss/100)/ lotWeight
-        var impuritiesAndHumidityLossPrice = lotPrice * impuritiesAndHumidityLoss / 100
+        val impuritiesLossPrice = (lotPrice * impuritiesLoss/100)
+        val humidityLossPrice= ((lotPrice-impuritiesLossPrice) * humidityLoss/100)
+        var impuritiesAndHumidityLossPrice = impuritiesLossPrice + humidityLossPrice
         val technicalLossPrice = (lotPrice / lotWeight) * technicalLoss
         impuritiesAndHumidityLossPrice += technicalLossPrice
 
