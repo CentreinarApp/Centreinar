@@ -6,6 +6,8 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.saveable
+import com.example.centreinar.Classification
+import com.example.centreinar.Discount
 import com.example.centreinar.InputDiscount
 import com.example.centreinar.Limit
 import com.example.centreinar.data.repository.DiscountRepository
@@ -21,6 +23,9 @@ class DiscountViewModel @Inject constructor(
     private val repository: DiscountRepository,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
+
+    private val _discounts = MutableStateFlow<Discount?>(null)
+    val discounts: StateFlow<Discount?> = _discounts.asStateFlow()
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
@@ -65,6 +70,7 @@ class DiscountViewModel @Inject constructor(
             try {
                 //
                 discountId = repository.calculateDiscount(inputDiscount.grain,inputDiscount.group,1,inputDiscount, doesTechnicalLoss = doesTechnicalLoss,doesClassificationLoss,doesDeduction)
+                getDiscount(discountId)
             } catch (e: Exception) {
                 _error.value = e.message ?: "Unknown error"
                 Log.e("InputDiscount", "Discount input was not saved", e)
@@ -72,7 +78,22 @@ class DiscountViewModel @Inject constructor(
                 _isLoading.value = false
             }
         }
+
         return discountId
+    }
+
+    fun getDiscount(id:Long){
+        viewModelScope.launch {
+            try {
+                _discounts.value = repository.getDiscountById(id)
+            } catch (e: Exception) {
+                _error.value = e.message ?: "Unknown error"
+                Log.e("InputDiscount", "Discount input was not saved", e)
+            } finally {
+                _isLoading.value = false
+            }
+        }
+
     }
 
     fun setLimit(
@@ -99,7 +120,7 @@ class DiscountViewModel @Inject constructor(
 
             } catch (e: Exception) {
                 _error.value = e.message ?: "Unknown error"
-                Log.e("SampleInput", "Classification failed", e)
+                Log.e("SampleInput", "Discount Calculation failed", e)
             } finally {
                 _isLoading.value = false
             }
