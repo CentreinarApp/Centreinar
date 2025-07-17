@@ -38,7 +38,7 @@ import com.example.centreinar.InputDiscount
 import com.example.centreinar.ui.discount.viewmodel.DiscountViewModel
 
 @Composable
-fun discountInputScreen(
+fun DiscountInputScreen(
     navController: NavController,
     viewModel: DiscountViewModel = hiltViewModel()
 ) {
@@ -187,11 +187,11 @@ fun discountInputScreen(
                         )
 
                         try {
-                            viewModel.setDiscount(inputDiscount,false,false,false)
+                            viewModel.setDiscount(inputDiscount,false,true,false)
                         } catch (e: NumberFormatException) {
                             errorMessage = "Valores numéricos inválidos detectados"
                         }
-                        navController.navigate("DiscountsResultScreen")
+                        navController.navigate("discountResultsScreen")
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {

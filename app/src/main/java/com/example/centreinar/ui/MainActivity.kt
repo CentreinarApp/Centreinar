@@ -25,9 +25,10 @@
     import com.example.centreinar.ui.classificationProcess.viewmodel.ClassificationViewModel
     import com.example.centreinar.ui.discount.screens.DiscountGroupSelectionScreen
     import com.example.centreinar.ui.discount.screens.DiscountLimitInputScreen
+    import com.example.centreinar.ui.discount.screens.DiscountResultScreen
     import com.example.centreinar.ui.discount.screens.GrainSelectionDiscountScreen
     import com.example.centreinar.ui.discount.screens.OfficialOrNotOfficialDiscountScreen
-    import com.example.centreinar.ui.discount.screens.discountInputScreen
+    import com.example.centreinar.ui.discount.screens.DiscountInputScreen
     import com.example.centreinar.ui.discount.viewmodel.DiscountViewModel
     import com.example.centreinar.ui.theme.CentreinarTheme
     import dagger.hilt.android.AndroidEntryPoint
@@ -150,7 +151,7 @@
                     val parentEntry = remember(backStackEntry) {
                         navController.getBackStackEntry("main_flow")
                     }
-                    discountInputScreen(
+                    DiscountInputScreen(
                         navController,
                         hiltViewModel<DiscountViewModel>(parentEntry)
                     )
@@ -193,6 +194,16 @@
                         hiltViewModel<DiscountViewModel>(parentEntry)
                     )
                 }
+                composable("discountResultsScreen") { backStackEntry ->
+                    val parentEntry = remember(backStackEntry) {
+                        navController.getBackStackEntry("main_flow")
+                    }
+                    DiscountResultScreen(
+                        navController,
+                        hiltViewModel<DiscountViewModel>(parentEntry)
+                    )
+                }
+
 
             }
         }
