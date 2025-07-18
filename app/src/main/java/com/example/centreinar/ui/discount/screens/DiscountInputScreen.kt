@@ -24,12 +24,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.input.ImeAction
@@ -50,13 +52,23 @@ fun DiscountInputScreen(
     var priceBySack by remember { mutableStateOf("") }
     var moisture by remember { mutableStateOf("") }
     var impurities by remember { mutableStateOf("") }
+    var daysOfStorage by remember { mutableStateOf("") }
+    var deductionValue by remember { mutableStateOf("") }
     var brokenCrackedDamaged by remember { mutableStateOf("") }
     var greenish by remember { mutableStateOf("") }
     var burnt by remember { mutableStateOf("") }
     var burntOrSour by remember { mutableStateOf("") }
     var moldy by remember { mutableStateOf("") }
     var spoiled by remember { mutableStateOf("") }
+    var doesTechnicalLoss by  remember { mutableStateOf(false) }
+    var doesClassificationLoss by remember { mutableStateOf(false) }
+    var doesDeduction by remember { mutableStateOf(false) }
+    var showClassificationLossConfirmation by remember { mutableStateOf(false) }
+    var showTechnicalLossConfirmation by remember { mutableStateOf(false) }
+    var showDeductionConfirmation by remember { mutableStateOf(false) }
+
     var errorMessage by remember { mutableStateOf<String?>(null) }
+
 
     val lotWeightFocus = remember { FocusRequester() }
     val priceBySackFocus = remember { FocusRequester() }
@@ -68,6 +80,8 @@ fun DiscountInputScreen(
     val burntOrSourFocus = remember { FocusRequester() }
     val moldyFocus = remember { FocusRequester() }
     val spoiledFocus = remember { FocusRequester() }
+    val daysOfStorageFocus = remember { FocusRequester() }
+    val deductionValueFocus = remember { FocusRequester() }
 
     val keyboardController = LocalSoftwareKeyboardController.current
 
@@ -146,6 +160,135 @@ fun DiscountInputScreen(
                 brokenCrackedDamagedFocus = brokenFocus
             )
         }
+        if(showTechnicalLossConfirmation){
+            AlertDialog(
+                onDismissRequest = {
+                    showTechnicalLossConfirmation = false
+                },
+                title = { Text("Quebra técnica") },
+                text = { Text("Deseja calcular quebra técnica?") },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                        showTechnicalLossConfirmation = false
+                        doesTechnicalLoss = true
+                        }
+                    ) {
+                        Text("Sim")
+                    }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = {
+                            showTechnicalLossConfirmation = false
+                            doesTechnicalLoss = false
+                        }
+                    ) {
+                        Text("Não")
+                    }
+                }
+            )
+        }
+        if(showClassificationLossConfirmation){
+            AlertDialog(
+                onDismissRequest = {
+                showClassificationLossConfirmation = false
+                },
+                title = { Text("Desconto de Classificação") },
+                text = { Text("Deseja calcular o desconto de Classificação?") },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            showClassificationLossConfirmation = false
+                            doesClassificationLoss = true
+                        }
+                    ) {
+                        Text("Sim")
+                    }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = {
+                            showClassificationLossConfirmation = false
+                            doesClassificationLoss = false
+                        }
+                    ) {
+                        Text("Não")
+                    }
+                }
+            )
+        }
+        if(showDeductionConfirmation){
+            AlertDialog(
+                onDismissRequest = {
+                    showDeductionConfirmation = false
+                },
+                title = { Text("Deságio") },
+                text = { Text("Deseja fazer deságio?") },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            showDeductionConfirmation = false
+                            doesDeduction = true
+                        }
+                    ) {
+                        Text("Sim")
+                    }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = {
+                            showDeductionConfirmation = false
+                            doesDeduction = false
+                        }
+                    ) {
+                        Text("Não")
+                    }
+                }
+            )
+        }
+        if(doesTechnicalLoss){
+            AlertDialog(
+                onDismissRequest = {
+                    showDeductionConfirmation = false
+                },
+                title = { Text("Dias de Armazenamento") },
+                text = {
+                    Column(
+                        modifier = Modifier.padding(top = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ){
+                        NumberInputField(
+                            value = daysOfStorage,
+                            onValueChange = {daysOfStorage = it} ,
+                            label = "Dias de armazenamento",
+                            focusRequester = daysOfStorageFocus,
+                            nextFocus = null
+                        )
+                    }
+
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                        doesTechnicalLoss = false
+                        }
+                    ) {
+                        Text("Avançar")
+                    }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = {
+                        doesTechnicalLoss = false
+                        }
+                    ) {
+                        Text("Cancelar")
+                    }
+                }
+            )
+        }
+
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -160,8 +303,14 @@ fun DiscountInputScreen(
                 Spacer(modifier = Modifier.weight(1f))
             }
 
+
             if (selectedTab < tabTitles.lastIndex) {
-                Button(onClick = { selectedTab++ }) {
+                Button(onClick = {
+                    if(selectedTab == 0){
+                        showTechnicalLossConfirmation = true
+                    }
+                    selectedTab++
+                }) {
                     Text("Avançar")
                 }
             } else {
@@ -172,7 +321,7 @@ fun DiscountInputScreen(
                             group = group!!,
                             limitSource = 0,
                             classificationId = null,
-                            daysOfStorage = 0,
+                            daysOfStorage = daysOfStorage.toInt(),
                             lotWeight = lotWeight.toFloat(),
                             lotPrice = lotWeight.toFloat() * priceBySack.toFloat()/60 ,
                             foreignMattersAndImpurities = impurities.toFloat(),
@@ -183,11 +332,11 @@ fun DiscountInputScreen(
                             spoiled = spoiled.toFloat(),
                             greenish = greenish.toFloat(),
                             brokenCrackedDamaged = brokenCrackedDamaged.toFloat(),
-                            deductionValue = 0.0f
+                            deductionValue = deductionValue.toFloat()
                         )
 
                         try {
-                            viewModel.setDiscount(inputDiscount,false,true,false)
+                            viewModel.setDiscount(inputDiscount,doesTechnicalLoss,doesClassificationLoss,doesDeduction)
                         } catch (e: NumberFormatException) {
                             errorMessage = "Valores numéricos inválidos detectados"
                         }
