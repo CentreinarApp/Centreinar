@@ -38,6 +38,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import com.example.centreinar.InputDiscount
 import com.example.centreinar.ui.discount.viewmodel.DiscountViewModel
+import java.math.RoundingMode
 
 @Composable
 fun DiscountInputScreen(
@@ -52,8 +53,8 @@ fun DiscountInputScreen(
     var priceBySack by remember { mutableStateOf("") }
     var moisture by remember { mutableStateOf("") }
     var impurities by remember { mutableStateOf("") }
-    var daysOfStorage by remember { mutableStateOf("") }
-    var deductionValue by remember { mutableStateOf("") }
+    var daysOfStorage by remember { mutableStateOf("0") }
+    var deductionValue by remember { mutableStateOf("0") }
     var brokenCrackedDamaged by remember { mutableStateOf("") }
     var greenish by remember { mutableStateOf("") }
     var burnt by remember { mutableStateOf("") }
@@ -61,14 +62,16 @@ fun DiscountInputScreen(
     var moldy by remember { mutableStateOf("") }
     var spoiled by remember { mutableStateOf("") }
     var doesTechnicalLoss by  remember { mutableStateOf(false) }
+    var doesTechnicalLossFinal by  remember { mutableStateOf(false) }
     var doesClassificationLoss by remember { mutableStateOf(false) }
+    var doesClassificationLossFinal by  remember { mutableStateOf(false) }
     var doesDeduction by remember { mutableStateOf(false) }
+    var doesDeductionFinal by  remember { mutableStateOf(false) }
     var showClassificationLossConfirmation by remember { mutableStateOf(false) }
     var showTechnicalLossConfirmation by remember { mutableStateOf(false) }
     var showDeductionConfirmation by remember { mutableStateOf(false) }
 
     var errorMessage by remember { mutableStateOf<String?>(null) }
-
 
     val lotWeightFocus = remember { FocusRequester() }
     val priceBySackFocus = remember { FocusRequester() }
@@ -172,6 +175,7 @@ fun DiscountInputScreen(
                         onClick = {
                         showTechnicalLossConfirmation = false
                         doesTechnicalLoss = true
+                        doesTechnicalLossFinal = false
                         }
                     ) {
                         Text("Sim")
@@ -182,6 +186,7 @@ fun DiscountInputScreen(
                         onClick = {
                             showTechnicalLossConfirmation = false
                             doesTechnicalLoss = false
+                            doesTechnicalLossFinal = false
                         }
                     ) {
                         Text("Não")
@@ -189,35 +194,7 @@ fun DiscountInputScreen(
                 }
             )
         }
-        if(showClassificationLossConfirmation){
-            AlertDialog(
-                onDismissRequest = {
-                showClassificationLossConfirmation = false
-                },
-                title = { Text("Desconto de Classificação") },
-                text = { Text("Deseja calcular o desconto de Classificação?") },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            showClassificationLossConfirmation = false
-                            doesClassificationLoss = true
-                        }
-                    ) {
-                        Text("Sim")
-                    }
-                },
-                dismissButton = {
-                    TextButton(
-                        onClick = {
-                            showClassificationLossConfirmation = false
-                            doesClassificationLoss = false
-                        }
-                    ) {
-                        Text("Não")
-                    }
-                }
-            )
-        }
+
         if(showDeductionConfirmation){
             AlertDialog(
                 onDismissRequest = {
@@ -230,6 +207,7 @@ fun DiscountInputScreen(
                         onClick = {
                             showDeductionConfirmation = false
                             doesDeduction = true
+                            doesDeductionFinal = true
                         }
                     ) {
                         Text("Sim")
@@ -240,6 +218,7 @@ fun DiscountInputScreen(
                         onClick = {
                             showDeductionConfirmation = false
                             doesDeduction = false
+                            doesDeductionFinal = false
                         }
                     ) {
                         Text("Não")
@@ -250,7 +229,8 @@ fun DiscountInputScreen(
         if(doesTechnicalLoss){
             AlertDialog(
                 onDismissRequest = {
-                    showDeductionConfirmation = false
+                    doesTechnicalLoss = false
+                    doesTechnicalLossFinal = false
                 },
                 title = { Text("Dias de Armazenamento") },
                 text = {
@@ -266,12 +246,12 @@ fun DiscountInputScreen(
                             nextFocus = null
                         )
                     }
-
                 },
                 confirmButton = {
                     TextButton(
                         onClick = {
                         doesTechnicalLoss = false
+                        doesTechnicalLossFinal = true
                         }
                     ) {
                         Text("Avançar")
@@ -281,6 +261,7 @@ fun DiscountInputScreen(
                     TextButton(
                         onClick = {
                         doesTechnicalLoss = false
+                        doesTechnicalLossFinal = false
                         }
                     ) {
                         Text("Cancelar")
@@ -288,6 +269,7 @@ fun DiscountInputScreen(
                 }
             )
         }
+
 
         Row(
             modifier = Modifier
@@ -316,27 +298,52 @@ fun DiscountInputScreen(
             } else {
                 Button(
                     onClick = {
+
                         val inputDiscount = InputDiscount(
                             grain = grain!!,
                             group = group!!,
                             limitSource = 0,
                             classificationId = null,
                             daysOfStorage = daysOfStorage.toInt(),
-                            lotWeight = lotWeight.toFloat(),
-                            lotPrice = lotWeight.toFloat() * priceBySack.toFloat()/60 ,
-                            foreignMattersAndImpurities = impurities.toFloat(),
-                            humidity = moisture.toFloat(),
-                            burnt = burnt.toFloat(),
-                            burntOrSour = burntOrSour.toFloat(),
-                            moldy = moldy.toFloat(),
-                            spoiled = spoiled.toFloat(),
-                            greenish = greenish.toFloat(),
-                            brokenCrackedDamaged = brokenCrackedDamaged.toFloat(),
-                            deductionValue = deductionValue.toFloat()
+                            lotWeight = lotWeight
+                                .toBigDecimalOrNull()
+                                ?.setScale(2, RoundingMode.HALF_UP)
+                                ?.toFloat() ?: 0f,
+                            lotPrice = ((lotWeight
+                                .toBigDecimal()
+                                .setScale(2, RoundingMode.HALF_UP)
+                                    * priceBySack.toBigDecimal()
+                                .setScale(2, RoundingMode.HALF_UP)
+                                    ).toFloat() / 60) ?: 0f,
+                            foreignMattersAndImpurities = impurities.toBigDecimalOrNull()
+                                ?.setScale(2, RoundingMode.HALF_UP)
+                                ?.toFloat() ?: 0f,
+                            humidity = moisture.toBigDecimalOrNull()
+                                ?.setScale(2, RoundingMode.HALF_UP)
+                                ?.toFloat() ?: 0f,
+                            burnt = burnt.toBigDecimalOrNull()
+                                ?.setScale(2, RoundingMode.HALF_UP)
+                                ?.toFloat() ?: 0f,
+                            burntOrSour = burntOrSour.toBigDecimalOrNull()
+                                ?.setScale(2, RoundingMode.HALF_UP)
+                                ?.toFloat() ?: 0f,
+                            moldy = moldy.toBigDecimalOrNull()
+                                ?.setScale(2, RoundingMode.HALF_UP)
+                                ?.toFloat() ?: 0f,
+                            spoiled = spoiled.toBigDecimalOrNull()
+                                ?.setScale(2, RoundingMode.HALF_UP)
+                                ?.toFloat() ?: 0f,
+                            greenish = greenish.toBigDecimalOrNull()
+                                ?.setScale(2, RoundingMode.HALF_UP)
+                                ?.toFloat() ?: 0f,
+                            brokenCrackedDamaged = brokenCrackedDamaged.toBigDecimalOrNull()
+                                ?.setScale(2, RoundingMode.HALF_UP)
+                                ?.toFloat() ?: 0f,
+                            deductionValue = 0.0f
                         )
 
                         try {
-                            viewModel.setDiscount(inputDiscount,doesTechnicalLoss,doesClassificationLoss,doesDeduction)
+                            viewModel.setDiscount(inputDiscount,doesTechnicalLossFinal,doesClassificationLossFinal,doesDeductionFinal)
                         } catch (e: NumberFormatException) {
                             errorMessage = "Valores numéricos inválidos detectados"
                         }
