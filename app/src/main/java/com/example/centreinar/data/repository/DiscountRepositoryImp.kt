@@ -57,7 +57,6 @@ class DiscountRepositoryImp @Inject constructor(
             technicalLoss = calculateTechnicalLoss(humidityAndImpuritiesLoss = impuritiesAndHumidityLoss, storageDays = storageDays, lotWeight = lotWeight)
         }
 
-        impuritiesAndHumidityLoss += technicalLoss
         //Classification Loss
 
         var burntLoss  = 0.0f
@@ -103,7 +102,7 @@ class DiscountRepositoryImp @Inject constructor(
         val humidityLossPrice= ((lotPrice-impuritiesLossPrice) * humidityLoss/100)
         var impuritiesAndHumidityLossPrice = impuritiesLossPrice + humidityLossPrice
         val technicalLossPrice = (lotPrice / lotWeight) * technicalLoss
-        impuritiesAndHumidityLossPrice += technicalLossPrice
+
 
 
         val burntLossPrice = lotPrice * burntLoss / 100
@@ -115,7 +114,7 @@ class DiscountRepositoryImp @Inject constructor(
 
         val classificationDiscountPrice = burntLossPrice + burntOrSourLossPrice + brokenLossPrice + greenishLossPrice + moldyLossPrice + spoiledLossPrice
 
-        val finalDiscountPrice = classificationDiscountPrice + impuritiesAndHumidityLossPrice
+        val finalDiscountPrice = classificationDiscountPrice + impuritiesAndHumidityLossPrice + technicalLossPrice
         val finalWeightPrice = sample.lotPrice - finalDiscountPrice
 
         // Discount weight
