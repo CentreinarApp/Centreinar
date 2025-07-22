@@ -82,16 +82,13 @@ fun DiscountResultsTable(
                     Triple("Matéria Estranha e Impurezas", discounts.impuritiesLoss,discounts.impuritiesLossPrice),
                     Triple("Umidade", discounts.humidityLoss,discounts.humidityLossPrice),
                     Triple("Quebra técnica", discounts.technicalLoss,discounts.technicalLossPrice),
+                    Triple("Desconto do Deságio", discounts.deduction,discounts.deductionValue),
                     Triple("Queimados", discounts.burntLoss, discounts.burntLossPrice),
                     Triple("Ardidos e Queimados", discounts.burntOrSourLoss, discounts.burntOrSourLossPrice),
                     Triple("Mofados", discounts.moldyLoss, discounts.moldyLossPrice),
                     Triple("Total de Avariados", discounts.spoiledLoss,discounts.spoiledLossPrice),
                     Triple("Esverdeados", discounts.greenishLoss,discounts.greenishLossPrice),
-                    Triple("Partidos, Quebrados e Amassados", discounts.brokenLoss,discounts.brokenLossPrice),
-                    Triple("Desconto de Umidade e MEI", discounts.humidityAndImpuritiesDiscount,discounts.humidityAndImpuritiesDiscountPrice),
-                    Triple("Desconto de Classificação", discounts.classificationDiscount,discounts.classificationDiscountPrice),
-                    Triple("Desconto Final", discounts.finalDiscount,discounts.finalDiscountPrice),
-                    Triple("Lote final", discounts.finalWeight,discounts.finalWeightPrice)
+                    Triple("Partidos, Quebrados e Amassados", discounts.brokenLoss,discounts.brokenLossPrice)
 
                 ).forEachIndexed { index, (label, mass, price) ->
                     TableRow(
