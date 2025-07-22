@@ -45,7 +45,7 @@ fun OfficialOrNotOfficialDiscountScreen(
                 contentColor = MaterialTheme.colorScheme.onPrimaryContainer
             )
         ) {
-            Text("Classificação Oficial", style = MaterialTheme.typography.titleMedium)
+            Text("Referências Oficial", style = MaterialTheme.typography.titleMedium)
         }
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -64,7 +64,7 @@ fun OfficialOrNotOfficialDiscountScreen(
                 contentColor = MaterialTheme.colorScheme.onSecondaryContainer
             )
         ) {
-            Text("Classificação Não Oficial", style = MaterialTheme.typography.titleMedium)
+            Text("Referências Não Oficial", style = MaterialTheme.typography.titleMedium)
         }
     }
 }

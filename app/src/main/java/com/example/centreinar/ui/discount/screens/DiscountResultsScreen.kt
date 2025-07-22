@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.centreinar.ui.discount.components.DiscountResultsTable
+import com.example.centreinar.ui.discount.components.DiscountSimplifiedResultsTable
 import com.example.centreinar.ui.discount.viewmodel.DiscountViewModel
 
 @Composable
@@ -35,6 +36,10 @@ fun DiscountResultScreen(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         if(discounts != null){
+            DiscountSimplifiedResultsTable(discounts!!)
+
+            Spacer(Modifier.height(16.dp))
+
             DiscountResultsTable(discounts!!)
         }
         else {
