@@ -85,7 +85,7 @@ class DiscountRepositoryImp @Inject constructor(
         var finalLoss = classificationDiscount + impuritiesAndHumidityLoss + technicalLoss
 
         // deduction
-        if(deductionValue < 0.0f){
+        if(deductionValue > 0.0f){
             deduction = calculateDeduction(deductionValue,classificationDiscount)
             finalLoss = finalLoss +  deduction - classificationDiscount
         }
@@ -101,7 +101,7 @@ class DiscountRepositoryImp @Inject constructor(
 
         var deductionPrice = 0.0f
 
-        if(deductionValue> 0.0f){
+        if(deductionValue > 0.0f){
             deductionPrice = lotPrice *  deduction * 100 / lotWeight // rule of three
         }
 
