@@ -28,6 +28,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
@@ -62,14 +63,8 @@ fun DiscountInputScreen(
     var moldy by remember { mutableStateOf("") }
     var spoiled by remember { mutableStateOf("") }
     var doesTechnicalLoss by  remember { mutableStateOf(false) }
-    var doesTechnicalLossFinal by  remember { mutableStateOf(false) }
-    var doesClassificationLoss by remember { mutableStateOf(false) }
-    var doesClassificationLossFinal by  remember { mutableStateOf(false) }
     var doesDeduction by remember { mutableStateOf(false) }
-    var doesDeductionFinal by  remember { mutableStateOf(false) }
-    var showClassificationLossConfirmation by remember { mutableStateOf(false) }
-    var showTechnicalLossConfirmation by remember { mutableStateOf(false) }
-    var showDeductionConfirmation by remember { mutableStateOf(false) }
+
 
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
@@ -133,10 +128,15 @@ fun DiscountInputScreen(
                 onImpuritiesChange = { impurities = it },
                 priceBySack = priceBySack,
                 onPriceBySackChange = {priceBySack = it},
+                daysOfStorage = daysOfStorage,
+                onDaysOfStorageChange = {daysOfStorage = it},
                 lotWeightFocus = lotWeightFocus,
                 moistureFocus = moistureFocus,
                 impuritiesFocus = impuritiesFocus,
-                priceBySackFocus = priceBySackFocus
+                priceBySackFocus = priceBySackFocus,
+                daysOfStorageFocus = daysOfStorageFocus,
+                doesTechnicalLoss = doesTechnicalLoss,
+                onDoesTechnicalLossChange = {doesTechnicalLoss = it}
             )
 
             1 ->GraveDefectsTab(
@@ -163,112 +163,7 @@ fun DiscountInputScreen(
                 brokenCrackedDamagedFocus = brokenFocus
             )
         }
-        if(showTechnicalLossConfirmation){
-            AlertDialog(
-                onDismissRequest = {
-                    showTechnicalLossConfirmation = false
-                },
-                title = { Text("Quebra técnica") },
-                text = { Text("Deseja calcular quebra técnica?") },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                        showTechnicalLossConfirmation = false
-                        doesTechnicalLoss = true
-                        doesTechnicalLossFinal = false
-                        }
-                    ) {
-                        Text("Sim")
-                    }
-                },
-                dismissButton = {
-                    TextButton(
-                        onClick = {
-                            showTechnicalLossConfirmation = false
-                            doesTechnicalLoss = false
-                            doesTechnicalLossFinal = false
-                        }
-                    ) {
-                        Text("Não")
-                    }
-                }
-            )
-        }
 
-        if(showDeductionConfirmation){
-            AlertDialog(
-                onDismissRequest = {
-                    showDeductionConfirmation = false
-                },
-                title = { Text("Deságio") },
-                text = { Text("Deseja fazer deságio?") },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            showDeductionConfirmation = false
-                            doesDeduction = true
-                            doesDeductionFinal = true
-                        }
-                    ) {
-                        Text("Sim")
-                    }
-                },
-                dismissButton = {
-                    TextButton(
-                        onClick = {
-                            showDeductionConfirmation = false
-                            doesDeduction = false
-                            doesDeductionFinal = false
-                        }
-                    ) {
-                        Text("Não")
-                    }
-                }
-            )
-        }
-        if(doesTechnicalLoss){
-            AlertDialog(
-                onDismissRequest = {
-                    doesTechnicalLoss = false
-                    doesTechnicalLossFinal = false
-                },
-                title = { Text("Dias de Armazenamento") },
-                text = {
-                    Column(
-                        modifier = Modifier.padding(top = 8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ){
-                        NumberInputField(
-                            value = daysOfStorage,
-                            onValueChange = {daysOfStorage = it} ,
-                            label = "Dias de armazenamento",
-                            focusRequester = daysOfStorageFocus,
-                            nextFocus = null
-                        )
-                    }
-                },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                        doesTechnicalLoss = false
-                        doesTechnicalLossFinal = true
-                        }
-                    ) {
-                        Text("Avançar")
-                    }
-                },
-                dismissButton = {
-                    TextButton(
-                        onClick = {
-                        doesTechnicalLoss = false
-                        doesTechnicalLossFinal = false
-                        }
-                    ) {
-                        Text("Cancelar")
-                    }
-                }
-            )
-        }
 
 
         Row(
@@ -288,9 +183,6 @@ fun DiscountInputScreen(
 
             if (selectedTab < tabTitles.lastIndex) {
                 Button(onClick = {
-                    if(selectedTab == 0){
-                        showTechnicalLossConfirmation = true
-                    }
                     selectedTab++
                 }) {
                     Text("Avançar")
@@ -343,7 +235,7 @@ fun DiscountInputScreen(
                         )
 
                         try {
-                            viewModel.setDiscount(inputDiscount,doesTechnicalLossFinal,doesClassificationLossFinal,doesDeductionFinal)
+                            viewModel.setDiscount(inputDiscount,true,true,true)
                         } catch (e: NumberFormatException) {
                             errorMessage = "Valores numéricos inválidos detectados"
                         }
@@ -370,10 +262,16 @@ fun BasicInfoTab(
     onMoistureChange: (String) -> Unit,
     impurities: String,
     onImpuritiesChange: (String) -> Unit,
+    daysOfStorage : String,
+    onDaysOfStorageChange: (String) -> Unit,
     lotWeightFocus: FocusRequester,
     moistureFocus: FocusRequester,
     impuritiesFocus: FocusRequester,
-    priceBySackFocus: FocusRequester
+    priceBySackFocus: FocusRequester,
+    daysOfStorageFocus: FocusRequester,
+    doesTechnicalLoss: Boolean,
+    onDoesTechnicalLossChange: (Boolean) ->Unit,
+
 ) {
     Column(modifier = Modifier.padding(16.dp)) {
         NumberInputField(
@@ -417,6 +315,21 @@ fun BasicInfoTab(
         )
 
         Spacer(modifier = Modifier.height(16.dp))
+
+        Switch(
+            checked = doesTechnicalLoss,
+            onCheckedChange = onDoesTechnicalLossChange
+        )
+
+        if(doesTechnicalLoss){
+            NumberInputField(
+                value = daysOfStorage,
+                onValueChange = onDaysOfStorageChange ,
+                label = "Dias de armazenamento",
+                focusRequester = daysOfStorageFocus,
+                nextFocus = null
+            )
+        }
     }
 }
 
