@@ -130,13 +130,18 @@ fun DiscountInputScreen(
                 onPriceBySackChange = {priceBySack = it},
                 daysOfStorage = daysOfStorage,
                 onDaysOfStorageChange = {daysOfStorage = it},
+                deductionValue = deductionValue,
+                onDeductionValueChange = {deductionValue = it},
+                doesDeduction = doesDeduction,
+                onDoesDeductionChange = {doesDeduction = it},
+                doesTechnicalLoss = doesTechnicalLoss,
+                onDoesTechnicalLossChange = {doesTechnicalLoss = it},
                 lotWeightFocus = lotWeightFocus,
                 moistureFocus = moistureFocus,
                 impuritiesFocus = impuritiesFocus,
                 priceBySackFocus = priceBySackFocus,
                 daysOfStorageFocus = daysOfStorageFocus,
-                doesTechnicalLoss = doesTechnicalLoss,
-                onDoesTechnicalLossChange = {doesTechnicalLoss = it}
+                deductionValueFocus = deductionValueFocus
             )
 
             1 ->GraveDefectsTab(
@@ -231,7 +236,7 @@ fun DiscountInputScreen(
                             brokenCrackedDamaged = brokenCrackedDamaged.toBigDecimalOrNull()
                                 ?.setScale(2, RoundingMode.HALF_UP)
                                 ?.toFloat() ?: 0f,
-                            deductionValue = 0.0f
+                            deductionValue = deductionValue.toFloat()
                         )
 
                         try {
@@ -264,14 +269,18 @@ fun BasicInfoTab(
     onImpuritiesChange: (String) -> Unit,
     daysOfStorage : String,
     onDaysOfStorageChange: (String) -> Unit,
+    deductionValue: String,
+    onDeductionValueChange: (String) -> Unit,
     lotWeightFocus: FocusRequester,
     moistureFocus: FocusRequester,
     impuritiesFocus: FocusRequester,
     priceBySackFocus: FocusRequester,
     daysOfStorageFocus: FocusRequester,
+    deductionValueFocus: FocusRequester,
     doesTechnicalLoss: Boolean,
     onDoesTechnicalLossChange: (Boolean) ->Unit,
-
+    doesDeduction:Boolean,
+    onDoesDeductionChange:(Boolean) ->Unit
 ) {
     Column(modifier = Modifier.padding(16.dp)) {
         NumberInputField(
@@ -330,6 +339,22 @@ fun BasicInfoTab(
                 nextFocus = null
             )
         }
+
+        Switch(
+            checked = doesDeduction,
+            onCheckedChange = onDoesDeductionChange,
+        )
+
+        if(doesDeduction){
+            NumberInputField(
+                value = deductionValue,
+                onValueChange = onDeductionValueChange,
+                label = "Valor de Deságio",
+                focusRequester = deductionValueFocus,
+                nextFocus = null
+            )
+        }
+
     }
 }
 
