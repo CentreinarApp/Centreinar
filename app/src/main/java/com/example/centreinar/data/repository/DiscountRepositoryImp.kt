@@ -53,7 +53,7 @@ class DiscountRepositoryImp @Inject constructor(
 
         var impuritiesAndHumidityLoss = humidityLossFinal+impuritiesLossFinal
 
-        if(doesTechnicalLoss){
+        if(storageDays > 0){
             technicalLoss = calculateTechnicalLoss(humidityAndImpuritiesLoss = impuritiesAndHumidityLoss, storageDays = storageDays, lotWeight = lotWeight)
         }
 
@@ -68,31 +68,27 @@ class DiscountRepositoryImp @Inject constructor(
         var classificationDiscount  = 0.0f
         var deduction = 0.0f
 
+        burntLoss = tools.calculateDifference(sample.burnt,limit["burnt"]!!)
 
+        burntOrSourLoss = tools.calculateDifference(sample.burntOrSour - burntLoss, limit["burntOrSour"]!!)
 
-        if(doesClassificationLoss){
+        moldyLoss = tools.calculateDifference(sample.moldy, limit["moldy"]!!)
 
-            burntLoss = tools.calculateDifference(sample.burnt,limit["burnt"]!!)
+        spoiledLoss = tools.calculateDifference((sample.spoiled) - moldyLoss - burntLoss - burntOrSourLoss,limit["spoiled"]!!)
 
-            burntOrSourLoss = tools.calculateDifference(sample.burntOrSour - burntLoss, limit["burntOrSour"]!!)
+        greenishLoss = tools.calculateDifference(sample.greenish,limit["greenish"]!!)
 
-            moldyLoss = tools.calculateDifference(sample.moldy, limit["moldy"]!!)
+        brokenLoss = tools.calculateDifference(sample.brokenCrackedDamaged, limit["broken"]!!)
 
-            spoiledLoss = tools.calculateDifference((sample.spoiled) - moldyLoss - burntLoss - burntOrSourLoss,limit["spoiled"]!!)
+        classificationDiscount = ((brokenLoss + burntLoss + burntOrSourLoss + moldyLoss + greenishLoss + spoiledLoss )/100 ) * lotWeight
 
-            greenishLoss = tools.calculateDifference(sample.greenish,limit["greenish"]!!)
+        var finalLoss = classificationDiscount + impuritiesAndHumidityLoss + technicalLoss
 
-            brokenLoss = tools.calculateDifference(sample.brokenCrackedDamaged, limit["broken"]!!)
-
-            classificationDiscount = ((brokenLoss + burntLoss + burntOrSourLoss + moldyLoss + greenishLoss + spoiledLoss )/100 ) * lotWeight
-
-            if(doesDeduction){
-                deduction = calculateDeduction(deductionValue,classificationDiscount)
-                classificationDiscount = deduction
-            }
-
+        // deduction
+        if(deductionValue < 0.0f){
+            deduction = calculateDeduction(deductionValue,classificationDiscount)
+            finalLoss = finalLoss +  deduction - classificationDiscount
         }
-        val finalLoss = classificationDiscount + impuritiesAndHumidityLoss + technicalLoss
 
         val finalWeight = lotWeight - finalLoss
 
@@ -103,6 +99,11 @@ class DiscountRepositoryImp @Inject constructor(
         var impuritiesAndHumidityLossPrice = impuritiesLossPrice + humidityLossPrice
         val technicalLossPrice = (lotPrice / lotWeight) * technicalLoss
 
+        var deductionPrice = 0.0f
+
+        if(deductionValue> 0.0f){
+            deductionPrice = lotPrice *  deduction * 100 / lotWeight // rule of three
+        }
 
 
         val burntLossPrice = lotPrice * burntLoss / 100
@@ -114,7 +115,12 @@ class DiscountRepositoryImp @Inject constructor(
 
         val classificationDiscountPrice = burntLossPrice + burntOrSourLossPrice + brokenLossPrice + greenishLossPrice + moldyLossPrice + spoiledLossPrice
 
-        val finalDiscountPrice = classificationDiscountPrice + impuritiesAndHumidityLossPrice + technicalLossPrice
+        var finalDiscountPrice = classificationDiscountPrice + impuritiesAndHumidityLossPrice + technicalLossPrice
+
+        if(deductionValue > 0.0f ){
+            finalDiscountPrice = finalDiscountPrice - classificationDiscountPrice + deductionPrice
+        }
+
         val finalWeightPrice = sample.lotPrice - finalDiscountPrice
 
         // Discount weight
@@ -134,7 +140,7 @@ class DiscountRepositoryImp @Inject constructor(
             burntLossPrice = burntLossPrice, burntOrSourLossPrice = burntOrSourLossPrice, brokenLossPrice = brokenLossPrice, greenishLossPrice = greenishLossPrice,
             moldyLossPrice = moldyLossPrice, spoiledLossPrice = spoiledLossPrice, classificationDiscountPrice = classificationDiscountPrice,
             humidityAndImpuritiesDiscountPrice = impuritiesAndHumidityLossPrice,
-           humidityAndImpuritiesDiscount = impuritiesAndHumidityLoss, deductionValue = deductionValue ,
+           humidityAndImpuritiesDiscount = impuritiesAndHumidityLoss, deductionValue = deductionPrice ,
             deduction = deduction, finalDiscount = finalLoss, finalDiscountPrice = finalDiscountPrice, impuritiesLossPrice = impuritiesLossPrice, humidityLossPrice = humidityLossPrice, technicalLossPrice = technicalLossPrice ,  finalWeightPrice = finalWeightPrice , finalWeight = finalWeight )
 
         return discountDao.insert(discount)
