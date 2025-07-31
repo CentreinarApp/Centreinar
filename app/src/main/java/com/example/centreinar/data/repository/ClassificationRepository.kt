@@ -55,6 +55,7 @@ interface ClassificationRepository {
         group:Int,
         type:Int,
         impurities:Float,
+        moisture:Float,
         brokenCrackedDamaged: Float,
         greenish: Float,
         burnt:Float,

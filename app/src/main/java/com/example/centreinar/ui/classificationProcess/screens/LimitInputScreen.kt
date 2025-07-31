@@ -41,6 +41,7 @@ fun LimitInputScreen(
 
     // State variables
     var impurities by remember { mutableStateOf("") }
+    var moisture by remember { mutableStateOf("") }
     var brokenCrackedDamaged by remember { mutableStateOf("") }
     var greenish by remember { mutableStateOf("") }
     var burnt by remember { mutableStateOf("") }
@@ -53,6 +54,7 @@ fun LimitInputScreen(
 
     // Focus requesters
     val impuritiesFocus = remember { FocusRequester() }
+    val moistureFocus= remember { FocusRequester() }
     val brokenFocus = remember { FocusRequester() }
     val greenishFocus = remember { FocusRequester() }
     val burntFocus = remember { FocusRequester() }
@@ -70,6 +72,7 @@ fun LimitInputScreen(
     LaunchedEffect(defaultLimits) {
         if (defaultLimits != null && !defaultsSet) {
             impurities = defaultLimits?.get("impuritiesUpLim")?.toString() ?: ""
+            moisture = defaultLimits?.get("moistureUpLim")?.toString()?:""
             brokenCrackedDamaged = defaultLimits?.get("brokenUpLim")?.toString() ?: ""
             greenish = defaultLimits?.get("greenishUpLim")?.toString() ?: ""
             burnt = defaultLimits?.get("burntUpLim")?.toString() ?: ""
@@ -107,6 +110,18 @@ fun LimitInputScreen(
             onValueChange = { impurities = it },
             label = "Matéria estranha e Impurezas (%)",
             focusRequester = impuritiesFocus,
+            nextFocus = moistureFocus,
+            enabled = isEditable
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Moisture
+        NumberInputField(
+            value = moisture,
+            onValueChange = { moisture = it },
+            label = "Umidade (%)",
+            focusRequester = moistureFocus,
             nextFocus = burntFocus,
             enabled = isEditable
         )
@@ -210,6 +225,7 @@ fun LimitInputScreen(
                     try {
                         viewModel.setLimit(
                             impurities = toFloat(impurities),
+                            moisture = toFloat(moisture),
                             brokenCrackedDamaged = toFloat(brokenCrackedDamaged),
                             greenish = toFloat(greenish),
                             burnt = toFloat(burnt),

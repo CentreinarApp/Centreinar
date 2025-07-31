@@ -157,8 +157,8 @@ class DiscountRepositoryImp @Inject constructor(
     override suspend fun getLimitsByType(grain:String, group:Int, tipo:Int, limitSource:Int): Map<String,Float> {
         val limit:Limit = limitDao.getLimitsByType(grain, group, tipo, limitSource)
         return mapOf(
-           "humidity" to 14.0f,
-           "impurities" to 1.0f,
+           "impurities" to limit.impuritiesUpLim,
+           "humidity" to limit.moistureUpLim,
            "broken" to limit.brokenCrackedDamagedUpLim,
            "greenish" to limit.greenishUpLim,
            "burnt" to limit.burntUpLim,
@@ -183,6 +183,7 @@ class DiscountRepositoryImp @Inject constructor(
         group:Int,
         type:Int,
         impurities:Float,
+        moisture:Float,
         brokenCrackedDamaged: Float,
         greenish: Float,
         burnt:Float,
@@ -199,6 +200,8 @@ class DiscountRepositoryImp @Inject constructor(
             type = type,
             impuritiesLowerLim = 0.0f,
             impuritiesUpLim = impurities,
+            moistureLowerLim = 0.0f,
+            moistureUpLim = moisture,
             brokenCrackedDamagedLowerLim = 0.0f,
             brokenCrackedDamagedUpLim = brokenCrackedDamaged,
             greenishLowerLim = 0.0f,
@@ -224,6 +227,8 @@ class DiscountRepositoryImp @Inject constructor(
         return mapOf(
             "impuritiesLowerLim" to limit.impuritiesLowerLim,
             "impuritiesUpLim" to limit.impuritiesUpLim,
+            "moistureLowerLim" to limit.moistureLowerLim,
+            "moistureUpLim" to limit.moistureUpLim,
             "brokenLowerLim" to limit.brokenCrackedDamagedLowerLim,
             "brokenUpLim" to limit.brokenCrackedDamagedUpLim,
             "greenishLowerLim" to limit.greenishLowerLim,

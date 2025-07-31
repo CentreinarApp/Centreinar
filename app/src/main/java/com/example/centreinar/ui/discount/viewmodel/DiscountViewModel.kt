@@ -98,6 +98,7 @@ class DiscountViewModel @Inject constructor(
 
     fun setLimit(
         impurities:Float,
+        moisture:Float,
         brokenCrackedDamaged: Float,
         greenish: Float,
         burnt:Float,
@@ -116,7 +117,7 @@ class DiscountViewModel @Inject constructor(
             try {
                 _isLoading.value = true
                 _error.value = null
-                repository.setLimit(grain.toString(),group,1,impurities,brokenCrackedDamaged, greenish, burnt, burntOrSour, moldy, spoiled)
+                repository.setLimit(grain.toString(),group,1,impurities,moisture,brokenCrackedDamaged, greenish, burnt, burntOrSour, moldy, spoiled)
 
             } catch (e: Exception) {
                 _error.value = e.message ?: "Unknown error"
