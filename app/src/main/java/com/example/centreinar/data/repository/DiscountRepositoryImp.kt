@@ -102,7 +102,7 @@ class DiscountRepositoryImp @Inject constructor(
         var deductionPrice = 0.0f
 
         if(deductionValue > 0.0f){
-            deductionPrice = lotPrice *  deduction * 100 / lotWeight // rule of three
+            deductionPrice = lotPrice *  (deduction * 100 / lotWeight)/100 // rule of three
         }
 
 
