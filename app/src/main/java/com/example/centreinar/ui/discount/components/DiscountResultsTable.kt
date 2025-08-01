@@ -81,8 +81,6 @@ fun DiscountResultsTable(
                 listOf(
                     Triple("Matéria Estranha e Impurezas", discounts.impuritiesLoss,discounts.impuritiesLossPrice),
                     Triple("Umidade", discounts.humidityLoss,discounts.humidityLossPrice),
-                    Triple("Quebra técnica", discounts.technicalLoss,discounts.technicalLossPrice),
-                    Triple("Desconto do Deságio", discounts.deduction,discounts.deductionValue),
                     Triple("Queimados", discounts.burntLoss, discounts.burntLossPrice),
                     Triple("Ardidos e Queimados", discounts.burntOrSourLoss, discounts.burntOrSourLossPrice),
                     Triple("Mofados", discounts.moldyLoss, discounts.moldyLossPrice),

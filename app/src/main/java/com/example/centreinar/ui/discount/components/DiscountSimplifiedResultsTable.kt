@@ -79,7 +79,9 @@ fun DiscountSimplifiedResultsTable(
 
                 listOf(
                     Triple("Desconto por Impurezas e Umidade", discounts.humidityAndImpuritiesDiscount,discounts.humidityAndImpuritiesDiscountPrice),
-                    Triple("Quebra da Classificação", discounts.classificationDiscount,discounts.classificationDiscountPrice),
+                    Triple("Quebra técnica",discounts.technicalLoss, discounts.technicalLossPrice),
+                    Triple("Quebra da Classificação (sem deságio)", discounts.classificationDiscount,discounts.classificationDiscountPrice),
+                    Triple("Quebra da Classificação (com deságio)", discounts.deduction, discounts.deductionValue),
                     Triple("Desconto Total", discounts.finalDiscount,discounts.finalDiscountPrice),
                     Triple("Lote Liquido Final", discounts.finalWeight,discounts.finalWeightPrice)
                 ).forEachIndexed { index, (label, mass, price) ->
