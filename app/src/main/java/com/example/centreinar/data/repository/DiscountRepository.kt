@@ -1,5 +1,6 @@
 package com.example.centreinar.data.repository
 
+import androidx.test.services.storage.TestStorage
 import com.example.centreinar.Classification
 import com.example.centreinar.Discount
 import com.example.centreinar.InputDiscount
@@ -27,6 +28,8 @@ interface DiscountRepository{
     suspend fun getLimit(grain: String, group: Int, tipo: Int, source: Int): Limit
     suspend fun getLimitOfType1Official(group: Int, grain: String): Map<String, Float>
     suspend fun getLastClassification(): Classification
+    suspend fun toInputDiscount(priceBySack:Float,classification:Classification,daysOfStorage: Int,deductionValue: Float):InputDiscount
+
 
 }
 

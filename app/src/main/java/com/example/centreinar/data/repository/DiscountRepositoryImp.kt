@@ -248,4 +248,35 @@ class DiscountRepositoryImp @Inject constructor(
     override suspend fun getLastClassification(): Classification {
         return classificationDao.getLastClassification()
     }
+
+    override suspend fun toInputDiscount(
+        priceBySack:Float,
+        classification:Classification,
+        daysOfStorage:Int,
+        deductionValue:Float,
+    ): InputDiscount {
+        val sample = sampleDao.getById(classification.sampleId)
+        var lotWeight = 0.0f
+        if(sample!=null){
+            lotWeight = sample.lotWeight
+        }
+        return InputDiscount(
+            grain = classification.grain,
+            group = classification.group,
+            limitSource = 0,
+            classificationId = classification.id,
+            daysOfStorage = daysOfStorage,
+            deductionValue = deductionValue,
+            lotWeight = lotWeight,
+            lotPrice = lotWeight * priceBySack/60,
+            foreignMattersAndImpurities = classification.foreignMattersPercentage,
+            humidity = sample!!.humidity,
+            burnt = classification.burntPercentage,
+            burntOrSour = classification.burntOrSourPercentage,
+            moldy = classification.moldyPercentage,
+            spoiled = classification.spoiledPercentage,
+            greenish = classification.greenishPercentage,
+            brokenCrackedDamaged = classification.brokenCrackedDamagedPercentage
+        )
+    }
 }
