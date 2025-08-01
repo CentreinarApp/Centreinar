@@ -1,5 +1,6 @@
 package com.example.centreinar.data.repository
 
+import com.example.centreinar.Classification
 import com.example.centreinar.Discount
 import com.example.centreinar.InputDiscount
 import com.example.centreinar.Limit
@@ -25,6 +26,8 @@ interface DiscountRepository{
     ): Long
     suspend fun getLimit(grain: String, group: Int, tipo: Int, source: Int): Limit
     suspend fun getLimitOfType1Official(group: Int, grain: String): Map<String, Float>
+    suspend fun getLastClassification(): Classification
+
 }
 
 //implement a way of creating custom limits

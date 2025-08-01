@@ -7,6 +7,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 import com.example.centreinar.Classification
+import com.example.centreinar.ColorClassification
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -45,4 +46,7 @@ interface ClassificationDao {
 
     @Query("SELECT * FROM classification WHERE grain = :grainType")
     fun getByGrainType(grainType: String): Flow<List<Classification>>
+
+    @Query("SELECT * FROM classification ORDER BY id DESC LIMIT 1")
+    suspend fun getLastClassification(): Classification
 }

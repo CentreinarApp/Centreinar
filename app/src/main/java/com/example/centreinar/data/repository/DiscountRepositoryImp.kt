@@ -1,6 +1,7 @@
 package com.example.centreinar.data.repository
 
 import androidx.compose.ui.Modifier
+import com.example.centreinar.Classification
 import com.example.centreinar.Discount
 import com.example.centreinar.InputDiscount
 import com.example.centreinar.Limit
@@ -242,5 +243,9 @@ class DiscountRepositoryImp @Inject constructor(
             "spoiledTotalLowerLim" to limit.spoiledTotalLowerLim,
             "spoiledTotalUpLim" to limit.spoiledTotalUpLim
         )
+    }
+
+    override suspend fun getLastClassification(): Classification {
+        return classificationDao.getLastClassification()
     }
 }
