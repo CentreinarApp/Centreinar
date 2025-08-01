@@ -29,7 +29,9 @@ interface DiscountRepository{
     suspend fun getLimitOfType1Official(group: Int, grain: String): Map<String, Float>
     suspend fun getLastClassification(): Classification
     suspend fun toInputDiscount(priceBySack:Float,classification:Classification,daysOfStorage: Int,deductionValue: Float):InputDiscount
-
+    suspend fun getDiscountForClassification( priceBySack:Float,
+                                              daysOfStorage:Int,
+                                              deductionValue:Float)
 
 }
 

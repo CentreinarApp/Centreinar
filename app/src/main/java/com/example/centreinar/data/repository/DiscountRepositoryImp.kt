@@ -253,7 +253,7 @@ class DiscountRepositoryImp @Inject constructor(
         priceBySack:Float,
         classification:Classification,
         daysOfStorage:Int,
-        deductionValue:Float,
+        deductionValue:Float
     ): InputDiscount {
         val sample = sampleDao.getById(classification.sampleId)
         var lotWeight = 0.0f
@@ -278,5 +278,13 @@ class DiscountRepositoryImp @Inject constructor(
             greenish = classification.greenishPercentage,
             brokenCrackedDamaged = classification.brokenCrackedDamagedPercentage
         )
+    }
+
+    override suspend fun getDiscountForClassification( priceBySack:Float,
+                                                       daysOfStorage:Int,
+                                                       deductionValue:Float) {
+        val classification = getLastClassification()
+        val inputDiscount = toInputDiscount(priceBySack,classification,daysOfStorage,deductionValue)
+        calculateDiscount(grain = inputDiscount.grain, group = inputDiscount.group,1,inputDiscount,true,true,true)
     }
 }
