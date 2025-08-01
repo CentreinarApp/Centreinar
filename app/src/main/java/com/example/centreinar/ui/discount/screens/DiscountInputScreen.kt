@@ -128,20 +128,10 @@ fun DiscountInputScreen(
                 onImpuritiesChange = { impurities = it },
                 priceBySack = priceBySack,
                 onPriceBySackChange = {priceBySack = it},
-                daysOfStorage = daysOfStorage,
-                onDaysOfStorageChange = {daysOfStorage = it},
-                deductionValue = deductionValue,
-                onDeductionValueChange = {deductionValue = it},
-                doesDeduction = doesDeduction,
-                onDoesDeductionChange = {doesDeduction = it},
-                doesTechnicalLoss = doesTechnicalLoss,
-                onDoesTechnicalLossChange = {doesTechnicalLoss = it},
                 lotWeightFocus = lotWeightFocus,
                 moistureFocus = moistureFocus,
                 impuritiesFocus = impuritiesFocus,
-                priceBySackFocus = priceBySackFocus,
-                daysOfStorageFocus = daysOfStorageFocus,
-                deductionValueFocus = deductionValueFocus
+                priceBySackFocus = priceBySackFocus
             )
 
             1 ->GraveDefectsTab(
@@ -165,7 +155,17 @@ fun DiscountInputScreen(
                 brokenCrackedDamaged = brokenCrackedDamaged,
                 onBrokenCrackedDamagedChange = { brokenCrackedDamaged = it },
                 greenishFocus = greenishFocus,
-                brokenCrackedDamagedFocus = brokenFocus
+                brokenCrackedDamagedFocus = brokenFocus,
+                daysOfStorage = daysOfStorage,
+                onDaysOfStorageChange = {daysOfStorage = it},
+                deductionValue = deductionValue,
+                onDeductionValueChange = {deductionValue = it},
+                doesDeduction = doesDeduction,
+                onDoesDeductionChange = {doesDeduction = it},
+                doesTechnicalLoss = doesTechnicalLoss,
+                onDoesTechnicalLossChange = {doesTechnicalLoss = it},
+                daysOfStorageFocus = daysOfStorageFocus,
+                deductionValueFocus = deductionValueFocus
             )
         }
 
@@ -267,20 +267,10 @@ fun BasicInfoTab(
     onMoistureChange: (String) -> Unit,
     impurities: String,
     onImpuritiesChange: (String) -> Unit,
-    daysOfStorage : String,
-    onDaysOfStorageChange: (String) -> Unit,
-    deductionValue: String,
-    onDeductionValueChange: (String) -> Unit,
     lotWeightFocus: FocusRequester,
     moistureFocus: FocusRequester,
     impuritiesFocus: FocusRequester,
-    priceBySackFocus: FocusRequester,
-    daysOfStorageFocus: FocusRequester,
-    deductionValueFocus: FocusRequester,
-    doesTechnicalLoss: Boolean,
-    onDoesTechnicalLossChange: (Boolean) ->Unit,
-    doesDeduction:Boolean,
-    onDoesDeductionChange:(Boolean) ->Unit
+    priceBySackFocus: FocusRequester
 ) {
     Column(modifier = Modifier.padding(16.dp)) {
         NumberInputField(
@@ -325,35 +315,6 @@ fun BasicInfoTab(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Switch(
-            checked = doesTechnicalLoss,
-            onCheckedChange = onDoesTechnicalLossChange
-        )
-
-        if(doesTechnicalLoss){
-            NumberInputField(
-                value = daysOfStorage,
-                onValueChange = onDaysOfStorageChange ,
-                label = "Dias de armazenamento",
-                focusRequester = daysOfStorageFocus,
-                nextFocus = null
-            )
-        }
-
-        Switch(
-            checked = doesDeduction,
-            onCheckedChange = onDoesDeductionChange,
-        )
-
-        if(doesDeduction){
-            NumberInputField(
-                value = deductionValue,
-                onValueChange = onDeductionValueChange,
-                label = "Valor de Deságio",
-                focusRequester = deductionValueFocus,
-                nextFocus = null
-            )
-        }
 
     }
 }
@@ -371,8 +332,7 @@ fun GraveDefectsTab(
     burntFocus: FocusRequester,
     burntOrSourFocus: FocusRequester,
     moldyFocus: FocusRequester,
-    spoiledFocus: FocusRequester
-
+    spoiledFocus: FocusRequester,
 ) {
     Column(modifier = Modifier.padding(16.dp)) {
         // Burnt
@@ -423,8 +383,18 @@ fun FinalDefectsTab(
     onGreenishChange: (String) -> Unit,
     brokenCrackedDamaged: String,
     onBrokenCrackedDamagedChange: (String) -> Unit,
+    daysOfStorage : String,
+    onDaysOfStorageChange: (String) -> Unit,
+    deductionValue: String,
+    onDeductionValueChange: (String) -> Unit,
     greenishFocus: FocusRequester,
-    brokenCrackedDamagedFocus: FocusRequester
+    brokenCrackedDamagedFocus: FocusRequester,
+    daysOfStorageFocus: FocusRequester,
+    deductionValueFocus: FocusRequester,
+    doesTechnicalLoss: Boolean,
+    onDoesTechnicalLossChange: (Boolean) ->Unit,
+    doesDeduction:Boolean,
+    onDoesDeductionChange:(Boolean) ->Unit
 ) {
     Column(modifier = Modifier.padding(16.dp)) {
 
@@ -445,6 +415,38 @@ fun FinalDefectsTab(
             focusRequester = brokenCrackedDamagedFocus,
             nextFocus = null
         )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Switch(
+            checked = doesTechnicalLoss,
+            onCheckedChange = onDoesTechnicalLossChange
+        )
+
+        if(doesTechnicalLoss){
+            NumberInputField(
+                value = daysOfStorage,
+                onValueChange = onDaysOfStorageChange ,
+                label = "Dias de armazenamento",
+                focusRequester = daysOfStorageFocus,
+                nextFocus = null
+            )
+        }
+
+        Switch(
+            checked = doesDeduction,
+            onCheckedChange = onDoesDeductionChange,
+        )
+
+        if(doesDeduction){
+            NumberInputField(
+                value = deductionValue,
+                onValueChange = onDeductionValueChange,
+                label = "Valor de Deságio",
+                focusRequester = deductionValueFocus,
+                nextFocus = null
+            )
+        }
     }
 }
 
