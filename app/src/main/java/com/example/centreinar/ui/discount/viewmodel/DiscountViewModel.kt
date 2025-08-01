@@ -78,7 +78,6 @@ class DiscountViewModel @Inject constructor(
                 _isLoading.value = false
             }
         }
-
         return discountId
     }
 
@@ -151,7 +150,7 @@ class DiscountViewModel @Inject constructor(
     {
         viewModelScope.launch {
             try {
-                repository.getDiscountForClassification(priceBySack,daysOfStorage,deductionValue)
+                _discounts.value = repository.getDiscountForClassification(priceBySack,daysOfStorage,deductionValue)
             } catch (e: Exception) {
                 _error.value = e.message ?: "Unknown error"
                 Log.e("ClassificationToDiscount", "Classification to Discount Calculation failed", e)

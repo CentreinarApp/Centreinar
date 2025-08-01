@@ -158,6 +158,19 @@ fun ClassificationResult(
                         Text("Nova Análise")
 
                     }
+
+                    Spacer(Modifier.height(16.dp))
+
+                    Button(
+                        onClick = {
+                            navController.navigate("classificationToDiscount")
+                            viewModel.clearStates()
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Calcular Desconto")
+
+                    }
                 }
             }
         }

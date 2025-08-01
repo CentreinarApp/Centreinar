@@ -23,6 +23,7 @@
     import com.example.centreinar.ui.classificationProcess.screens.LimitInputScreen
     import com.example.centreinar.ui.classificationProcess.screens.OfficialOrNotOfficialScreen
     import com.example.centreinar.ui.classificationProcess.viewmodel.ClassificationViewModel
+    import com.example.centreinar.ui.discount.screens.ClassificationToDiscountInputScreen
     import com.example.centreinar.ui.discount.screens.DiscountGroupSelectionScreen
     import com.example.centreinar.ui.discount.screens.DiscountLimitInputScreen
     import com.example.centreinar.ui.discount.screens.DiscountResultScreen
@@ -199,6 +200,16 @@
                         navController.getBackStackEntry("main_flow")
                     }
                     DiscountResultScreen(
+                        navController,
+                        hiltViewModel<DiscountViewModel>(parentEntry)
+                    )
+                }
+
+                composable("classificationToDiscount") { backStackEntry ->
+                    val parentEntry = remember(backStackEntry) {
+                        navController.getBackStackEntry("main_flow")
+                    }
+                    ClassificationToDiscountInputScreen(
                         navController,
                         hiltViewModel<DiscountViewModel>(parentEntry)
                     )
