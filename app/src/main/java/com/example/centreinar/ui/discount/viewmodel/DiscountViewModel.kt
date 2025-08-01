@@ -144,4 +144,20 @@ class DiscountViewModel @Inject constructor(
             }
         }
     }
+
+    fun getDiscountForClassification(priceBySack:Float,
+                                     daysOfStorage:Int,
+                                     deductionValue:Float)
+    {
+        viewModelScope.launch {
+            try {
+                repository.getDiscountForClassification(priceBySack,daysOfStorage,deductionValue)
+            } catch (e: Exception) {
+                _error.value = e.message ?: "Unknown error"
+                Log.e("ClassificationToDiscount", "Classification to Discount Calculation failed", e)
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
 }
