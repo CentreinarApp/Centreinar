@@ -68,7 +68,13 @@ class DiscountViewModel @Inject constructor(
         var discountId = 0L
         viewModelScope.launch {
             try {
-                //
+
+                if(isOfficial == false){
+                inputDiscount.limitSource = repository.getLastLimitSource()
+                }
+                // saves input discount
+                repository.setInputDiscount(inputDiscount)
+
                 discountId = repository.calculateDiscount(inputDiscount.grain,inputDiscount.group,1,inputDiscount, doesTechnicalLoss = doesTechnicalLoss,doesClassificationLoss,doesDeduction)
                 getDiscount(discountId)
             } catch (e: Exception) {

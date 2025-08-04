@@ -32,6 +32,8 @@ interface DiscountRepository{
     suspend fun getDiscountForClassification( priceBySack:Float,
                                               daysOfStorage:Int,
                                               deductionValue:Float):Discount?
+    suspend fun getLastLimitSource():Int
+    suspend fun setInputDiscount(inputDiscount: InputDiscount):Long
 }
 
 //implement a way of creating custom limits

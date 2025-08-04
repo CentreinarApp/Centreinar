@@ -7,6 +7,7 @@ import com.example.centreinar.InputDiscount
 import com.example.centreinar.Limit
 import com.example.centreinar.data.local.dao.ClassificationDao
 import com.example.centreinar.data.local.dao.DiscountDao
+import com.example.centreinar.data.local.dao.InputDiscountDao
 import com.example.centreinar.data.local.dao.LimitDao
 import com.example.centreinar.data.local.dao.SampleDao
 import com.example.centreinar.util.Utilities
@@ -19,6 +20,7 @@ class DiscountRepositoryImp @Inject constructor(
     private val classificationDao: ClassificationDao,
     private val sampleDao: SampleDao,
     private val discountDao: DiscountDao,
+    private val inputDiscountDao: InputDiscountDao,
     private val tools : Utilities
 ): DiscountRepository {
     override suspend fun calculateDiscount(
@@ -287,5 +289,13 @@ class DiscountRepositoryImp @Inject constructor(
         val inputDiscount = toInputDiscount(priceBySack,classification,daysOfStorage,deductionValue)
         val id = calculateDiscount(grain = inputDiscount.grain, group = inputDiscount.group,1,inputDiscount,true,true,true)
         return discountDao.getDiscountById(id.toInt())
+    }
+
+    override suspend fun getLastLimitSource():Int {
+        return limitDao.getLastSource()
+    }
+
+    override suspend fun setInputDiscount(inputDiscount: InputDiscount): Long {
+       return inputDiscountDao.insert(inputDiscount)
     }
 }
