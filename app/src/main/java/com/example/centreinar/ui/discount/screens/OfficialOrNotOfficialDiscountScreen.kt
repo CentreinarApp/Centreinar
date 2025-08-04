@@ -1,6 +1,7 @@
-package com.example.centreinar.ui.classificationProcess.screens
+package com.example.centreinar.ui.discount.screens
 
 import androidx.compose.foundation.layout.Arrangement
+import com.example.centreinar.ui.discount.viewmodel.DiscountViewModel
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -17,12 +18,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.example.centreinar.ui.classificationProcess.viewmodel.ClassificationViewModel
+
 
 @Composable
-fun HomeScreen(
+fun OfficialOrNotOfficialDiscountScreen(
     navController: NavController,
-    viewModel: ClassificationViewModel = hiltViewModel()
+    viewModel: DiscountViewModel = hiltViewModel()
 ) {
     Column(
         modifier = Modifier
@@ -31,9 +32,10 @@ fun HomeScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        // Classification Button
         Button(
-            onClick = { navController.navigate("grainSelection") },
+            onClick = {
+                viewModel.isOfficial = true
+                navController.navigate("discountLimitInput") },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(80.dp)
@@ -43,17 +45,16 @@ fun HomeScreen(
                 contentColor = MaterialTheme.colorScheme.onPrimaryContainer
             )
         ) {
-            Text(
-                text = "Classificação de Grãos",
-                style = MaterialTheme.typography.titleMedium
-            )
+            Text("Referências Oficial", style = MaterialTheme.typography.titleMedium)
         }
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Discount Calculation Button
         Button(
-            onClick = { navController.navigate("grainSelectionDiscount") },
+            onClick = {
+                viewModel.isOfficial = false
+                navController.navigate("discountLimitInput")
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(80.dp)
@@ -63,10 +64,7 @@ fun HomeScreen(
                 contentColor = MaterialTheme.colorScheme.onSecondaryContainer
             )
         ) {
-            Text(
-                text = "Cálculo de Descontos",
-                style = MaterialTheme.typography.titleMedium
-            )
+            Text("Referências Não Oficial", style = MaterialTheme.typography.titleMedium)
         }
     }
 }

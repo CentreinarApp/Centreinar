@@ -51,6 +51,7 @@ class ClassificationViewModel @Inject constructor(
     var isOfficial by savedStateHandle.saveable {
         mutableStateOf<Boolean?>(null)
     }
+
     var observation by savedStateHandle.saveable {
         mutableStateOf<String?>(null)
     }
@@ -111,6 +112,7 @@ class ClassificationViewModel @Inject constructor(
 
     fun setLimit(
                  impurities:Float,
+                 moisture:Float,
                  brokenCrackedDamaged: Float,
                  greenish: Float,
                  burnt:Float,
@@ -129,7 +131,7 @@ class ClassificationViewModel @Inject constructor(
             try {
                 _isLoading.value = true
                 _error.value = null
-                repository.setLimit(grain.toString(),group,1,impurities,brokenCrackedDamaged, greenish, burnt, burntOrSour, moldy, spoiled)
+                repository.setLimit(grain.toString(),group,1,impurities,moisture,brokenCrackedDamaged, greenish, burnt, burntOrSour, moldy, spoiled)
 
             } catch (e: Exception) {
                 _error.value = e.message ?: "Unknown error"

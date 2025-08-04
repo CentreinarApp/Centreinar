@@ -11,6 +11,8 @@ data class Limit(
     @ColumnInfo(name = "grain") val grain: String,
     @ColumnInfo(name = "group") val group : Int,
     @ColumnInfo(name = "type") val type : Int,
+    @ColumnInfo(name = "moistureLowerLim")val moistureLowerLim : Float,
+    @ColumnInfo(name = "moistureUpLim")val moistureUpLim : Float,
     @ColumnInfo(name = "impuritiesLowerLim")val impuritiesLowerLim : Float,
     @ColumnInfo(name = "impuritiesUpLim")val impuritiesUpLim : Float,
     @ColumnInfo(name = "brokenCrackedDamagedLowerLim")val brokenCrackedDamagedLowerLim: Float,

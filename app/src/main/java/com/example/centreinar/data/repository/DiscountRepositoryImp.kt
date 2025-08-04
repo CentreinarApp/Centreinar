@@ -1,5 +1,7 @@
 package com.example.centreinar.data.repository
 
+import androidx.compose.ui.Modifier
+import com.example.centreinar.Classification
 import com.example.centreinar.Discount
 import com.example.centreinar.InputDiscount
 import com.example.centreinar.Limit
@@ -52,11 +54,10 @@ class DiscountRepositoryImp @Inject constructor(
 
         var impuritiesAndHumidityLoss = humidityLossFinal+impuritiesLossFinal
 
-        if(doesTechnicalLoss){
+        if(storageDays > 0){
             technicalLoss = calculateTechnicalLoss(humidityAndImpuritiesLoss = impuritiesAndHumidityLoss, storageDays = storageDays, lotWeight = lotWeight)
         }
 
-        impuritiesAndHumidityLoss += technicalLoss
         //Classification Loss
 
         var burntLoss  = 0.0f
@@ -68,39 +69,42 @@ class DiscountRepositoryImp @Inject constructor(
         var classificationDiscount  = 0.0f
         var deduction = 0.0f
 
-        if(doesClassificationLoss){
+        burntLoss = tools.calculateDifference(sample.burnt,limit["burnt"]!!)
 
-            burntLoss = tools.calculateDifference(sample.burnt,limit["burnt"]!!)
+        burntOrSourLoss = tools.calculateDifference(sample.burntOrSour - burntLoss, limit["burntOrSour"]!!)
 
-            burntOrSourLoss = tools.calculateDifference(sample.burntOrSour - burntLoss, limit["burntOrSour"]!!)
+        moldyLoss = tools.calculateDifference(sample.moldy, limit["moldy"]!!)
 
-            moldyLoss = tools.calculateDifference(sample.moldy, limit["moldy"]!!)
+        spoiledLoss = tools.calculateDifference((sample.spoiled) - moldyLoss - burntLoss - burntOrSourLoss,limit["spoiled"]!!)
 
-            spoiledLoss = tools.calculateDifference((sample.spoiled) - moldyLoss - burntLoss - burntOrSourLoss,limit["spoiled"]!!)
+        greenishLoss = tools.calculateDifference(sample.greenish,limit["greenish"]!!)
 
-            greenishLoss = tools.calculateDifference(sample.greenish,limit["greenish"]!!)
+        brokenLoss = tools.calculateDifference(sample.brokenCrackedDamaged, limit["broken"]!!)
 
-            brokenLoss = tools.calculateDifference(sample.brokenCrackedDamaged, limit["broken"]!!)
+        classificationDiscount = ((brokenLoss + burntLoss + burntOrSourLoss + moldyLoss + greenishLoss + spoiledLoss )/100 ) * lotWeight
 
-            classificationDiscount = ((brokenLoss + burntLoss + burntOrSourLoss + moldyLoss + greenishLoss + spoiledLoss )/100 ) * lotWeight
+        var finalLoss = classificationDiscount + impuritiesAndHumidityLoss + technicalLoss
 
-            if(doesDeduction){
-                deduction = calculateDeduction(deductionValue,classificationDiscount)
-                classificationDiscount = deduction
-            }
-
+        // deduction
+        if(deductionValue > 0.0f){
+            deduction = calculateDeduction(deductionValue,classificationDiscount)
+            finalLoss = finalLoss +  deduction - classificationDiscount
         }
-        val finalLoss = classificationDiscount + impuritiesAndHumidityLoss + technicalLoss
 
         val finalWeight = lotWeight - finalLoss
 
         //prices
 
-        val impuritiesLossPrice = (lotPrice * impuritiesLoss/100) / lotWeight
-        val humidityLossPrice= ((lotPrice-impuritiesLossPrice) * humidityLoss/100)/ lotWeight
-        var impuritiesAndHumidityLossPrice = lotPrice * impuritiesAndHumidityLoss / 100
+        val impuritiesLossPrice = (lotPrice * impuritiesLoss/100)
+        val humidityLossPrice= ((lotPrice-impuritiesLossPrice) * humidityLoss/100)
+        var impuritiesAndHumidityLossPrice = impuritiesLossPrice + humidityLossPrice
         val technicalLossPrice = (lotPrice / lotWeight) * technicalLoss
-        impuritiesAndHumidityLossPrice += technicalLossPrice
+
+        var deductionPrice = 0.0f
+
+        if(deductionValue > 0.0f){
+            deductionPrice = lotPrice *  (deduction * 100 / lotWeight)/100 // rule of three
+        }
 
 
         val burntLossPrice = lotPrice * burntLoss / 100
@@ -112,20 +116,32 @@ class DiscountRepositoryImp @Inject constructor(
 
         val classificationDiscountPrice = burntLossPrice + burntOrSourLossPrice + brokenLossPrice + greenishLossPrice + moldyLossPrice + spoiledLossPrice
 
-        val finalDiscountPrice = classificationDiscountPrice + impuritiesAndHumidityLossPrice
+        var finalDiscountPrice = classificationDiscountPrice + impuritiesAndHumidityLossPrice + technicalLossPrice
+
+        if(deductionValue > 0.0f ){
+            finalDiscountPrice = finalDiscountPrice - classificationDiscountPrice + deductionPrice
+        }
+
         val finalWeightPrice = sample.lotPrice - finalDiscountPrice
 
+        // Discount weight
+        burntLoss  = burntLoss * lotWeight / 100
+        burntOrSourLoss = burntOrSourLoss * lotWeight / 100
+        brokenLoss = brokenLoss * lotWeight / 100
+        greenishLoss = greenishLoss  * lotWeight / 100
+        moldyLoss = moldyLoss  * lotWeight / 100
+        spoiledLoss = spoiledLoss  * lotWeight / 100
 
         val discount =
         Discount(
             inputDiscountId = sample.id,
-           impuritiesLoss = impuritiesLoss, humidityLoss = humidityLoss, technicalLoss =  technicalLoss, burntLoss =  burntLoss,
+           impuritiesLoss = impuritiesLossFinal, humidityLoss = humidityLossFinal, technicalLoss =  technicalLoss, burntLoss =  burntLoss,
            burntOrSourLoss = burntOrSourLoss, moldyLoss =  moldyLoss, spoiledLoss = spoiledLoss, classificationDiscount = classificationDiscount,
            greenishLoss = greenishLoss, brokenLoss = brokenLoss,
             burntLossPrice = burntLossPrice, burntOrSourLossPrice = burntOrSourLossPrice, brokenLossPrice = brokenLossPrice, greenishLossPrice = greenishLossPrice,
             moldyLossPrice = moldyLossPrice, spoiledLossPrice = spoiledLossPrice, classificationDiscountPrice = classificationDiscountPrice,
             humidityAndImpuritiesDiscountPrice = impuritiesAndHumidityLossPrice,
-           humidityAndImpuritiesDiscount = impuritiesAndHumidityLoss, deductionValue = deductionValue ,
+           humidityAndImpuritiesDiscount = impuritiesAndHumidityLoss, deductionValue = deductionPrice ,
             deduction = deduction, finalDiscount = finalLoss, finalDiscountPrice = finalDiscountPrice, impuritiesLossPrice = impuritiesLossPrice, humidityLossPrice = humidityLossPrice, technicalLossPrice = technicalLossPrice ,  finalWeightPrice = finalWeightPrice , finalWeight = finalWeight )
 
         return discountDao.insert(discount)
@@ -142,8 +158,8 @@ class DiscountRepositoryImp @Inject constructor(
     override suspend fun getLimitsByType(grain:String, group:Int, tipo:Int, limitSource:Int): Map<String,Float> {
         val limit:Limit = limitDao.getLimitsByType(grain, group, tipo, limitSource)
         return mapOf(
-           "humidity" to 14.0f,
-           "impurities" to 1.0f,
+           "impurities" to limit.impuritiesUpLim,
+           "humidity" to limit.moistureUpLim,
            "broken" to limit.brokenCrackedDamagedUpLim,
            "greenish" to limit.greenishUpLim,
            "burnt" to limit.burntUpLim,
@@ -161,5 +177,115 @@ class DiscountRepositoryImp @Inject constructor(
         classificationLoss: Float
     ): Float {
        return ((100 - deductionValue)/100 * classificationLoss)
+    }
+
+    override suspend fun setLimit(
+        grain:String,
+        group:Int,
+        type:Int,
+        impurities:Float,
+        moisture:Float,
+        brokenCrackedDamaged: Float,
+        greenish: Float,
+        burnt:Float,
+        burntOrSour:Float,
+        moldy:Float,
+        spoiled:Float
+    ):Long {
+        val lastSource = limitDao.getLastSource()
+        val source = lastSource + 1
+        val limit = Limit(
+            source = source,
+            grain = grain,
+            group = group,
+            type = type,
+            impuritiesLowerLim = 0.0f,
+            impuritiesUpLim = impurities,
+            moistureLowerLim = 0.0f,
+            moistureUpLim = moisture,
+            brokenCrackedDamagedLowerLim = 0.0f,
+            brokenCrackedDamagedUpLim = brokenCrackedDamaged,
+            greenishLowerLim = 0.0f,
+            greenishUpLim = greenish,
+            burntLowerLim = 0.0f,
+            burntUpLim = burnt,
+            burntOrSourLowerLim = 0.0f,
+            burntOrSourUpLim = burntOrSour,
+            moldyLowerLim = 0.0f,
+            moldyUpLim = moldy,
+            spoiledTotalLowerLim = 0.0f,
+            spoiledTotalUpLim = spoiled
+        )
+        return limitDao.insertLimit(limit)
+    }
+
+    override suspend fun getLimit(grain: String, group: Int, tipo: Int, source: Int):Limit {
+        return limitDao.getLimitsByType(grain,group,tipo,source)
+    }
+
+    override suspend fun getLimitOfType1Official(group: Int, grain: String): Map<String, Float> {
+        val limit = limitDao.getLimitsByType(grain,group,1,0)
+        return mapOf(
+            "impuritiesLowerLim" to limit.impuritiesLowerLim,
+            "impuritiesUpLim" to limit.impuritiesUpLim,
+            "moistureLowerLim" to limit.moistureLowerLim,
+            "moistureUpLim" to limit.moistureUpLim,
+            "brokenLowerLim" to limit.brokenCrackedDamagedLowerLim,
+            "brokenUpLim" to limit.brokenCrackedDamagedUpLim,
+            "greenishLowerLim" to limit.greenishLowerLim,
+            "greenishUpLim" to limit.greenishUpLim,
+            "burntLowerLim" to limit.burntLowerLim,
+            "burntUpLim" to limit.burntUpLim,
+            "burntOrSourLowerLim" to limit.burntOrSourLowerLim,
+            "burntOrSourUpLim" to limit.burntOrSourUpLim,
+            "moldyLowerLim" to limit.moldyLowerLim,
+            "moldyUpLim" to limit.moldyUpLim,
+            "spoiledTotalLowerLim" to limit.spoiledTotalLowerLim,
+            "spoiledTotalUpLim" to limit.spoiledTotalUpLim
+        )
+    }
+
+    override suspend fun getLastClassification(): Classification {
+        return classificationDao.getLastClassification()
+    }
+
+    override suspend fun toInputDiscount(
+        priceBySack:Float,
+        classification:Classification,
+        daysOfStorage:Int,
+        deductionValue:Float
+    ): InputDiscount {
+        val sample = sampleDao.getById(classification.sampleId)
+        var lotWeight = 0.0f
+        if(sample!=null){
+            lotWeight = sample.lotWeight
+        }
+        return InputDiscount(
+            grain = classification.grain,
+            group = classification.group,
+            limitSource = 0,
+            classificationId = classification.id,
+            daysOfStorage = daysOfStorage,
+            deductionValue = deductionValue,
+            lotWeight = lotWeight,
+            lotPrice = lotWeight * priceBySack/60,
+            foreignMattersAndImpurities = classification.foreignMattersPercentage,
+            humidity = sample!!.humidity,
+            burnt = classification.burntPercentage,
+            burntOrSour = classification.burntOrSourPercentage,
+            moldy = classification.moldyPercentage,
+            spoiled = classification.spoiledPercentage,
+            greenish = classification.greenishPercentage,
+            brokenCrackedDamaged = classification.brokenCrackedDamagedPercentage
+        )
+    }
+
+    override suspend fun getDiscountForClassification( priceBySack:Float,
+                                                       daysOfStorage:Int,
+                                                       deductionValue:Float): Discount? {
+        val classification = getLastClassification()
+        val inputDiscount = toInputDiscount(priceBySack,classification,daysOfStorage,deductionValue)
+        val id = calculateDiscount(grain = inputDiscount.grain, group = inputDiscount.group,1,inputDiscount,true,true,true)
+        return discountDao.getDiscountById(id.toInt())
     }
 }

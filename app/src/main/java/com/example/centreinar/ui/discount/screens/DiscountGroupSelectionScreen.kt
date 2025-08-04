@@ -1,4 +1,4 @@
-package com.example.centreinar.ui.classificationProcess.screens
+package com.example.centreinar.ui.discount.screens
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -17,12 +17,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.example.centreinar.ui.classificationProcess.viewmodel.ClassificationViewModel
+import com.example.centreinar.ui.discount.viewmodel.DiscountViewModel
+
 
 @Composable
-fun HomeScreen(
+fun DiscountGroupSelectionScreen(
     navController: NavController,
-    viewModel: ClassificationViewModel = hiltViewModel()
+    viewModel: DiscountViewModel = hiltViewModel()
 ) {
     Column(
         modifier = Modifier
@@ -31,9 +32,10 @@ fun HomeScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        // Classification Button
         Button(
-            onClick = { navController.navigate("grainSelection") },
+            onClick = {
+                viewModel.selectedGroup = 1
+                navController.navigate("officialOrNotDiscount") },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(80.dp)
@@ -43,17 +45,16 @@ fun HomeScreen(
                 contentColor = MaterialTheme.colorScheme.onPrimaryContainer
             )
         ) {
-            Text(
-                text = "Classificação de Grãos",
-                style = MaterialTheme.typography.titleMedium
-            )
+            Text("Grupo 1", style = MaterialTheme.typography.titleMedium)
         }
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Discount Calculation Button
         Button(
-            onClick = { navController.navigate("grainSelectionDiscount") },
+            onClick = {
+                viewModel.selectedGroup = 2
+                navController.navigate("officialOrNotDiscount")
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(80.dp)
@@ -63,10 +64,7 @@ fun HomeScreen(
                 contentColor = MaterialTheme.colorScheme.onSecondaryContainer
             )
         ) {
-            Text(
-                text = "Cálculo de Descontos",
-                style = MaterialTheme.typography.titleMedium
-            )
+            Text("Grupo 2", style = MaterialTheme.typography.titleMedium)
         }
     }
 }

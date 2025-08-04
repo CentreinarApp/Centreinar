@@ -196,7 +196,7 @@ fun ClassificationInputScreen(
             var group = viewModel.selectedGroup
             if (group == null) {
                 group = 1
-            }
+            } //test this
             val sample = Sample(
                 grain = grain.toString(),
                 group = group,

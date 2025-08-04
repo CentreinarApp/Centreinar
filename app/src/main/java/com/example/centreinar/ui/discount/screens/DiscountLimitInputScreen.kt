@@ -1,4 +1,4 @@
-package com.example.centreinar.ui.classificationProcess.screens
+package com.example.centreinar.ui.discount.screens
 
 
 import androidx.compose.foundation.layout.Column
@@ -29,15 +29,15 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
-import com.example.centreinar.ui.classificationProcess.viewmodel.ClassificationViewModel
+import com.example.centreinar.ui.discount.viewmodel.DiscountViewModel
 
 @Composable
-fun LimitInputScreen(
+fun DiscountLimitInputScreen(
     navController: NavController,
-    viewModel: ClassificationViewModel = hiltViewModel()
+    viewModel: DiscountViewModel = hiltViewModel()
 ) {
     // Collect default limits from ViewModel
-    val defaultLimits by viewModel.defaultLimits.collectAsStateWithLifecycle()
+   val defaultLimits by viewModel.defaultLimits.collectAsStateWithLifecycle()
 
     // State variables
     var impurities by remember { mutableStateOf("") }
@@ -72,7 +72,7 @@ fun LimitInputScreen(
     LaunchedEffect(defaultLimits) {
         if (defaultLimits != null && !defaultsSet) {
             impurities = defaultLimits?.get("impuritiesUpLim")?.toString() ?: ""
-            moisture = defaultLimits?.get("moistureUpLim")?.toString()?:""
+            moisture = defaultLimits?.get("moistureUpLim")?.toString() ?: ""
             brokenCrackedDamaged = defaultLimits?.get("brokenUpLim")?.toString() ?: ""
             greenish = defaultLimits?.get("greenishUpLim")?.toString() ?: ""
             burnt = defaultLimits?.get("burntUpLim")?.toString() ?: ""
@@ -237,7 +237,7 @@ fun LimitInputScreen(
                         errorMessage = "Valores numéricos inválidos detectados"
                     }
                 }
-                navController.navigate("disqualification")
+                navController.navigate("discount")
             },
             modifier = Modifier.fillMaxWidth()
         ) {

@@ -23,6 +23,14 @@
     import com.example.centreinar.ui.classificationProcess.screens.LimitInputScreen
     import com.example.centreinar.ui.classificationProcess.screens.OfficialOrNotOfficialScreen
     import com.example.centreinar.ui.classificationProcess.viewmodel.ClassificationViewModel
+    import com.example.centreinar.ui.discount.screens.ClassificationToDiscountInputScreen
+    import com.example.centreinar.ui.discount.screens.DiscountGroupSelectionScreen
+    import com.example.centreinar.ui.discount.screens.DiscountLimitInputScreen
+    import com.example.centreinar.ui.discount.screens.DiscountResultScreen
+    import com.example.centreinar.ui.discount.screens.GrainSelectionDiscountScreen
+    import com.example.centreinar.ui.discount.screens.OfficialOrNotOfficialDiscountScreen
+    import com.example.centreinar.ui.discount.screens.DiscountInputScreen
+    import com.example.centreinar.ui.discount.viewmodel.DiscountViewModel
     import com.example.centreinar.ui.theme.CentreinarTheme
     import dagger.hilt.android.AndroidEntryPoint
 
@@ -140,8 +148,74 @@
                     )
                 }
 
+                composable("discount") {backStackEntry ->
+                    val parentEntry = remember(backStackEntry) {
+                        navController.getBackStackEntry("main_flow")
+                    }
+                    DiscountInputScreen(
+                        navController,
+                        hiltViewModel<DiscountViewModel>(parentEntry)
+                    )
+                }
+                composable("grainSelectionDiscount") { backStackEntry ->
+                    val parentEntry = remember(backStackEntry) {
+                        navController.getBackStackEntry("main_flow")
+                    }
+                    GrainSelectionDiscountScreen(
+                        navController,
+                        hiltViewModel<DiscountViewModel>(parentEntry)
+                    )
+                }
 
-                composable("discount") { /* Similar structure for discount screen */ }
+                composable("groupSelectionDiscount") { backStackEntry ->
+                    val parentEntry = remember(backStackEntry) {
+                        navController.getBackStackEntry("main_flow")
+                    }
+                    DiscountGroupSelectionScreen(
+                        navController,
+                        hiltViewModel<DiscountViewModel>(parentEntry)
+                    )
+                }
+
+                composable("officialOrNotDiscount") { backStackEntry ->
+                    val parentEntry = remember(backStackEntry) {
+                        navController.getBackStackEntry("main_flow")
+                    }
+                    OfficialOrNotOfficialDiscountScreen(
+                        navController,
+                        hiltViewModel<DiscountViewModel>(parentEntry)
+                    )
+                }
+                composable("discountLimitInput") { backStackEntry ->
+                    val parentEntry = remember(backStackEntry) {
+                        navController.getBackStackEntry("main_flow")
+                    }
+                    DiscountLimitInputScreen(
+                        navController,
+                        hiltViewModel<DiscountViewModel>(parentEntry)
+                    )
+                }
+                composable("discountResultsScreen") { backStackEntry ->
+                    val parentEntry = remember(backStackEntry) {
+                        navController.getBackStackEntry("main_flow")
+                    }
+                    DiscountResultScreen(
+                        navController,
+                        hiltViewModel<DiscountViewModel>(parentEntry)
+                    )
+                }
+
+                composable("classificationToDiscount") { backStackEntry ->
+                    val parentEntry = remember(backStackEntry) {
+                        navController.getBackStackEntry("main_flow")
+                    }
+                    ClassificationToDiscountInputScreen(
+                        navController,
+                        hiltViewModel<DiscountViewModel>(parentEntry)
+                    )
+                }
+
+
             }
         }
     }
