@@ -71,6 +71,4 @@ interface ClassificationRepository {
     suspend fun getLimitOfType1Official(group:Int,grain:String):Map<String,Float>
     suspend fun getLimit(grain:String,group: Int,tipo:Int,source:Int): Limit
     suspend fun getObservations(idClassification:Int, colorClass:ColorClassification? = null):String
-
-
 }

@@ -7,6 +7,7 @@ import com.example.centreinar.data.local.dao.ClassificationDao
 import com.example.centreinar.data.local.dao.ColorClassificationDao
 import com.example.centreinar.data.local.dao.DiscountDao
 import com.example.centreinar.data.local.dao.DisqualificationDao
+import com.example.centreinar.data.local.dao.InputDiscountDao
 import com.example.centreinar.data.local.dao.LimitDao
 import com.example.centreinar.data.local.dao.SampleDao
 import com.example.centreinar.data.repository.ClassificationRepository
@@ -81,6 +82,7 @@ object RepositoryModule {
         sampleDao: SampleDao,
         discountDao: DiscountDao,
         tools: Utilities,
+        inputDiscountDao: InputDiscountDao,
         colorClassificationDao: ColorClassificationDao,
         disqualificationDao: DisqualificationDao
     ): DiscountRepository {
@@ -89,6 +91,7 @@ object RepositoryModule {
             classificationDao,
             sampleDao,
             discountDao,
+            inputDiscountDao,
             tools
         )
     }
