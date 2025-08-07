@@ -232,8 +232,36 @@ class ClassificationViewModel @Inject constructor(
         else return repository.getObservations(idClassification = classification.id)
     }
 
-    fun exportClassification(context: Context, classification: Classification) {
-        pdfExporter.exportClassificationToPdf(context, classification)
+    fun exportClassification(context: Context, classification: Classification, limit: Limit) {
+        viewModelScope.launch {
+            try {
+                // Fetch data sequentially - each call will wait for completion
+                val sample = repository.getSample(classification.sampleId)
+                val colorClassification = repository.getLastColorClass()
+                val observation = repository.getObservations(classification.id, colorClassification)
+
+
+                // Check if we have all required data
+                if (sample == null) {
+                    _error.value = "Sample data not found"
+                    Log.e("Export", "Sample not found for ID: ${classification.sampleId}")
+                    return@launch
+                }
+
+                // Export with null-safe optional parameters
+                pdfExporter.exportClassificationToPdf(
+                    context,
+                    classification,
+                    sample,
+                    colorClassification,  // Can be null
+                    observation,          // Can be null
+                    limit                // Can be null
+                )
+            } catch (e: Exception) {
+                _error.value = "Export failed: ${e.message ?: "Unknown error"}"
+                Log.e("Export", "Export failed", e)
+            }
+        }
     }
 }
 

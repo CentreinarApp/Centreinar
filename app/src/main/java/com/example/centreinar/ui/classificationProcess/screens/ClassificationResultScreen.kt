@@ -173,7 +173,10 @@ fun ClassificationResult(
 
                     }
                     Button(onClick = {
-                        viewModel.exportClassification(context, classification!!)
+                        viewModel.loadLastUsedLimit()
+                        lastUsedLimit?.let{
+                            viewModel.exportClassification(context, classification!!, lastUsedLimit!!)
+                        }
                     }) {
                         Text("Exportar PDF")
                     }
