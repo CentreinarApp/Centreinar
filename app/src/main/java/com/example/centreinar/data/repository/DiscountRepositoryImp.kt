@@ -298,4 +298,8 @@ class DiscountRepositoryImp @Inject constructor(
     override suspend fun setInputDiscount(inputDiscount: InputDiscount): Long {
        return inputDiscountDao.insert(inputDiscount)
     }
+
+    override suspend fun getLastInputDiscount(): InputDiscount {
+        return inputDiscountDao.getLastInputDiscount()
+    }
 }

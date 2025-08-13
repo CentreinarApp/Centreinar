@@ -34,6 +34,6 @@ interface DiscountRepository{
                                               deductionValue:Float):Discount?
     suspend fun getLastLimitSource():Int
     suspend fun setInputDiscount(inputDiscount: InputDiscount):Long
+    suspend fun getLastInputDiscount():InputDiscount
 }
 
-//implement a way of creating custom limits

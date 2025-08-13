@@ -20,6 +20,9 @@ interface InputDiscountDao {
     @Delete
     suspend fun delete(inputDiscount: InputDiscount): Int
 
+    @Query("SELECT * FROM InputDiscount ORDER BY id DESC LIMIT 1")
+    suspend fun getLastInputDiscount():InputDiscount
+
     @Query("SELECT * FROM InputDiscount")
     suspend fun getAll(): List<InputDiscount>
 
