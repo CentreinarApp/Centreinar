@@ -1,5 +1,6 @@
 package com.example.centreinar.ui.discount.viewmodel
 
+import android.content.Context
 import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.SavedStateHandle
@@ -11,6 +12,7 @@ import com.example.centreinar.Discount
 import com.example.centreinar.InputDiscount
 import com.example.centreinar.Limit
 import com.example.centreinar.data.repository.DiscountRepository
+import com.example.centreinar.util.PDFExporter
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -21,6 +23,7 @@ import javax.inject.Inject
 @HiltViewModel
 class DiscountViewModel @Inject constructor(
     private val repository: DiscountRepository,
+    private val pdfExporter: PDFExporter,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -162,6 +165,52 @@ class DiscountViewModel @Inject constructor(
                 Log.e("ClassificationToDiscount", "Classification to Discount Calculation failed", e)
             } finally {
                 _isLoading.value = false
+            }
+        }
+    }
+
+    fun loadLastUsedLimit(){
+        viewModelScope.launch {
+            val grain = selectedGrain?.toString() ?: ""
+            val group = selectedGroup ?: 0
+            try {
+                if(isOfficial == true){
+                    _lastUsedLimit.value = repository.getLimit(grain,group,1,0)
+                }
+                else{
+                    val source = repository.getLastLimitSource()
+                    _lastUsedLimit.value = repository.getLimit(grain,group,1,source)
+                }
+
+            } catch (e: Exception) {
+                _error.value = e.message ?: "Unknown error"
+                Log.e("UsedLimit", "Limit hasn't been loaded", e)
+            }
+        }
+    }
+    fun exportDiscount(context: Context, discount: Discount, limit: Limit) {
+        viewModelScope.launch {
+            try {
+                // Fetch data sequentially - each call will wait for completion
+                val sample = repository.getLastInputDiscount()
+
+                // Check if we have all required data
+                if (sample == null) {
+                    _error.value = "inputDiscount data not found"
+                    Log.e("Export", "inputDiscount not found")
+                    return@launch
+                }
+
+                // Export with null-safe optional parameters
+                pdfExporter.exportDiscountToPdf(
+                    context,
+                    discount,
+                    sample,
+                    limit                // Can be null
+                )
+            } catch (e: Exception) {
+                _error.value = "Export failed: ${e.message ?: "Unknown error"}"
+                Log.e("Export", "Export failed", e)
             }
         }
     }

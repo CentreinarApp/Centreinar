@@ -11,6 +11,8 @@ import android.os.Environment
 import androidx.core.content.FileProvider
 import com.example.centreinar.Classification
 import com.example.centreinar.ColorClassification
+import com.example.centreinar.Discount
+import com.example.centreinar.InputDiscount
 import com.example.centreinar.Limit
 import com.example.centreinar.Sample
 import java.io.File
@@ -361,6 +363,188 @@ class PDFExporter @Inject constructor() {
             lines.add(currentLine)
         }
         return lines
+    }
+
+    fun exportDiscountToPdf(
+        context: Context,
+        discount: Discount,
+        sample:InputDiscount,
+        defectLimits: Limit? = null,
+        classification: Classification? = null,
+    ) {
+        val document = PdfDocument()
+        val pageWidth = 595
+        val pageHeight = 842
+
+        // Page 1: Discount Results
+        val page1 = createDiscountPage(document, pageWidth, pageHeight, discount)
+        document.finishPage(page1)
+
+        // Page 2: inputDiscount (if available)
+        val page2 = createInputDiscountPage(document,pageWidth,pageHeight,sample)
+        document.finishPage(page2)
+
+
+        //Page 3:classification (if available)
+        classification?.let{ classi ->
+           // val page3 = createClassificationPage()
+            //document.finishPage(page3)
+
+        }
+
+        // Page 4: Defect Limits (if available)
+        defectLimits?.let { limits ->
+            val page4 = createDefectLimitsPage(document, pageWidth, pageHeight, limits)
+            document.finishPage(page4)
+        }
+
+
+        // Save and share PDF
+        saveAndShareDocument(context, document)
+    }
+    private fun createInputDiscountPage(
+        document: PdfDocument,
+        pageWidth: Int,
+        pageHeight: Int,
+        inputDiscount: InputDiscount
+    ): PdfDocument.Page{
+        val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, 1).create()
+        val page = document.startPage(pageInfo)
+        val canvas: Canvas = page.canvas
+
+        val paints = setupPaints()
+        var yStart = 60f
+        val xStart = 40f
+        val tableWidth = 515f
+        val rowHeight = 30f
+        val colWidths = listOf(0.5f, 0.25f, 0.25f).map { it * tableWidth }
+        canvas.drawText("Dados da Amostra", pageWidth / 2f, yStart, paints.titlePaint)
+        yStart += 40f
+        // Header
+        val headers = listOf("Defeitos", "%")
+        var x = xStart
+        headers.forEachIndexed { i, text ->
+            canvas.drawRect(x, yStart, x + colWidths[i], yStart + rowHeight, paints.borderPaint)
+            canvas.drawText(text, x + 10f, yStart + 20f, paints.headerPaint)
+            x += colWidths[i]
+        }
+        yStart += rowHeight
+
+        // Data Rows
+        val rows = listOf(
+            Pair("Matéria estranha e Impureza", inputDiscount.foreignMattersAndImpurities),
+            Pair("Umidade", inputDiscount.humidity),
+            Pair("Queimados", inputDiscount.burnt),
+            Pair("Ardidos e Queimados", inputDiscount.burntOrSour),
+            Pair("Mofados", inputDiscount.moldy),
+            Pair("Ardidos", inputDiscount.spoiled),
+            Pair("Esverdeados", inputDiscount.greenish),
+            Pair("Partidos, Quebrados e Danificados", inputDiscount.brokenCrackedDamaged)
+        )
+
+        rows.forEach { row ->
+            x = xStart
+            val data = listOf(
+                row.first,
+                "%.2f".format(row.second),
+            )
+            data.forEachIndexed { i, text ->
+                canvas.drawRect(x, yStart, x + colWidths[i], yStart + rowHeight, paints.borderPaint)
+                canvas.drawText(text, x + 10f, yStart + 20f, paints.cellPaint)
+                x += colWidths[i]
+            }
+            yStart += rowHeight
+
+            // Add separator except after last row
+            if (rows.last() != row) {
+                canvas.drawLine(
+                    xStart, yStart,
+                    xStart + tableWidth, yStart,
+                    paints.borderPaint
+                )
+                yStart += 5f
+            }
+        }
+
+        return page
+    }
+
+    private fun createDiscountPage(
+        document: PdfDocument,
+        pageWidth: Int,
+        pageHeight: Int,
+        discount: Discount
+    ): PdfDocument.Page {
+        val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, 1).create()
+        val page = document.startPage(pageInfo)
+        val canvas: Canvas = page.canvas
+
+        val paints = setupPaints()
+        var yStart = 60f
+        val xStart = 40f
+        val tableWidth = 515f
+        val rowHeight = 30f
+        val colWidths = listOf(0.5f, 0.25f, 0.25f).map { it * tableWidth }
+
+        // Title
+        canvas.drawText("RESULTADO DOS DESCONTOS", pageWidth / 2f, yStart, paints.titlePaint)
+        yStart += 40f
+
+        // Header
+        val headers = listOf("TIPO DE QUEBRA", "QUANTIA (KG)", "VALOR (R$)")
+        var x = xStart
+        headers.forEachIndexed { i, text ->
+            canvas.drawRect(x, yStart, x + colWidths[i], yStart + rowHeight, paints.borderPaint)
+            canvas.drawText(text, x + 10f, yStart + 20f, paints.headerPaint)
+            x += colWidths[i]
+        }
+        yStart += rowHeight
+
+        // Simplified
+        val rows = listOf(
+            Triple("Desconto por Impurezas e Umidade", discount.humidityAndImpuritiesDiscount, discount.humidityAndImpuritiesDiscountPrice),
+            Triple("Quebra técnica", discount.technicalLoss, discount.technicalLossPrice),
+            Triple("Quebra da Classificação (sem deságio)", discount.classificationDiscount, discount.classificationDiscountPrice),
+            Triple("Quebra da Classificação (com deságio)", discount.deduction, discount.deductionValue),
+            Triple("Desconto Total", discount.finalDiscount, discount.finalDiscountPrice),
+            Triple("Lote Líquido Final", discount.finalWeight, discount.finalWeightPrice),
+            Triple("Matéria Estranha e Impurezas", discount.impuritiesLoss,discount.impuritiesLossPrice),
+            Triple("Umidade", discount.humidityLoss,discount.humidityLossPrice),
+            Triple("Queimados", discount.burntLoss, discount.burntLossPrice),
+            Triple("Ardidos e Queimados", discount.burntOrSourLoss, discount.burntOrSourLossPrice),
+            Triple("Mofados", discount.moldyLoss, discount.moldyLossPrice),
+            Triple("Total de Avariados", discount.spoiledLoss,discount.spoiledLossPrice),
+            Triple("Esverdeados", discount.greenishLoss,discount.greenishLossPrice),
+            Triple("Partidos, Quebrados e Amassados", discount.brokenLoss,discount.brokenLossPrice)
+        )
+
+
+        rows.forEach { row ->
+            x = xStart
+            val data = listOf(
+                row.first,
+                "%.2f".format(row.second),
+                "%.2f".format(row.third)
+            )
+            data.forEachIndexed { i, text ->
+                canvas.drawRect(x, yStart, x + colWidths[i], yStart + rowHeight, paints.borderPaint)
+                canvas.drawText(text, x + 10f, yStart + 20f, paints.cellPaint)
+                x += colWidths[i]
+            }
+            yStart += rowHeight
+
+            // Add separator except after last row
+            if (rows.last() != row) {
+                canvas.drawLine(
+                    xStart, yStart,
+                    xStart + tableWidth, yStart,
+                    paints.borderPaint
+                )
+                yStart += 5f
+            }
+        }
+
+        return page
     }
 
     private fun sharePdf(context: Context, file: File) {
