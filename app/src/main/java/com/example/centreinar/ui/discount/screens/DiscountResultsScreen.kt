@@ -1,5 +1,6 @@
 package com.example.centreinar.ui.discount.screens
 
+import android.util.Log
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -40,6 +41,7 @@ fun DiscountResultScreen(
     var showMoreDetails by  remember { mutableStateOf(false) }
     val lastUsedLimit by viewModel.lastUsedLimit.collectAsStateWithLifecycle()
     val context = LocalContext.current
+
 
 
 
@@ -86,7 +88,9 @@ fun DiscountResultScreen(
 
         Button(onClick = {
             viewModel.loadLastUsedLimit()
+            Log.e("DiscountResultsScreen","clicked the button")
             lastUsedLimit?.let{
+                Log.e("DiscountResultsScreen","have last limit")
                 viewModel.exportDiscount(context, discounts!!, lastUsedLimit!!)
             }
         }) {

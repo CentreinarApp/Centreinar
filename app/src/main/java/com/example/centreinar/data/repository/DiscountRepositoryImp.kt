@@ -5,6 +5,7 @@ import com.example.centreinar.Classification
 import com.example.centreinar.Discount
 import com.example.centreinar.InputDiscount
 import com.example.centreinar.Limit
+import com.example.centreinar.Sample
 import com.example.centreinar.data.local.dao.ClassificationDao
 import com.example.centreinar.data.local.dao.DiscountDao
 import com.example.centreinar.data.local.dao.InputDiscountDao
@@ -262,7 +263,7 @@ class DiscountRepositoryImp @Inject constructor(
         if(sample!=null){
             lotWeight = sample.lotWeight
         }
-        return InputDiscount(
+        val inputDiscount = InputDiscount(
             grain = classification.grain,
             group = classification.group,
             limitSource = 0,
@@ -280,6 +281,8 @@ class DiscountRepositoryImp @Inject constructor(
             greenish = classification.greenishPercentage,
             brokenCrackedDamaged = classification.brokenCrackedDamagedPercentage
         )
+        inputDiscountDao.insert(inputDiscount)
+        return inputDiscount
     }
 
     override suspend fun getDiscountForClassification( priceBySack:Float,
@@ -301,5 +304,9 @@ class DiscountRepositoryImp @Inject constructor(
 
     override suspend fun getLastInputDiscount(): InputDiscount {
         return inputDiscountDao.getLastInputDiscount()
+    }
+
+    override suspend fun getSampleById(id:Int): Sample? {
+        return sampleDao.getById(id)
     }
 }

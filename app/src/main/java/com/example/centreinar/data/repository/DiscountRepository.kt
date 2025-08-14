@@ -5,6 +5,7 @@ import com.example.centreinar.Classification
 import com.example.centreinar.Discount
 import com.example.centreinar.InputDiscount
 import com.example.centreinar.Limit
+import com.example.centreinar.Sample
 
 interface DiscountRepository{
     suspend fun calculateDiscount(grain:String, group:Int, tipo:Int, sample: InputDiscount,doesTechnicalLoss:Boolean,doesClassificationLoss:Boolean, doesDeduction:Boolean): Long
@@ -35,5 +36,6 @@ interface DiscountRepository{
     suspend fun getLastLimitSource():Int
     suspend fun setInputDiscount(inputDiscount: InputDiscount):Long
     suspend fun getLastInputDiscount():InputDiscount
+    suspend fun getSampleById(id:Int): Sample?
 }
 

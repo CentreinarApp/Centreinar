@@ -8,6 +8,7 @@ import android.graphics.Paint
 import android.graphics.pdf.PdfDocument
 import android.net.Uri
 import android.os.Environment
+import android.util.Log
 import androidx.core.content.FileProvider
 import com.example.centreinar.Classification
 import com.example.centreinar.ColorClassification
@@ -371,6 +372,7 @@ class PDFExporter @Inject constructor() {
         sample:InputDiscount,
         defectLimits: Limit? = null,
         classification: Classification? = null,
+        sampleClassification: Sample? = null,
     ) {
         val document = PdfDocument()
         val pageWidth = 595
@@ -386,10 +388,13 @@ class PDFExporter @Inject constructor() {
 
 
         //Page 3:classification (if available)
-        classification?.let{ classi ->
-           // val page3 = createClassificationPage()
-            //document.finishPage(page3)
-
+        sampleClassification?.let{ originalSample ->
+            classification?.let{ classi ->
+                Log.e("PDFEXporter","classification started")
+                val page3 = createClassificationPage(document, pageWidth, pageHeight, classification,sampleClassification)
+                Log.e("PDFEXporter","classification finish ")
+                document.finishPage(page3)
+            }
         }
 
         // Page 4: Defect Limits (if available)
