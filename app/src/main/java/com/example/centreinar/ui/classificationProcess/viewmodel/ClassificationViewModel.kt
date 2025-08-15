@@ -1,5 +1,6 @@
 package com.example.centreinar.ui.classificationProcess.viewmodel
 
+import android.content.Context
 import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.SavedStateHandle
@@ -11,6 +12,7 @@ import com.example.centreinar.ColorClassification
 import com.example.centreinar.Limit
 import com.example.centreinar.Sample
 import com.example.centreinar.data.repository.ClassificationRepository
+import com.example.centreinar.util.PDFExporter
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -22,6 +24,7 @@ import javax.inject.Inject
 @HiltViewModel
 class ClassificationViewModel @Inject constructor(
     private val repository: ClassificationRepository,
+    private val pdfExporter: PDFExporter,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -227,6 +230,38 @@ class ClassificationViewModel @Inject constructor(
             return repository.getObservations(classification.id,colorClass)
         }
         else return repository.getObservations(idClassification = classification.id)
+    }
+
+    fun exportClassification(context: Context, classification: Classification, limit: Limit) {
+        viewModelScope.launch {
+            try {
+                // Fetch data sequentially - each call will wait for completion
+                val sample = repository.getSample(classification.sampleId)
+                val colorClassification = repository.getLastColorClass()
+                val observation = repository.getObservations(classification.id, colorClassification)
+
+
+                // Check if we have all required data
+                if (sample == null) {
+                    _error.value = "Sample data not found"
+                    Log.e("Export", "Sample not found for ID: ${classification.sampleId}")
+                    return@launch
+                }
+
+                // Export with null-safe optional parameters
+                pdfExporter.exportClassificationToPdf(
+                    context,
+                    classification,
+                    sample,
+                    colorClassification,  // Can be null
+                    observation,          // Can be null
+                    limit                // Can be null
+                )
+            } catch (e: Exception) {
+                _error.value = "Export failed: ${e.message ?: "Unknown error"}"
+                Log.e("Export", "Export failed", e)
+            }
+        }
     }
 }
 

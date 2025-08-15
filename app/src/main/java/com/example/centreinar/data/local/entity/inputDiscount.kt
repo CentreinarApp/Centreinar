@@ -18,7 +18,7 @@ data class InputDiscount(
     val group: Int = 0,
 
     @ColumnInfo(name = "limitSource")
-    val limitSource: Int = 0,
+    var limitSource: Int = 0,
 
     @ColumnInfo(name = "daysOfStorage")
     val daysOfStorage: Int = 0,

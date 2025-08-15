@@ -25,6 +25,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -48,7 +49,7 @@ fun ClassificationResult(
     val error by viewModel.error.collectAsState()
     var showLimitsDialog by remember { mutableStateOf(false) }
     val lastUsedLimit by viewModel.lastUsedLimit.collectAsStateWithLifecycle()
-
+    val context = LocalContext.current
 
     //val doesDefineColorClass = viewModel.doesDefineColorClass
     var colorClassificationResult by remember { mutableStateOf<ColorClassification?>(null) }
@@ -170,6 +171,14 @@ fun ClassificationResult(
                     ) {
                         Text("Calcular Desconto")
 
+                    }
+                    Button(onClick = {
+                        viewModel.loadLastUsedLimit()
+                        lastUsedLimit?.let{
+                            viewModel.exportClassification(context, classification!!, lastUsedLimit!!)
+                        }
+                    }) {
+                        Text("Exportar PDF")
                     }
                 }
             }

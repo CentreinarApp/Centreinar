@@ -1,5 +1,6 @@
 package com.example.centreinar.ui.discount.viewmodel
 
+import android.content.Context
 import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.SavedStateHandle
@@ -10,7 +11,9 @@ import com.example.centreinar.Classification
 import com.example.centreinar.Discount
 import com.example.centreinar.InputDiscount
 import com.example.centreinar.Limit
+import com.example.centreinar.Sample
 import com.example.centreinar.data.repository.DiscountRepository
+import com.example.centreinar.util.PDFExporter
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -21,6 +24,7 @@ import javax.inject.Inject
 @HiltViewModel
 class DiscountViewModel @Inject constructor(
     private val repository: DiscountRepository,
+    private val pdfExporter: PDFExporter,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -68,7 +72,13 @@ class DiscountViewModel @Inject constructor(
         var discountId = 0L
         viewModelScope.launch {
             try {
-                //
+
+                if(isOfficial == false){
+                inputDiscount.limitSource = repository.getLastLimitSource()
+                }
+                // saves input discount
+                repository.setInputDiscount(inputDiscount)
+
                 discountId = repository.calculateDiscount(inputDiscount.grain,inputDiscount.group,1,inputDiscount, doesTechnicalLoss = doesTechnicalLoss,doesClassificationLoss,doesDeduction)
                 getDiscount(discountId)
             } catch (e: Exception) {
@@ -105,26 +115,26 @@ class DiscountViewModel @Inject constructor(
         moldy:Float,
         spoiled:Float) {
 
-        val grain = selectedGrain?:' '
-        val group = selectedGroup?:0
+            val grain = selectedGrain?:' '
+            val group = selectedGroup?:0
 
-        if (grain == null || group == null) {
-            Log.e("HomeViewModel", "Grain or group not selected")
-            return
-        }
-        viewModelScope.launch {
-            try {
-                _isLoading.value = true
-                _error.value = null
-                repository.setLimit(grain.toString(),group,1,impurities,moisture,brokenCrackedDamaged, greenish, burnt, burntOrSour, moldy, spoiled)
-
-            } catch (e: Exception) {
-                _error.value = e.message ?: "Unknown error"
-                Log.e("SampleInput", "Discount Calculation failed", e)
-            } finally {
-                _isLoading.value = false
+            if (grain == null || group == null) {
+                Log.e("HomeViewModel", "Grain or group not selected")
+                return
             }
-        }
+            viewModelScope.launch {
+                try {
+                    _isLoading.value = true
+                    _error.value = null
+                    repository.setLimit(grain.toString(),group,1,impurities,moisture,brokenCrackedDamaged, greenish, burnt, burntOrSour, moldy, spoiled)
+
+                } catch (e: Exception) {
+                    _error.value = e.message ?: "Unknown error"
+                    Log.e("SampleInput", "Discount Calculation failed", e)
+                } finally {
+                    _isLoading.value = false
+                }
+            }
 
     }
 
@@ -151,11 +161,75 @@ class DiscountViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 _discounts.value = repository.getDiscountForClassification(priceBySack,daysOfStorage,deductionValue)
+                val lastInputDiscount = repository.getLastInputDiscount()
+                selectedGrain= lastInputDiscount.grain
+                selectedGroup =  lastInputDiscount.group
+                Log.e("ClassificationToDiscount", "Classification to discount Worked")
             } catch (e: Exception) {
                 _error.value = e.message ?: "Unknown error"
                 Log.e("ClassificationToDiscount", "Classification to Discount Calculation failed", e)
             } finally {
                 _isLoading.value = false
+            }
+        }
+    }
+
+    fun loadLastUsedLimit(){
+        viewModelScope.launch {
+            val grain = selectedGrain?.toString() ?: "Soja"
+            val group = selectedGroup ?: 1
+            try {
+                if(isOfficial == true){
+                    _lastUsedLimit.value = repository.getLimit(grain,group,1,0)
+                }
+                else{
+                    val source = repository.getLastLimitSource()
+                    _lastUsedLimit.value = repository.getLimit(grain,group,1,source)
+                }
+
+            } catch (e: Exception) {
+                _error.value = e.message ?: "Unknown error"
+                Log.e("UsedLimit", "Limit hasn't been loaded", e)
+            }
+        }
+    }
+    fun exportDiscount(context: Context, discount: Discount, limit: Limit) {
+        viewModelScope.launch {
+            try {
+                Log.e("Export", "Got ito exportDiscount")
+
+                // Fetch data sequentially - each call will wait for completion
+                val sample = repository.getLastInputDiscount()
+                Log.e("Export", "Got sample")
+                var classification: Classification?=  null
+                var sampleClassification: Sample? = null
+                if(sample.classificationId != null){
+                    classification = repository.getLastClassification()
+                    val logClassification = classification.toString()
+                    Log.e("Export", "Classification: $logClassification")
+                    sampleClassification = repository.getSampleById(classification.sampleId)
+                    val logSample = sampleClassification.toString()
+                    Log.e("Export", "Classification: $logSample")
+                }
+                // Check if we have all required data
+                if (sample == null) {
+                    _error.value = "inputDiscount data not found"
+                    Log.e("Export", "inputDiscount not found")
+                    return@launch
+                }
+
+                // Export with null-safe optional parameters
+                pdfExporter.exportDiscountToPdf(
+                    context,
+                    discount,
+                    sample,
+                    limit,                // Can be null
+                    classification,
+                    sampleClassification
+                )
+            } catch (e: Exception) {
+                _error.value = "Export failed: ${e.message ?: "Unknown error"}"
+                Log.e("Export", "Export failed", e)
             }
         }
     }
