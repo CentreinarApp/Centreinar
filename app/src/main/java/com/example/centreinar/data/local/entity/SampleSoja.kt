@@ -1,8 +1,8 @@
 package com.example.centreinar
+
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-
 /*
 Esverdeado → Greenish
 Partido e quebrado e danificado → Broken, cracked, and damaged
@@ -15,10 +15,10 @@ Imaturos (chochos) → Immature (shrivelled)
 Danificados por insetos → Insect-damaged
 Gessado → starchy
 Matérias estranhas e Impurezas → foreign matter and Impurities
- */
+*/
 
-@Entity(tableName = "sample")
-data class Sample(
+@Entity(tableName = "sample_soja")
+data class SampleSoja(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
 
@@ -72,5 +72,4 @@ data class Sample(
 
     @ColumnInfo(name = "shriveled")
     val shriveled: Float = 0.0f,
-
 )

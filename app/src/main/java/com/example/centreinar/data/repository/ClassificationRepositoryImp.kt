@@ -2,7 +2,7 @@ package com.example.centreinar.data.repository
 
 import android.util.Log
 import com.example.centreinar.Classification
-import com.example.centreinar.ColorClassification
+import com.example.centreinar.ColorClassificationSoja
 import com.example.centreinar.Disqualification
 import com.example.centreinar.Limit
 import com.example.centreinar.Sample
@@ -12,7 +12,6 @@ import com.example.centreinar.data.local.dao.DisqualificationDao
 import com.example.centreinar.data.local.dao.LimitDao
 import com.example.centreinar.data.local.dao.SampleDao
 import com.example.centreinar.domain.model.LimitCategory
-import com.example.centreinar.util.PDFExporter
 import com.example.centreinar.util.Utilities
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -147,7 +146,7 @@ class ClassificationRepositoryImpl @Inject constructor(
 
     }
 
-    override suspend fun setClass(grain:String, classificationId: Int, totalWeight: Float, otherColors: Float):ColorClassification {
+    override suspend fun setClass(grain:String, classificationId: Int, totalWeight: Float, otherColors: Float):ColorClassificationSoja {
 
         val otherColorsPercentage = tools.calculatePercentage(otherColors, totalWeight)
         var framingClass = " "
@@ -158,7 +157,7 @@ class ClassificationRepositoryImpl @Inject constructor(
             framingClass = "Amarela"
         }
 
-        val colorClassification = ColorClassification(
+        val colorClassification = ColorClassificationSoja(
             grain = grain,
             classificationId = classificationId,
             yellowPercentage =  tools.calculatePercentage(totalWeight-otherColors,totalWeight),
@@ -237,7 +236,7 @@ class ClassificationRepositoryImpl @Inject constructor(
         disqualificationDao.updateGraveDefectSum(disqualificationId, defectSum)
     }
 
-    override suspend fun getObservations(idClassification: Int, colorClass:ColorClassification?):String{
+    override suspend fun getObservations(idClassification: Int, colorClass:ColorClassificationSoja?):String{
 
         val classification = classificationDao.getById(idClassification)
         var response = " "
@@ -322,7 +321,7 @@ class ClassificationRepositoryImpl @Inject constructor(
         return response
     }
 
-    override suspend fun getLastColorClass(): ColorClassification? {
+    override suspend fun getLastColorClass(): ColorClassificationSoja? {
        return colorClassificationDao.getLastColorClass()
     }
 

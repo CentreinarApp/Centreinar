@@ -8,7 +8,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.saveable
 import com.example.centreinar.Classification
-import com.example.centreinar.Discount
+import com.example.centreinar.DiscountSoja
 import com.example.centreinar.InputDiscount
 import com.example.centreinar.Limit
 import com.example.centreinar.Sample
@@ -28,8 +28,8 @@ class DiscountViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
-    private val _discounts = MutableStateFlow<Discount?>(null)
-    val discounts: StateFlow<Discount?> = _discounts.asStateFlow()
+    private val _discounts = MutableStateFlow<DiscountSoja?>(null)
+    val discounts: StateFlow<DiscountSoja?> = _discounts.asStateFlow()
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
@@ -193,7 +193,7 @@ class DiscountViewModel @Inject constructor(
             }
         }
     }
-    fun exportDiscount(context: Context, discount: Discount, limit: Limit) {
+    fun exportDiscount(context: Context, discount: DiscountSoja, limit: Limit) {
         viewModelScope.launch {
             try {
                 Log.e("Export", "Got ito exportDiscount")

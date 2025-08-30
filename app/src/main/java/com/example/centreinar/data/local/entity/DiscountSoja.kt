@@ -4,11 +4,13 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
-@Entity(tableName = "discount")
-data class Discount(
+@Entity(tableName = "discount_soja")
+data class DiscountSoja(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
+
     @ColumnInfo(name = "inputDiscountId") val inputDiscountId: Int,
+
     @ColumnInfo(name = "impuritiesLoss") val impuritiesLoss: Float,
     @ColumnInfo(name = "humidityLoss") val humidityLoss: Float,
     @ColumnInfo(name = "technicalLoss") val technicalLoss: Float,
@@ -16,10 +18,10 @@ data class Discount(
     @ColumnInfo(name = "burntOrSourLoss") val burntOrSourLoss: Float,
     @ColumnInfo(name = "moldyLoss") val moldyLoss: Float,
     @ColumnInfo(name = "spoiledLoss") val spoiledLoss: Float,
-    @ColumnInfo(name = "greenishLoss") val greenishLoss : Float,
-    @ColumnInfo(name = "brokenLoss") val brokenLoss : Float,
+    @ColumnInfo(name = "greenishLoss") val greenishLoss: Float,
+    @ColumnInfo(name = "brokenLoss") val brokenLoss: Float,
 
-    @ColumnInfo(name = "classificationDiscount") val classificationDiscount : Float,
+    @ColumnInfo(name = "classificationDiscount") val classificationDiscount: Float,
     @ColumnInfo(name = "humidityAndImpuritiesDiscount") val humidityAndImpuritiesDiscount: Float,
 
     @ColumnInfo(name = "impuritiesLossPrice") val impuritiesLossPrice: Float,
@@ -29,9 +31,9 @@ data class Discount(
     @ColumnInfo(name = "burntOrSourLossPrice") val burntOrSourLossPrice: Float,
     @ColumnInfo(name = "moldyLossPrice") val moldyLossPrice: Float,
     @ColumnInfo(name = "spoiledLossPrice") val spoiledLossPrice: Float,
-    @ColumnInfo(name = "greenishLossPrice") val greenishLossPrice : Float,
-    @ColumnInfo(name = "brokenLossPrice") val brokenLossPrice : Float,
-    @ColumnInfo(name = "classificationDiscountPrice") val classificationDiscountPrice : Float,
+    @ColumnInfo(name = "greenishLossPrice") val greenishLossPrice: Float,
+    @ColumnInfo(name = "brokenLossPrice") val brokenLossPrice: Float,
+    @ColumnInfo(name = "classificationDiscountPrice") val classificationDiscountPrice: Float,
     @ColumnInfo(name = "humidityAndImpuritiesDiscountPrice") val humidityAndImpuritiesDiscountPrice: Float,
 
     @ColumnInfo(name = "deductionValue") val deductionValue: Float,
@@ -41,6 +43,5 @@ data class Discount(
     @ColumnInfo(name = "finalWeight") val finalWeight: Float,
 
     @ColumnInfo(name = "finalDiscountPrice") val finalDiscountPrice: Float,
-    @ColumnInfo(name = "finalWeightPrice") val finalWeightPrice: Float,
-
-    )
+    @ColumnInfo(name = "finalWeightPrice") val finalWeightPrice: Float
+)

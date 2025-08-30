@@ -30,7 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
-import com.example.centreinar.ColorClassification
+import com.example.centreinar.ColorClassificationSoja
 import com.example.centreinar.ui.classificationProcess.components.ClassColorResult
 import com.example.centreinar.ui.classificationProcess.components.ClassificationTable
 import com.example.centreinar.ui.classificationProcess.components.ObservationCard
@@ -52,7 +52,7 @@ fun ClassificationResult(
     val context = LocalContext.current
 
     //val doesDefineColorClass = viewModel.doesDefineColorClass
-    var colorClassificationResult by remember { mutableStateOf<ColorClassification?>(null) }
+    var colorClassificationResult by remember { mutableStateOf<ColorClassificationSoja?>(null) }
     var observation by remember { mutableStateOf<String?>(null) }
 
 

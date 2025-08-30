@@ -11,14 +11,13 @@ import android.os.Environment
 import android.util.Log
 import androidx.core.content.FileProvider
 import com.example.centreinar.Classification
-import com.example.centreinar.ColorClassification
-import com.example.centreinar.Discount
+import com.example.centreinar.ColorClassificationSoja
+import com.example.centreinar.DiscountSoja
 import com.example.centreinar.InputDiscount
 import com.example.centreinar.Limit
 import com.example.centreinar.Sample
 import java.io.File
 import java.io.FileOutputStream
-import java.io.IOException
 import javax.inject.Inject
 
 class PDFExporter @Inject constructor() {
@@ -34,7 +33,7 @@ class PDFExporter @Inject constructor() {
         context: Context,
         classification: Classification,
         sample: Sample,
-        colorClassification: ColorClassification?,  // Make nullable
+        colorClassification: ColorClassificationSoja?,  // Make nullable
         observation: String?,                      // Make nullable
         defectLimits: Limit?                       // Make nullable
     ) {
@@ -143,7 +142,7 @@ class PDFExporter @Inject constructor() {
         document: PdfDocument,
         pageWidth: Int,
         pageHeight: Int,
-        colorClassification: ColorClassification?,
+        colorClassification: ColorClassificationSoja?,
         observation: String?
     ): PdfDocument.Page {
         val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, 2).create()
@@ -192,7 +191,7 @@ class PDFExporter @Inject constructor() {
         xStart: Float,
         yStart: Float,
         tableWidth: Float,
-        colorClass: ColorClassification,
+        colorClass: ColorClassificationSoja,
         paints: Paints
     ): Float {
         var currentY = yStart
@@ -368,7 +367,7 @@ class PDFExporter @Inject constructor() {
 
     fun exportDiscountToPdf(
         context: Context,
-        discount: Discount,
+        discount: DiscountSoja,
         sample:InputDiscount,
         defectLimits: Limit? = null,
         classification: Classification? = null,
@@ -478,7 +477,7 @@ class PDFExporter @Inject constructor() {
         document: PdfDocument,
         pageWidth: Int,
         pageHeight: Int,
-        discount: Discount
+        discount: DiscountSoja
     ): PdfDocument.Page {
         val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, 1).create()
         val page = document.startPage(pageInfo)

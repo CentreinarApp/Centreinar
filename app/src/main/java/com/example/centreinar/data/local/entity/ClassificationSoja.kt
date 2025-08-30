@@ -5,9 +5,9 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 
 @Entity(
-    tableName = "classification"
+    tableName = "classification_soja"
 )
-data class Classification(
+data class ClassificationSoja(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
 
@@ -27,7 +27,7 @@ data class Classification(
     val brokenCrackedDamagedPercentage: Float = 0.0f,
 
     @ColumnInfo(name = "greenishPercentage")
-    val greenishPercentage:Float = 0.0f,
+    val greenishPercentage: Float = 0.0f,
 
     @ColumnInfo(name = "moldyPercentage")
     val moldyPercentage: Float = 0.0f,
@@ -35,7 +35,7 @@ data class Classification(
     @ColumnInfo(name = "burntPercentage")
     val burntPercentage: Float = 0.0f,
 
-    @ColumnInfo(name = "burntOrSourPercentage")  // Fixed wrong column name
+    @ColumnInfo(name = "burntOrSourPercentage")
     val burntOrSourPercentage: Float = 0.0f,
 
     @ColumnInfo(name = "spoiledPercentage")

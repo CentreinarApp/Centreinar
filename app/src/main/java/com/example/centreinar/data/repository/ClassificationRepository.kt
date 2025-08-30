@@ -1,7 +1,7 @@
 package com.example.centreinar.data.repository
 
 import com.example.centreinar.Classification
-import com.example.centreinar.ColorClassification
+import com.example.centreinar.ColorClassificationSoja
 import com.example.centreinar.Disqualification
 import com.example.centreinar.Limit
 import com.example.centreinar.Sample
@@ -39,7 +39,7 @@ interface ClassificationRepository {
         classificationId: Int,
         totalWeight: Float,
         otherColors: Float
-    ): ColorClassification
+    ): ColorClassificationSoja
 
     suspend fun setDisqualification(
         classificationId: Int,
@@ -65,10 +65,10 @@ interface ClassificationRepository {
     ): Long
 
     suspend fun getLastLimitSource():Int
-    suspend fun getLastColorClass():ColorClassification?
+    suspend fun getLastColorClass():ColorClassificationSoja?
     suspend fun getDisqualificationByClassificationId(idClassification: Int):Disqualification?
     suspend fun updateDisqualification(classificationId:Int,finalType:Int)
     suspend fun getLimitOfType1Official(group:Int,grain:String):Map<String,Float>
     suspend fun getLimit(grain:String,group: Int,tipo:Int,source:Int): Limit
-    suspend fun getObservations(idClassification:Int, colorClass:ColorClassification? = null):String
+    suspend fun getObservations(idClassification:Int, colorClass:ColorClassificationSoja? = null):String
 }

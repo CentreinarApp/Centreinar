@@ -1,8 +1,7 @@
 package com.example.centreinar.data.repository
 
-import androidx.test.services.storage.TestStorage
 import com.example.centreinar.Classification
-import com.example.centreinar.Discount
+import com.example.centreinar.DiscountSoja
 import com.example.centreinar.InputDiscount
 import com.example.centreinar.Limit
 import com.example.centreinar.Sample
@@ -12,7 +11,7 @@ interface DiscountRepository{
     suspend fun calculateDiscount(grain:String, group:Int, tipo:Int, sample: InputDiscount, limit: Map<String,Float>, doesTechnicalLoss:Boolean,doesClassificationLoss:Boolean, doesDeduction:Boolean): Long
     suspend fun calculateTechnicalLoss(storageDays: Int, humidityAndImpuritiesLoss:Float, lotWeight:Float):Float
     suspend fun calculateDeduction(deductionValue:Float,classificationLoss:Float):Float
-    suspend fun getDiscountById(id: Long): Discount?
+    suspend fun getDiscountById(id: Long): DiscountSoja?
     suspend fun getLimitsByType(grain:String, group:Int, tipo:Int,limitSource: Int):Map<String,Float>
     suspend fun setLimit(grain:String,
     group:Int,
@@ -32,7 +31,7 @@ interface DiscountRepository{
     suspend fun toInputDiscount(priceBySack:Float,classification:Classification,daysOfStorage: Int,deductionValue: Float):InputDiscount
     suspend fun getDiscountForClassification( priceBySack:Float,
                                               daysOfStorage:Int,
-                                              deductionValue:Float):Discount?
+                                              deductionValue:Float):DiscountSoja?
     suspend fun getLastLimitSource():Int
     suspend fun setInputDiscount(inputDiscount: InputDiscount):Long
     suspend fun getLastInputDiscount():InputDiscount

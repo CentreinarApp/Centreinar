@@ -3,8 +3,8 @@ package com.example.centreinar.data.local
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import com.example.centreinar.Classification
-import com.example.centreinar.ColorClassification
-import com.example.centreinar.Discount
+import com.example.centreinar.ColorClassificationSoja
+import com.example.centreinar.DiscountSoja
 import com.example.centreinar.Disqualification
 import com.example.centreinar.InputDiscount
 import com.example.centreinar.Limit
@@ -22,9 +22,9 @@ import com.example.centreinar.data.local.dao.SampleDao
         Limit::class,
         Classification::class,
         Sample::class,
-        Discount::class,
+        DiscountSoja::class,
         InputDiscount::class,
-        ColorClassification::class,
+        ColorClassificationSoja::class,
         Disqualification::class
     ],
     version = 4,

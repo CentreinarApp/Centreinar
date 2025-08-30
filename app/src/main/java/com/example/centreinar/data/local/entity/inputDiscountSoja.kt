@@ -4,15 +4,15 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
-@Entity(tableName = "InputDiscount")
-data class InputDiscount(
+@Entity(tableName = "input_discount_soja")
+data class InputDiscountSoja(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
 
     @ColumnInfo(name = "classificationId") val classificationId: Int?,
 
     @ColumnInfo(name = "grain")
-    val grain: String ="",
+    val grain: String = "",
 
     @ColumnInfo(name = "group")
     val group: Int = 0,
@@ -43,11 +43,11 @@ data class InputDiscount(
 
     @ColumnInfo(name = "spoiled") val spoiled: Float,
 
-    @ColumnInfo(name = "greenish") val greenish : Float,
+    @ColumnInfo(name = "greenish") val greenish: Float,
 
-    @ColumnInfo(name = "brokenCrackedDamaged") val brokenCrackedDamaged : Float,
+    @ColumnInfo(name = "brokenCrackedDamaged") val brokenCrackedDamaged: Float,
 
     @ColumnInfo(name = "deductionValue")
     val deductionValue: Float = 0.0f,
+)
 
-    )

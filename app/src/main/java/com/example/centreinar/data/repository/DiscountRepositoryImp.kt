@@ -1,8 +1,7 @@
 package com.example.centreinar.data.repository
 
-import androidx.compose.ui.Modifier
 import com.example.centreinar.Classification
-import com.example.centreinar.Discount
+import com.example.centreinar.DiscountSoja
 import com.example.centreinar.InputDiscount
 import com.example.centreinar.Limit
 import com.example.centreinar.Sample
@@ -136,7 +135,7 @@ class DiscountRepositoryImp @Inject constructor(
         spoiledLoss = spoiledLoss  * lotWeight / 100
 
         val discount =
-        Discount(
+        DiscountSoja(
             inputDiscountId = sample.id,
            impuritiesLoss = impuritiesLossFinal, humidityLoss = humidityLossFinal, technicalLoss =  technicalLoss, burntLoss =  burntLoss,
            burntOrSourLoss = burntOrSourLoss, moldyLoss =  moldyLoss, spoiledLoss = spoiledLoss, classificationDiscount = classificationDiscount,
@@ -171,7 +170,7 @@ class DiscountRepositoryImp @Inject constructor(
            "spoiled" to limit.spoiledTotalUpLim
         )
     }
-    override suspend fun getDiscountById(id: Long): Discount? {
+    override suspend fun getDiscountById(id: Long): DiscountSoja? {
         return discountDao.getDiscountById(id.toInt())
   }
 
@@ -287,7 +286,7 @@ class DiscountRepositoryImp @Inject constructor(
 
     override suspend fun getDiscountForClassification( priceBySack:Float,
                                                        daysOfStorage:Int,
-                                                       deductionValue:Float): Discount? {
+                                                       deductionValue:Float): DiscountSoja? {
         val classification = getLastClassification()
         val inputDiscount = toInputDiscount(priceBySack,classification,daysOfStorage,deductionValue)
         val id = calculateDiscount(grain = inputDiscount.grain, group = inputDiscount.group,1,inputDiscount,true,true,true)
