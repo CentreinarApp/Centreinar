@@ -4,6 +4,8 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
+
+class ClassificationSoja {
 @Entity(
     tableName = "classification_soja"
 )
@@ -83,3 +85,6 @@ data class ClassificationSoja(
     @ColumnInfo(name = "finalType")
     val finalType: Int = 0
 )
+
+
+}

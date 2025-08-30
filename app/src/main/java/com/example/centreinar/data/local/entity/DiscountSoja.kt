@@ -4,6 +4,8 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
+
+class DiscountSoja {
 @Entity(tableName = "discount_soja")
 data class DiscountSoja(
     @PrimaryKey(autoGenerate = true)
@@ -45,3 +47,6 @@ data class DiscountSoja(
     @ColumnInfo(name = "finalDiscountPrice") val finalDiscountPrice: Float,
     @ColumnInfo(name = "finalWeightPrice") val finalWeightPrice: Float
 )
+
+
+}

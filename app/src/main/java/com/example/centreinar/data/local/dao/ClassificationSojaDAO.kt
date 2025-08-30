@@ -9,6 +9,7 @@ import androidx.room.Update
 import com.example.centreinar.ClassificationSoja
 import kotlinx.coroutines.flow.Flow
 
+class ClassificationSojaDAO {
 @Dao
 interface ClassificationSojaDao {
 
@@ -48,4 +49,7 @@ interface ClassificationSojaDao {
 
     @Query("SELECT * FROM classification_soja ORDER BY id DESC LIMIT 1")
     suspend fun getLastClassification(): ClassificationSoja
+}
+
+
 }

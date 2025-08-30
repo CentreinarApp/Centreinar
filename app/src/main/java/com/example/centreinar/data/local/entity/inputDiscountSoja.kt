@@ -4,6 +4,8 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
+
+class InputDiscountSoja {
 @Entity(tableName = "input_discount_soja")
 data class InputDiscountSoja(
     @PrimaryKey(autoGenerate = true)
@@ -51,3 +53,5 @@ data class InputDiscountSoja(
     val deductionValue: Float = 0.0f,
 )
 
+
+}

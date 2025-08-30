@@ -5,6 +5,7 @@ import com.example.centreinar.ClassificationMilho
 import kotlinx.coroutines.flow.Flow
 
 
+class ClassificationMilhoDAO {
 @Dao
 interface ClassificationMilhoDao {
 
@@ -37,4 +38,7 @@ interface ClassificationMilhoDao {
 
     @Query("SELECT * FROM classification_milho ORDER BY id DESC LIMIT 1")
     suspend fun getLastClassification(): ClassificationMilho?
+}
+
+
 }

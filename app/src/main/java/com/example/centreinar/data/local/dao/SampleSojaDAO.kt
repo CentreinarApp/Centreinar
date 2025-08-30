@@ -9,6 +9,7 @@ import androidx.room.Update
 import com.example.centreinar.SampleSoja
 import kotlinx.coroutines.flow.Flow
 
+class SampleSojaDAO {
 @Dao
 interface SampleSojaDao {
 
@@ -51,3 +52,6 @@ interface SampleSojaDao {
     suspend fun getLatestSample(): SampleSoja?
 }
 
+
+
+}

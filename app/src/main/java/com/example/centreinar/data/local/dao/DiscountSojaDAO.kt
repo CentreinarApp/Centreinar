@@ -8,6 +8,7 @@ import androidx.room.Update
 import com.example.centreinar.DiscountSoja
 import kotlinx.coroutines.flow.Flow
 
+class DiscountSojaDAO {
 @Dao
 interface DiscountSojaDao {
 
@@ -25,4 +26,8 @@ interface DiscountSojaDao {
 
     @Query("SELECT * FROM discount_soja WHERE id = :id")
     suspend fun getDiscountById(id: Int): DiscountSoja?
+}
+
+
+
 }

@@ -4,6 +4,8 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
+
+class ColorClassificationSoja {
 @Entity(tableName = "ColorClassificationSoja")
 data class ColorClassificationSoja(
     @PrimaryKey(autoGenerate = true)
@@ -24,3 +26,6 @@ data class ColorClassificationSoja(
     @ColumnInfo(name = "class")
     val framingClass: String = "",
 )
+
+
+}

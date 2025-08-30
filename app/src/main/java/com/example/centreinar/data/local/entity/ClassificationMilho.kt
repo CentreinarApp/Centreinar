@@ -4,6 +4,7 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
+class ClassificationMilho {
 @Entity(tableName = "classification_milho")
 data class ClassificationMilho(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
@@ -25,3 +26,7 @@ data class ClassificationMilho(
 
     @ColumnInfo(name = "finalType") val finalType: Int = 0
 )
+
+
+
+}
