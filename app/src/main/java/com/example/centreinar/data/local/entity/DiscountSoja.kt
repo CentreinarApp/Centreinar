@@ -5,7 +5,7 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 
 
-class DiscountSoja {
+
 @Entity(tableName = "discount_soja")
 data class DiscountSoja(
     @PrimaryKey(autoGenerate = true)
@@ -49,4 +49,4 @@ data class DiscountSoja(
 )
 
 
-}
+

@@ -5,7 +5,7 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
-class DisqualificationSoja {
+
 @Entity(
     tableName = "disqualification_soja"
 )
@@ -28,4 +28,4 @@ data class DisqualificationSoja(
 
 
 
-}
+

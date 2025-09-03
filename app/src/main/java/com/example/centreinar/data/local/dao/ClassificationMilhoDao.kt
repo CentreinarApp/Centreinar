@@ -5,7 +5,7 @@ import com.example.centreinar.ClassificationMilho
 import kotlinx.coroutines.flow.Flow
 
 
-class ClassificationMilhoDAO {
+
 @Dao
 interface ClassificationMilhoDao {
 
@@ -40,5 +40,3 @@ interface ClassificationMilhoDao {
     suspend fun getLastClassification(): ClassificationMilho?
 }
 
-
-}

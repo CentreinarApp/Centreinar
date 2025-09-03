@@ -5,7 +5,7 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 
 
-class LimitSoja {
+
 @Entity(tableName = "limits_soja")
 data class LimitSoja(
     @PrimaryKey(autoGenerate = true)
@@ -72,5 +72,3 @@ data class LimitSoja(
     val spoiledTotalUpLim: Float,
 )
 
-
-}

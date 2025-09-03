@@ -9,7 +9,6 @@ import androidx.room.Update
 import com.example.centreinar.data.local.entity.SampleMilho
 import kotlinx.coroutines.flow.Flow
 
-class SampleMilhoDAO {
     @Dao
     interface SampleMilhoDao {
 
@@ -46,4 +45,3 @@ class SampleMilhoDAO {
         suspend fun getLatestSample(): SampleMilho?
     }
 
-}

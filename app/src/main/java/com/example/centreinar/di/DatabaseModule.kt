@@ -3,13 +3,13 @@ package com.example.centreinar.di
 import android.content.Context
 import androidx.room.Room
 import com.example.centreinar.data.local.AppDatabase
-import com.example.centreinar.data.local.dao.ClassificationDao
-import com.example.centreinar.data.local.dao.ColorClassificationDao
-import com.example.centreinar.data.local.dao.DiscountDao
-import com.example.centreinar.data.local.dao.DisqualificationDao
-import com.example.centreinar.data.local.dao.InputDiscountDao
-import com.example.centreinar.data.local.dao.LimitDao
-import com.example.centreinar.data.local.dao.SampleDao
+import com.example.centreinar.data.local.dao.ClassificationSojaDao
+import com.example.centreinar.data.local.dao.ColorClassificationSojaDao
+import com.example.centreinar.data.local.dao.DiscountSojaDao
+import com.example.centreinar.data.local.dao.DisqualificationSojaDao
+import com.example.centreinar.data.local.dao.InputDiscountSojaDao
+import com.example.centreinar.data.local.dao.LimitSojaDao
+import com.example.centreinar.data.local.dao.SampleSojaDao
 import com.example.centreinar.data.repository.ClassificationRepository
 import com.example.centreinar.data.repository.ClassificationRepositoryImpl
 import com.example.centreinar.data.repository.DiscountRepository
@@ -40,13 +40,13 @@ object DatabaseModule {
     }
 
     // DAO Providers
-    @Provides fun limitDao(db: AppDatabase) = db.limitDao()
-    @Provides fun classificationDao(db: AppDatabase) = db.classificationDao()
-    @Provides fun sampleDao(db: AppDatabase) = db.sampleDao()
-    @Provides fun discountDao(db: AppDatabase) = db.discountDao()
-    @Provides fun inputDiscountDao(db: AppDatabase) = db.inputDiscountDao()
-    @Provides fun colorClassificationDao(db: AppDatabase) = db.colorClassificationDao()
-    @Provides fun disqualificationDao(db: AppDatabase) = db.disqualificationDao()
+    @Provides fun limitDao(db: AppDatabase) = db.limitSojaDao()
+    @Provides fun classificationDao(db: AppDatabase) = db.classificationSojaDao()
+    @Provides fun sampleDao(db: AppDatabase) = db.sampleSojaDao()
+    @Provides fun discountDao(db: AppDatabase) = db.discountSojaDao()
+    @Provides fun inputDiscountDao(db: AppDatabase) = db.inputDiscountSojaDao()
+    @Provides fun colorClassificationDao(db: AppDatabase) = db.colorClassificationSojaDao()
+    @Provides fun disqualificationDao(db: AppDatabase) = db.disqualificationSojaDao()
 
 }
 
@@ -57,12 +57,12 @@ object RepositoryModule {
     @Provides
     @Singleton
     fun provideClassificationRepository(
-        limitDao: LimitDao,
-        classificationDao: ClassificationDao,
-        sampleDao: SampleDao,
+        limitDao: LimitSojaDao,
+        classificationDao: ClassificationSojaDao,
+        sampleDao: SampleSojaDao,
         tools: Utilities,
-        colorClassificationDao: ColorClassificationDao,
-        disqualificationDao: DisqualificationDao
+        colorClassificationDao: ColorClassificationSojaDao,
+        disqualificationDao: DisqualificationSojaDao
     ): ClassificationRepository {
         return ClassificationRepositoryImpl(
             limitDao,
@@ -77,14 +77,14 @@ object RepositoryModule {
     @Provides
     @Singleton
     fun provideDiscountRepository(
-        limitDao: LimitDao,
-        classificationDao: ClassificationDao,
-        sampleDao: SampleDao,
-        discountDao: DiscountDao,
+        limitDao: LimitSojaDao,
+        classificationDao: ClassificationSojaDao,
+        sampleDao: SampleSojaDao,
+        discountDao: DiscountSojaDao,
         tools: Utilities,
-        inputDiscountDao: InputDiscountDao,
-        colorClassificationDao: ColorClassificationDao,
-        disqualificationDao: DisqualificationDao
+        inputDiscountDao: InputDiscountSojaDao,
+        colorClassificationDao: ColorClassificationSojaDao,
+        disqualificationDao: DisqualificationSojaDao
     ): DiscountRepository {
         return DiscountRepositoryImp(
             limitDao,

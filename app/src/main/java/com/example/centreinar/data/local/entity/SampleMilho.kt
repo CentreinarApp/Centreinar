@@ -4,7 +4,7 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
-class SampleMilho {
+
     @Entity(tableName = "sample_milho")
     data class SampleMilho(
         @PrimaryKey(autoGenerate = true) val id: Int = 0,
@@ -23,4 +23,3 @@ class SampleMilho {
         @ColumnInfo(name = "immature") val immature: Float = 0.0f,
         @ColumnInfo(name = "gessado") val gessado: Float = 0.0f
     )
-}

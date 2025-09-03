@@ -8,7 +8,7 @@ import androidx.room.Query
 import androidx.room.Update
 import com.example.centreinar.data.local.entity.InputDiscountMilho
 
-class InputDiscountMilhoDAO {
+
     @Dao
     interface InputDiscountMilhoDao {
 
@@ -38,5 +38,3 @@ class InputDiscountMilhoDAO {
         @Query("SELECT * FROM input_discount_milho WHERE `group` = :group")
         suspend fun getByGroup(group: Int): List<InputDiscountMilho>
     }
-
-}

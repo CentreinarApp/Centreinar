@@ -4,7 +4,7 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
-class LimitMilho {
+
     @Entity(tableName = "limits_milho")
     data class LimitMilho(
         @PrimaryKey(autoGenerate = true) val id: Int = 0,
@@ -19,4 +19,3 @@ class LimitMilho {
         @ColumnInfo(name = "mofadoUpLim") val mofadoUpLim: Float,
         @ColumnInfo(name = "carunchadoUpLim") val carunchadoUpLim: Float
     )
-}

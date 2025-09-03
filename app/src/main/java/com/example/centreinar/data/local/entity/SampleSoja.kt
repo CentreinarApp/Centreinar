@@ -17,7 +17,7 @@ Gessado → starchy
 Matérias estranhas e Impurezas → foreign matter and Impurities
 */
 
-class SampleSoja {
+
 @Entity(tableName = "sample_soja")
 data class SampleSoja(
     @PrimaryKey(autoGenerate = true)
@@ -77,4 +77,4 @@ data class SampleSoja(
 
 
 
-}
+

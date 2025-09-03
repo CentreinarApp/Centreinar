@@ -3,7 +3,7 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
-class DiscountMilho {
+
     @Entity(tableName = "discount_milho")
     data class DiscountMilho(
         @PrimaryKey(autoGenerate = true) val id: Int = 0,
@@ -22,4 +22,3 @@ class DiscountMilho {
         @ColumnInfo(name = "finalDiscount") val finalDiscount: Float,
         @ColumnInfo(name = "finalWeight") val finalWeight: Float
     )
-}

@@ -1,15 +1,15 @@
 package com.example.centreinar.data.repository
 
-import com.example.centreinar.Classification
+import com.example.centreinar.ClassificationSoja
 import com.example.centreinar.ColorClassificationSoja
-import com.example.centreinar.Disqualification
-import com.example.centreinar.Limit
-import com.example.centreinar.Sample
+import com.example.centreinar.DisqualificationSoja
+import com.example.centreinar.LimitSoja
+import com.example.centreinar.SampleSoja
 import com.example.centreinar.domain.model.LimitCategory
 
 interface ClassificationRepository {
-    suspend fun classifySample(sample: Sample, limitSource: Int): Long
-    suspend fun getSample(id: Int): Sample?
+    suspend fun classifySample(sample: SampleSoja, limitSource: Int): Long
+    suspend fun getSample(id: Int): SampleSoja?
     suspend fun setSample(
         grain: String,
         group: Int,
@@ -25,9 +25,9 @@ interface ClassificationRepository {
         fermented: Float,
         germinated: Float,
         immature: Float
-    ): Sample
-    suspend fun setSample(sample: Sample):Long
-    suspend fun getClassification(id: Int): Classification?
+    ): SampleSoja
+    suspend fun setSample(sample: SampleSoja):Long
+    suspend fun getClassification(id: Int): ClassificationSoja?
     suspend fun getLimitsForGrain(
         grain: String,
         group: Int,
@@ -66,9 +66,9 @@ interface ClassificationRepository {
 
     suspend fun getLastLimitSource():Int
     suspend fun getLastColorClass():ColorClassificationSoja?
-    suspend fun getDisqualificationByClassificationId(idClassification: Int):Disqualification?
+    suspend fun getDisqualificationByClassificationId(idClassification: Int):DisqualificationSoja?
     suspend fun updateDisqualification(classificationId:Int,finalType:Int)
     suspend fun getLimitOfType1Official(group:Int,grain:String):Map<String,Float>
-    suspend fun getLimit(grain:String,group: Int,tipo:Int,source:Int): Limit
+    suspend fun getLimit(grain:String,group: Int,tipo:Int,source:Int): LimitSoja
     suspend fun getObservations(idClassification:Int, colorClass:ColorClassificationSoja? = null):String
 }

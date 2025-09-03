@@ -1,16 +1,16 @@
 package com.example.centreinar.data.repository
 
 import android.util.Log
-import com.example.centreinar.Classification
+import com.example.centreinar.ClassificationSoja
 import com.example.centreinar.ColorClassificationSoja
-import com.example.centreinar.Disqualification
-import com.example.centreinar.Limit
-import com.example.centreinar.Sample
-import com.example.centreinar.data.local.dao.ClassificationDao
-import com.example.centreinar.data.local.dao.ColorClassificationDao
-import com.example.centreinar.data.local.dao.DisqualificationDao
-import com.example.centreinar.data.local.dao.LimitDao
-import com.example.centreinar.data.local.dao.SampleDao
+import com.example.centreinar.DisqualificationSoja
+import com.example.centreinar.LimitSoja
+import com.example.centreinar.SampleSoja
+import com.example.centreinar.data.local.dao.ClassificationSojaDao
+import com.example.centreinar.data.local.dao.ColorClassificationSojaDao
+import com.example.centreinar.data.local.dao.DisqualificationSojaDao
+import com.example.centreinar.data.local.dao.LimitSojaDao
+import com.example.centreinar.data.local.dao.SampleSojaDao
 import com.example.centreinar.domain.model.LimitCategory
 import com.example.centreinar.util.Utilities
 import javax.inject.Inject
@@ -18,16 +18,16 @@ import javax.inject.Singleton
 
 @Singleton
 class ClassificationRepositoryImpl @Inject constructor(
-    private val limitDao: LimitDao,
-    private val classificationDao: ClassificationDao,
-    private val sampleDao: SampleDao,
+    private val limitDao: LimitSojaDao,
+    private val classificationDao: ClassificationSojaDao,
+    private val sampleDao: SampleSojaDao,
     private val tools : Utilities,
-    private val colorClassificationDao: ColorClassificationDao,
-    private val disqualificationDao: DisqualificationDao
+    private val colorClassificationDao: ColorClassificationSojaDao,
+    private val disqualificationDao: DisqualificationSojaDao
 
 ) : ClassificationRepository {
 
-    override suspend fun classifySample(sample: Sample,limitSource: Int): Long {
+    override suspend fun classifySample(sample: SampleSoja,limitSource: Int): Long {
 
         val limitMap = getLimitsForGrain(sample.grain,sample.group,limitSource)
 
@@ -87,7 +87,7 @@ class ClassificationRepositoryImpl @Inject constructor(
             finalType = 0
         }
 
-        val classification = Classification(
+        val classification = ClassificationSoja(
             grain = sample.grain,
             group = sample.group,
             sampleId = sampleId.toInt(),
@@ -117,18 +117,18 @@ class ClassificationRepositoryImpl @Inject constructor(
         return classificationDao.insert(classification)
     }
 
-    override suspend fun getSample(id: Int):Sample?{
+    override suspend fun getSample(id: Int):SampleSoja?{
         return sampleDao.getById(id)
     }
 
-    override  suspend fun setSample(grain: String,group: Int, sampleWeight: Float, lotWeight: Float, foreignMattersAndImpurities: Float, humidity: Float,greenish: Float,brokenCrackedDamaged: Float,burnt: Float, sour: Float,moldy: Float, fermented: Float,germinated: Float,immature: Float): Sample{
-        return Sample(grain = grain,group = group , sampleWeight = sampleWeight,lotWeight = lotWeight, foreignMattersAndImpurities = foreignMattersAndImpurities, humidity = humidity, greenish = greenish, brokenCrackedDamaged = brokenCrackedDamaged, burnt = burnt, sour = sour,moldy = moldy, fermented = fermented,germinated = germinated,immature = immature)
+    override  suspend fun setSample(grain: String,group: Int, sampleWeight: Float, lotWeight: Float, foreignMattersAndImpurities: Float, humidity: Float,greenish: Float,brokenCrackedDamaged: Float,burnt: Float, sour: Float,moldy: Float, fermented: Float,germinated: Float,immature: Float): SampleSoja{
+        return SampleSoja(grain = grain,group = group , sampleWeight = sampleWeight,lotWeight = lotWeight, foreignMattersAndImpurities = foreignMattersAndImpurities, humidity = humidity, greenish = greenish, brokenCrackedDamaged = brokenCrackedDamaged, burnt = burnt, sour = sour,moldy = moldy, fermented = fermented,germinated = germinated,immature = immature)
     }
 
-    override suspend fun setSample(sample: Sample): Long {
+    override suspend fun setSample(sample: SampleSoja): Long {
         return sampleDao.insert(sample)
     }
-    override suspend fun getClassification(id: Int): Classification? {
+    override suspend fun getClassification(id: Int): ClassificationSoja? {
         return classificationDao.getById(id)
     }
 
@@ -171,7 +171,7 @@ class ClassificationRepositoryImpl @Inject constructor(
     override suspend fun setDisqualification(classificationId: Int,badConservation: Int, graveDefectSum: Int, strangeSmell: Int, toxicGrains: Int, insects:Int): Long {
 
        return disqualificationDao.insert(
-           Disqualification(
+           DisqualificationSoja(
             classificationId = classificationId,
             badConservation = badConservation,
             graveDefectSum = graveDefectSum,
@@ -197,7 +197,7 @@ class ClassificationRepositoryImpl @Inject constructor(
     ):Long {
         val lastSource = limitDao.getLastSource()
         val source = lastSource + 1
-        val limit = Limit(
+        val limit = LimitSoja(
             source = source,
             grain = grain,
             group = group,
@@ -347,11 +347,11 @@ class ClassificationRepositoryImpl @Inject constructor(
         )
     }
 
-    override suspend fun getLimit(grain: String, group: Int, tipo: Int, source: Int):Limit {
+    override suspend fun getLimit(grain: String, group: Int, tipo: Int, source: Int):LimitSoja {
         return limitDao.getLimitsByType(grain,group,tipo,source)
     }
 
-    override suspend fun getDisqualificationByClassificationId(idClassification: Int): Disqualification? {
+    override suspend fun getDisqualificationByClassificationId(idClassification: Int): DisqualificationSoja? {
         return disqualificationDao.getByClassificationId(classificationId = idClassification)
     }
 

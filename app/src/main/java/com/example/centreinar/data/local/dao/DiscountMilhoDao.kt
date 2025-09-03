@@ -1,11 +1,10 @@
 package com.example.centreinar.data.local.dao
 
 import androidx.room.*
-import com.example.centreinar.ClassificationMilho
 import com.example.centreinar.data.local.entity.DiscountMilho
 import kotlinx.coroutines.flow.Flow
 
-class DiscountMilhoDAO {
+
     @Dao
     interface DiscountMilhoDao {
 
@@ -22,5 +21,3 @@ class DiscountMilhoDAO {
         @Query("SELECT * FROM discount_milho ORDER BY id DESC LIMIT 1")
         suspend fun getLastDiscount(): DiscountMilho?
     }
-
-}

@@ -7,7 +7,7 @@ import androidx.room.Query
 import androidx.room.Update
 import com.example.centreinar.data.local.entity.LimitMilho
 
-class LimitMilhoDAO {
+
     @Dao
     interface LimitMilhoDao {
 
@@ -32,5 +32,3 @@ class LimitMilhoDAO {
         @Query("SELECT source FROM limits_milho ORDER BY source DESC LIMIT 1")
         suspend fun getLastSource(): Int
     }
-
-}

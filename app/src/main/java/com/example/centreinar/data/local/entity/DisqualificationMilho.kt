@@ -4,7 +4,7 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
-class DisqualificationMilho {
+
     @Entity(tableName = "disqualification_milho")
     data class DisqualificationMilho(
         @PrimaryKey(autoGenerate = true) val id: Int = 0,
@@ -14,4 +14,3 @@ class DisqualificationMilho {
         @ColumnInfo(name = "strangeSmell") val strangeSmell: Int,
         @ColumnInfo(name = "toxicGrains") val toxicGrains: Int
     )
-}

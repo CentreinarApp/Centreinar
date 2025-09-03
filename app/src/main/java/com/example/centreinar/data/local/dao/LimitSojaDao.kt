@@ -8,7 +8,7 @@ import androidx.room.Update
 import com.example.centreinar.LimitSoja
 import com.example.centreinar.domain.model.LimitCategory
 
-class LimitSojaDAO {
+
 @Dao
 interface LimitSojaDao {
 
@@ -59,8 +59,4 @@ interface LimitSojaDao {
 
     @Query("SELECT source FROM limits_soja ORDER BY source DESC LIMIT 1")
     suspend fun getLastSource(): Int
-}
-
-
-
 }

@@ -4,7 +4,7 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
-class InputDiscountMilho {
+
     @Entity(tableName = "input_discount_milho")
     data class InputDiscountMilho(
         @PrimaryKey(autoGenerate = true) val id: Int = 0,
@@ -21,4 +21,3 @@ class InputDiscountMilho {
         @ColumnInfo(name = "ardidos") val ardidos: Float = 0.0f,
         @ColumnInfo(name = "mofados") val mofados: Float = 0.0f
     )
-}

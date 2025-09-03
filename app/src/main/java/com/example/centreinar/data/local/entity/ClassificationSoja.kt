@@ -5,7 +5,7 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 
 
-class ClassificationSoja {
+
 @Entity(
     tableName = "classification_soja"
 )
@@ -87,4 +87,4 @@ data class ClassificationSoja(
 )
 
 
-}
+

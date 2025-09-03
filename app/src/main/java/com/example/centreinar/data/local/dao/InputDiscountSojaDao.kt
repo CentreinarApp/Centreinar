@@ -8,7 +8,7 @@ import androidx.room.Query
 import androidx.room.Update
 import com.example.centreinar.InputDiscountSoja
 
-class InputDiscountSojaDAO {
+
 @Dao
 interface InputDiscountSojaDao {
 
@@ -40,6 +40,3 @@ interface InputDiscountSojaDao {
     suspend fun getByGroup(group: Int): List<InputDiscountSoja>
 }
 
-
-
-}

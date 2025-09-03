@@ -8,7 +8,6 @@ import androidx.room.Query
 import androidx.room.Update
 import com.example.centreinar.data.local.entity.DisqualificationMilho
 
-class DisqualificationMilhoDAO {
     @Dao
     interface DisqualificationMilhoDao {
 
@@ -39,5 +38,3 @@ class DisqualificationMilhoDAO {
         @Query("SELECT * FROM disqualification_milho ORDER BY id DESC LIMIT 1")
         suspend fun getLastDisqualification(): DisqualificationMilho?
     }
-
-}

@@ -9,7 +9,7 @@ import androidx.room.Update
 import com.example.centreinar.ClassificationSoja
 import kotlinx.coroutines.flow.Flow
 
-class ClassificationSojaDAO {
+
 @Dao
 interface ClassificationSojaDao {
 
@@ -51,5 +51,3 @@ interface ClassificationSojaDao {
     suspend fun getLastClassification(): ClassificationSoja
 }
 
-
-}

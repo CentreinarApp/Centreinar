@@ -9,7 +9,7 @@ import androidx.room.Query
 import androidx.room.Update
 import com.example.centreinar.data.local.entity.ColorClassificationMilho
 
-class ColorClassificationMilhoDAO {
+
 
     @Dao
     interface ColorClassificationMilhoDao {
@@ -42,4 +42,3 @@ class ColorClassificationMilhoDAO {
         suspend fun getLastColorClass(): ColorClassificationMilho?
     }
 
-}

@@ -4,20 +4,20 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 
 // DAOs
-import com.example.centreinar.data.local.dao.ClassificationMilhoDAO
-import com.example.centreinar.data.local.dao.ClassificationSojaDAO
-import com.example.centreinar.data.local.dao.ColorClassificationMilhoDAO
-import com.example.centreinar.data.local.dao.ColorClassificationSojaDAO
-import com.example.centreinar.data.local.dao.DiscountMilhoDAO
-import com.example.centreinar.data.local.dao.DiscountSojaDAO
-import com.example.centreinar.data.local.dao.DisqualificationMilhoDAO
-import com.example.centreinar.data.local.dao.DisqualificationSojaDAO
-import com.example.centreinar.data.local.dao.InputDiscountMilhoDAO
-import com.example.centreinar.data.local.dao.InputDiscountSojaDAO
-import com.example.centreinar.data.local.dao.LimitMilhoDAO
-import com.example.centreinar.data.local.dao.LimitSojaDAO
-import com.example.centreinar.data.local.dao.SampleMilhoDAO
-import com.example.centreinar.data.local.dao.SampleSojaDAO
+import com.example.centreinar.data.local.dao.ClassificationMilhoDao
+import com.example.centreinar.data.local.dao.ClassificationSojaDao
+import com.example.centreinar.data.local.dao.ColorClassificationMilhoDao
+import com.example.centreinar.data.local.dao.ColorClassificationSojaDao
+import com.example.centreinar.data.local.dao.DiscountMilhoDao
+import com.example.centreinar.data.local.dao.DiscountSojaDao
+import com.example.centreinar.data.local.dao.DisqualificationMilhoDao
+import com.example.centreinar.data.local.dao.DisqualificationSojaDao
+import com.example.centreinar.data.local.dao.InputDiscountMilhoDao
+import com.example.centreinar.data.local.dao.InputDiscountSojaDao
+import com.example.centreinar.data.local.dao.LimitMilhoDao
+import com.example.centreinar.data.local.dao.LimitSojaDao
+import com.example.centreinar.data.local.dao.SampleMilhoDao
+import com.example.centreinar.data.local.dao.SampleSojaDao
 
 // Entities
 import com.example.centreinar.ClassificationMilho
@@ -57,25 +57,25 @@ import com.example.centreinar.SampleSoja
 )
 abstract class AppDatabase : RoomDatabase() {
 
-    abstract fun limitMilhoDao(): LimitMilhoDAO
-    abstract fun limitSojaDao(): LimitSojaDAO
+    abstract fun limitMilhoDao(): LimitMilhoDao
+    abstract fun limitSojaDao(): LimitSojaDao
 
-    abstract fun classificationMilhoDao(): ClassificationMilhoDAO
-    abstract fun classificationSojaDao(): ClassificationSojaDAO
+    abstract fun classificationMilhoDao(): ClassificationMilhoDao
+    abstract fun classificationSojaDao(): ClassificationSojaDao
 
-    abstract fun sampleMilhoDao(): SampleMilhoDAO
-    abstract fun sampleSojaDao(): SampleSojaDAO
+    abstract fun sampleMilhoDao(): SampleMilhoDao
+    abstract fun sampleSojaDao(): SampleSojaDao
 
-    abstract fun discountMilhoDao(): DiscountMilhoDAO
-    abstract fun discountSojaDao(): DiscountSojaDAO
+    abstract fun discountMilhoDao(): DiscountMilhoDao
+    abstract fun discountSojaDao(): DiscountSojaDao
 
-    abstract fun inputDiscountMilhoDao(): InputDiscountMilhoDAO
-    abstract fun inputDiscountSojaDao(): InputDiscountSojaDAO
+    abstract fun inputDiscountMilhoDao(): InputDiscountMilhoDao
+    abstract fun inputDiscountSojaDao(): InputDiscountSojaDao
 
-    abstract fun colorClassificationMilhoDao(): ColorClassificationMilhoDAO
-    abstract fun colorClassificationSojaDao(): ColorClassificationSojaDAO
+    abstract fun colorClassificationMilhoDao(): ColorClassificationMilhoDao
+    abstract fun colorClassificationSojaDao(): ColorClassificationSojaDao
 
-    abstract fun disqualificationMilhoDao(): DisqualificationMilhoDAO
-    abstract fun disqualificationSojaDao(): DisqualificationSojaDAO
+    abstract fun disqualificationMilhoDao(): DisqualificationMilhoDao
+    abstract fun disqualificationSojaDao(): DisqualificationSojaDao
 }
 
