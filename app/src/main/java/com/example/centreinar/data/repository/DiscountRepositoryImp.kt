@@ -1,33 +1,33 @@
 package com.example.centreinar.data.repository
 
-import com.example.centreinar.Classification
+import com.example.centreinar.ClassificationSoja
 import com.example.centreinar.DiscountSoja
-import com.example.centreinar.InputDiscount
-import com.example.centreinar.Limit
-import com.example.centreinar.Sample
-import com.example.centreinar.data.local.dao.ClassificationDao
-import com.example.centreinar.data.local.dao.DiscountDao
-import com.example.centreinar.data.local.dao.InputDiscountDao
-import com.example.centreinar.data.local.dao.LimitDao
-import com.example.centreinar.data.local.dao.SampleDao
+import com.example.centreinar.InputDiscountSoja
+import com.example.centreinar.LimitSoja
+import com.example.centreinar.SampleSoja
+import com.example.centreinar.data.local.dao.ClassificationSojaDao
+import com.example.centreinar.data.local.dao.DiscountSojaDao
+import com.example.centreinar.data.local.dao.InputDiscountSojaDao
+import com.example.centreinar.data.local.dao.LimitSojaDao
+import com.example.centreinar.data.local.dao.SampleSojaDao
 import com.example.centreinar.util.Utilities
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class DiscountRepositoryImp @Inject constructor(
-    private val limitDao: LimitDao,
-    private val classificationDao: ClassificationDao,
-    private val sampleDao: SampleDao,
-    private val discountDao: DiscountDao,
-    private val inputDiscountDao: InputDiscountDao,
+    private val limitDao: LimitSojaDao,
+    private val classificationDao: ClassificationSojaDao,
+    private val sampleDao: SampleSojaDao,
+    private val discountDao: DiscountSojaDao,
+    private val inputDiscountDao: InputDiscountSojaDao,
     private val tools : Utilities
 ): DiscountRepository {
     override suspend fun calculateDiscount(
         grain: String,
         group: Int,
         tipo: Int,
-        sample: InputDiscount,
+        sample: InputDiscountSoja,
         doesTechnicalLoss: Boolean,
         doesClassificationLoss: Boolean,
         doesDeduction: Boolean
@@ -37,7 +37,7 @@ class DiscountRepositoryImp @Inject constructor(
         return calculateDiscount(grain = grain, group = group,tipo = tipo, sample = sample,limit = limit, doesTechnicalLoss = doesTechnicalLoss,doesClassificationLoss = doesClassificationLoss,doesDeduction = doesDeduction)
     }
 
-    override suspend fun calculateDiscount(grain:String, group:Int, tipo:Int, sample: InputDiscount, limit: Map<String,Float>, doesTechnicalLoss:Boolean,doesClassificationLoss:Boolean, doesDeduction:Boolean): Long {
+    override suspend fun calculateDiscount(grain:String, group:Int, tipo:Int, sample: InputDiscountSoja, limit: Map<String,Float>, doesTechnicalLoss:Boolean,doesClassificationLoss:Boolean, doesDeduction:Boolean): Long {
 
         val lotWeight =  sample.lotWeight
         val storageDays  = sample.daysOfStorage
@@ -158,7 +158,7 @@ class DiscountRepositoryImp @Inject constructor(
     }
 
     override suspend fun getLimitsByType(grain:String, group:Int, tipo:Int, limitSource:Int): Map<String,Float> {
-        val limit:Limit = limitDao.getLimitsByType(grain, group, tipo, limitSource)
+        val limit:LimitSoja = limitDao.getLimitsByType(grain, group, tipo, limitSource)
         return mapOf(
            "impurities" to limit.impuritiesUpLim,
            "humidity" to limit.moistureUpLim,
@@ -196,7 +196,7 @@ class DiscountRepositoryImp @Inject constructor(
     ):Long {
         val lastSource = limitDao.getLastSource()
         val source = lastSource + 1
-        val limit = Limit(
+        val limit = LimitSoja(
             source = source,
             grain = grain,
             group = group,
@@ -221,7 +221,7 @@ class DiscountRepositoryImp @Inject constructor(
         return limitDao.insertLimit(limit)
     }
 
-    override suspend fun getLimit(grain: String, group: Int, tipo: Int, source: Int):Limit {
+    override suspend fun getLimit(grain: String, group: Int, tipo: Int, source: Int):LimitSoja {
         return limitDao.getLimitsByType(grain,group,tipo,source)
     }
 
@@ -247,22 +247,22 @@ class DiscountRepositoryImp @Inject constructor(
         )
     }
 
-    override suspend fun getLastClassification(): Classification {
+    override suspend fun getLastClassification(): ClassificationSoja {
         return classificationDao.getLastClassification()
     }
 
     override suspend fun toInputDiscount(
         priceBySack:Float,
-        classification:Classification,
+        classification:ClassificationSoja,
         daysOfStorage:Int,
         deductionValue:Float
-    ): InputDiscount {
+    ): InputDiscountSoja {
         val sample = sampleDao.getById(classification.sampleId)
         var lotWeight = 0.0f
         if(sample!=null){
             lotWeight = sample.lotWeight
         }
-        val inputDiscount = InputDiscount(
+        val inputDiscount = InputDiscountSoja(
             grain = classification.grain,
             group = classification.group,
             limitSource = 0,
@@ -297,15 +297,15 @@ class DiscountRepositoryImp @Inject constructor(
         return limitDao.getLastSource()
     }
 
-    override suspend fun setInputDiscount(inputDiscount: InputDiscount): Long {
+    override suspend fun setInputDiscount(inputDiscount: InputDiscountSoja): Long {
        return inputDiscountDao.insert(inputDiscount)
     }
 
-    override suspend fun getLastInputDiscount(): InputDiscount {
+    override suspend fun getLastInputDiscount(): InputDiscountSoja {
         return inputDiscountDao.getLastInputDiscount()
     }
 
-    override suspend fun getSampleById(id:Int): Sample? {
+    override suspend fun getSampleById(id:Int): SampleSoja? {
         return sampleDao.getById(id)
     }
 }

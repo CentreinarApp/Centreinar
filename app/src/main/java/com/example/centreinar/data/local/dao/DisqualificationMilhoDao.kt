@@ -1,40 +1,32 @@
 package com.example.centreinar.data.local.dao
 
-import androidx.room.Dao
-import androidx.room.Delete
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
-import androidx.room.Query
-import androidx.room.Update
+import androidx.room.*
 import com.example.centreinar.data.local.entity.DisqualificationMilho
 
-    @Dao
-    interface DisqualificationMilhoDao {
+@Dao
+interface DisqualificationMilhoDao {
+    @Insert
+    suspend fun insert(disqualification: DisqualificationMilho): Long
 
-        @Insert(onConflict = OnConflictStrategy.REPLACE)
-        suspend fun insert(disqualification: DisqualificationMilho): Long
+    @Update
+    suspend fun update(disqualification: DisqualificationMilho)
 
-        @Insert(onConflict = OnConflictStrategy.REPLACE)
-        suspend fun insertAll(disqualifications: List<DisqualificationMilho>): List<Long>
+    @Delete
+    suspend fun delete(disqualification: DisqualificationMilho)
 
-        @Update
-        suspend fun update(disqualification: DisqualificationMilho)
+    @Query("SELECT * FROM disqualification_milho WHERE classificationId = :classificationId LIMIT 1")
+    suspend fun getByClassificationId(classificationId: Int): DisqualificationMilho?
 
-        @Delete
-        suspend fun delete(disqualification: DisqualificationMilho)
+    @Query("SELECT * FROM disqualification_milho ORDER BY id DESC LIMIT 1")
+    suspend fun getLastDisqualification(): DisqualificationMilho?
 
-        @Query("DELETE FROM disqualification_milho")
-        suspend fun deleteAll()
+    @Query("SELECT id FROM disqualification_milho ORDER BY id DESC LIMIT 1")
+    suspend fun getLastDisqualificationId(): Int?
 
-        @Query("SELECT * FROM disqualification_milho")
-        suspend fun getAll(): List<DisqualificationMilho>
+    @Query("UPDATE disqualification_milho SET classificationId = :classificationId WHERE id = :id")
+    suspend fun updateClassificationId(id: Int, classificationId: Int)
 
-        @Query("SELECT * FROM disqualification_milho WHERE id = :id")
-        suspend fun getById(id: Int): DisqualificationMilho?
+    @Query("UPDATE disqualification_milho SET graveDefectSum = :graveDefectSum WHERE id = :id")
+    suspend fun updateGraveDefectSum(id: Int, graveDefectSum: Int)
+}
 
-        @Query("SELECT * FROM disqualification_milho WHERE classificationId = :classificationId")
-        suspend fun getByClassificationId(classificationId: Int): DisqualificationMilho?
-
-        @Query("SELECT * FROM disqualification_milho ORDER BY id DESC LIMIT 1")
-        suspend fun getLastDisqualification(): DisqualificationMilho?
-    }
