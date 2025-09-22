@@ -26,7 +26,7 @@ interface ClassificationRepository {
         germinated: Float,
         immature: Float
     ): SampleSoja
-    suspend fun setSample(sample: SampleSoja):Long
+    suspend fun setSample(sample: SampleSoja): Long
     suspend fun getClassification(id: Int): ClassificationSoja?
     suspend fun getLimitsForGrain(
         grain: String,
@@ -35,7 +35,7 @@ interface ClassificationRepository {
     ): Map<String, List<LimitCategory>>
 
     suspend fun setClass(
-        grain:String,
+        grain: String,
         classificationId: Int,
         totalWeight: Float,
         otherColors: Float
@@ -51,24 +51,24 @@ interface ClassificationRepository {
     ): Long
 
     suspend fun setLimit(
-        grain:String,
-        group:Int,
-        type:Int,
-        impurities:Float,
-        moisture:Float,
+        grain: String,
+        group: Int,
+        type: Int,
+        impurities: Float,
+        moisture: Float,
         brokenCrackedDamaged: Float,
         greenish: Float,
-        burnt:Float,
-        burntOrSour:Float,
-        moldy:Float,
-        spoiled:Float
+        burnt: Float,
+        burntOrSour: Float,
+        moldy: Float,
+        spoiled: Float
     ): Long
 
-    suspend fun getLastLimitSource():Int
-    suspend fun getLastColorClass():ColorClassificationSoja?
-    suspend fun getDisqualificationByClassificationId(idClassification: Int):DisqualificationSoja?
-    suspend fun updateDisqualification(classificationId:Int,finalType:Int)
-    suspend fun getLimitOfType1Official(group:Int,grain:String):Map<String,Float>
-    suspend fun getLimit(grain:String,group: Int,tipo:Int,source:Int): LimitSoja
-    suspend fun getObservations(idClassification:Int, colorClass:ColorClassificationSoja? = null):String
+    suspend fun getLastLimitSource(): Int
+    suspend fun getLastColorClass(): ColorClassificationSoja?
+    suspend fun getDisqualificationByClassificationId(idClassification: Int): DisqualificationSoja?
+    suspend fun updateDisqualification(classificationId: Int, finalType: Int)
+    suspend fun getLimitOfType1Official(group: Int, grain: String): Map<String, Float>
+    suspend fun getLimit(grain: String, group: Int, tipo: Int, source: Int): LimitSoja
+    suspend fun getObservations(idClassification: Int, colorClass: ColorClassificationSoja? = null): String
 }

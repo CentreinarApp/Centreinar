@@ -4,9 +4,9 @@ import android.content.Context
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.example.centreinar.data.local.AppDatabase
 import com.example.centreinar.data.local.dao.LimitMilhoDao
 import com.example.centreinar.data.local.dao.LimitSojaDao
-import com.example.centreinar.data.local.AppDatabase
 import com.example.centreinar.LimitSoja
 import com.example.centreinar.data.local.entity.LimitMilho
 import dagger.Module
@@ -33,18 +33,15 @@ object DatabaseModule {
         ).addCallback(object : RoomDatabase.Callback() {
             override fun onCreate(db: SupportSQLiteDatabase) {
                 super.onCreate(db)
-                CoroutineScope(Dispatchers.IO).launch {
-                    // ✅ aqui usamos a instância correta já criada
-                    val database = Room.databaseBuilder(
-                        context,
-                        AppDatabase::class.java,
-                        "app_database.db"
-                    ).build()
 
+                CoroutineScope(Dispatchers.IO).launch {
+                    val database = provideAppDatabase(context)
                     val sojaDao = database.limitSojaDao()
                     val milhoDao = database.limitMilhoDao()
 
-                    // ========== SOJA ==========
+                    // =============================
+                    // 🚀 Inicialização SOJA (MAPA)
+                    // =============================
                     sojaDao.insertLimit(
                         LimitSoja(
                             id = 0, source = 0, grain = "soja", group = 1, type = 1,
@@ -58,6 +55,7 @@ object DatabaseModule {
                             spoiledTotalLowerLim = 0f, spoiledTotalUpLim = 4f
                         )
                     )
+
                     sojaDao.insertLimit(
                         LimitSoja(
                             id = 0, source = 0, grain = "soja", group = 1, type = 2,
@@ -71,6 +69,7 @@ object DatabaseModule {
                             spoiledTotalLowerLim = 0f, spoiledTotalUpLim = 6f
                         )
                     )
+
                     sojaDao.insertLimit(
                         LimitSoja(
                             id = 0, source = 0, grain = "soja", group = 2, type = 1,
@@ -85,7 +84,9 @@ object DatabaseModule {
                         )
                     )
 
-                    // ========== MILHO ==========
+                    // =============================
+                    // 🚀 Inicialização MILHO (MAPA)
+                    // =============================
                     milhoDao.insertLimit(
                         LimitMilho(
                             id = 0, source = 0, grain = "milho", group = 1, type = 1,
@@ -94,6 +95,7 @@ object DatabaseModule {
                             mofadoUpLim = 6f, carunchadoUpLim = 2f
                         )
                     )
+
                     milhoDao.insertLimit(
                         LimitMilho(
                             id = 0, source = 0, grain = "milho", group = 1, type = 2,
@@ -102,6 +104,7 @@ object DatabaseModule {
                             mofadoUpLim = 10f, carunchadoUpLim = 3f
                         )
                     )
+
                     milhoDao.insertLimit(
                         LimitMilho(
                             id = 0, source = 0, grain = "milho", group = 1, type = 3,

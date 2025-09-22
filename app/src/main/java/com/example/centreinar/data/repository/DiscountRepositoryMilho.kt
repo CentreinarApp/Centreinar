@@ -15,6 +15,28 @@ interface DiscountRepositoryMilho {
         doesDeduction: Boolean
     ): Long
 
+    suspend fun calculateDiscount(
+        grain: String,
+        group: Int,
+        tipo: Int,
+        sample: InputDiscountMilho,
+        limit: Map<String, Float>,
+        doesTechnicalLoss: Boolean,
+        doesClassificationLoss: Boolean,
+        doesDeduction: Boolean
+    ): Long
+
+    suspend fun calculateTechnicalLoss(
+        storageDays: Int,
+        impuritiesLoss: Float,
+        lotWeight: Float
+    ): Float
+
+    suspend fun calculateDeduction(
+        deductionValue: Float,
+        classificationLoss: Float
+    ): Float
+
     suspend fun getDiscountById(id: Long): DiscountMilho?
 
     suspend fun getLimitsByType(

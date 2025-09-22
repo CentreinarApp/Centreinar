@@ -1,4 +1,4 @@
-package com.example.centreinar.domain.repository
+package com.example.centreinar.data.repository
 
 import com.example.centreinar.ClassificationMilho
 import com.example.centreinar.data.local.entity.SampleMilho
@@ -20,4 +20,5 @@ interface ClassificationRepositoryMilho {
         immature: Float,
         gessado: Float
     ): SampleMilho
+    suspend fun setSample(sample: SampleMilho): Long
 }
