@@ -49,13 +49,34 @@ class ClassificationRepositoryImpl @Inject constructor(
         val percentageShriveled = tools.calculateDefectPercentage(sample.shriveled, cleanWeight)
 
         // categorias
-        val impuritiesType = tools.findCategoryForValue(limitMap["impurities"] ?: emptyList(), percentageImpurities)
-        val brokenType = tools.findCategoryForValue(limitMap["broken"] ?: emptyList(), percentageBroken)
-        val greenishType = tools.findCategoryForValue(limitMap["greenish"] ?: emptyList(), percentageGreenish)
-        val moldyType = tools.findCategoryForValue(limitMap["moldy"] ?: emptyList(), percentageMoldy)
-        val burntType = tools.findCategoryForValue(limitMap["burnt"] ?: emptyList(), percentageBurnt)
-        val burntOrSourType = tools.findCategoryForValue(limitMap["burntOrSour"] ?: emptyList(), percentageBurntOrSour)
-        val spoiledType = tools.findCategoryForValue(limitMap["spoiled"] ?: emptyList(), percentageSpoiled)
+        val impuritiesType = tools.findCategoryForValue(
+            limitMap["impurities"]?.map { it.lowerL to it.upperL } ?: emptyList(),
+            percentageImpurities
+        )
+        val brokenType = tools.findCategoryForValue(
+            limitMap["broken"]?.map { it.lowerL to it.upperL } ?: emptyList(),
+            percentageBroken
+        )
+        val greenishType = tools.findCategoryForValue(
+            limitMap["greenish"]?.map { it.lowerL to it.upperL } ?: emptyList(),
+            percentageGreenish
+        )
+        val moldyType = tools.findCategoryForValue(
+            limitMap["moldy"]?.map { it.lowerL to it.upperL } ?: emptyList(),
+            percentageMoldy
+        )
+        val burntType = tools.findCategoryForValue(
+            limitMap["burnt"]?.map { it.lowerL to it.upperL } ?: emptyList(),
+            percentageBurnt
+        )
+        val burntOrSourType = tools.findCategoryForValue(
+            limitMap["burntOrSour"]?.map { it.lowerL to it.upperL } ?: emptyList(),
+            percentageBurntOrSour
+        )
+        val spoiledType = tools.findCategoryForValue(
+            limitMap["spoiled"]?.map { it.lowerL to it.upperL } ?: emptyList(),
+            percentageSpoiled
+        )
 
         var finalType = listOf(
             brokenType, greenishType, moldyType, burntType, burntOrSourType, spoiledType, impuritiesType

@@ -18,7 +18,7 @@ class ClassificationRepositoryMilhoImpl @Inject constructor(
 ) : ClassificationRepositoryMilho {
 
     override suspend fun classifySample(sample: SampleMilho, limitSource: Int): Long {
-        // Obtém a lista de limites para o grain/group/source solicitado
+        // Obtém a lista de limites para o grain/group/source solicitado ou milho ou soja
         val limitsList = limitDao.getLimitsBySource(sample.grain, sample.group, limitSource)
         val limit = limitsList.firstOrNull()
             ?: throw Exception("Limites não encontrados para: grain=${sample.grain}, group=${sample.group}, source=$limitSource")
@@ -27,7 +27,7 @@ class ClassificationRepositoryMilhoImpl @Inject constructor(
         // Preferimos usar sample.cleanWeight se estiver preenchido (você preenche cleanWeight ao criar amostra).
         val cleanWeight = if (sample.cleanWeight > 0f) sample.cleanWeight else sample.sampleWeight
 
-        // Calcula percentuais (defeito/cleanWeight * 100) -- Utilities já faz arredondamento
+        // Calcula percentuais (defeito/cleanWeight * 100) ja fazendo o arredondamento correto
         val percentageImpurities = tools.calculateDefectPercentage(sample.impurities, cleanWeight)
         val percentageBroken = tools.calculateDefectPercentage(sample.broken, cleanWeight)
         val percentageArdido = tools.calculateDefectPercentage(sample.ardido, cleanWeight)
@@ -44,11 +44,8 @@ class ClassificationRepositoryMilhoImpl @Inject constructor(
             limits = limitsList
         )
 
-        // Verifica desclassificação (regras MAPA: soma de defeitos graves?).
-        // Para milho, o manual usa limites específicos; vamos aplicar uma verificação básica:
-        // Se soma de ardidos + mofados + carunchado exceder o limite de Fora-de-Tipo definido no LimitMilho (não há coluna direta),
-        // como fallback, se algum dos percentuais exceder o maior limite conhecido consideramos desclassificação (finalType = 0).
-        // Aqui usamos uma heurística segura: se algum percentual excede 100% do limiteUp (i.e., > limiteUp) marcamos finalType = 0.
+        // Verifica desclassificação
+
         val anyExceeds = (percentageImpurities > limit.impuritiesUpLim
                 || percentageBroken > limit.brokenUpLim
                 || percentageArdido > limit.ardidoUpLim

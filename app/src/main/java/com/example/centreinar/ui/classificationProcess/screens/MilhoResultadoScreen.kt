@@ -19,7 +19,7 @@ fun MilhoResultadoScreen(
 
     LaunchedEffect(classification) {
         if (classification != null) {
-            observations = viewModel.getObservations(null) // pode passar ColorClassificationSoja se precisar
+            observations = viewModel.getObservations(null)
         }
     }
 

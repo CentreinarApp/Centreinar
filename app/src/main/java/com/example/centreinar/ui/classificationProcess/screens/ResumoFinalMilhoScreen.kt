@@ -47,7 +47,6 @@ fun ResumoFinalMilhoScreen(
         Button(
             onClick = {
                 Toast.makeText(context, "Exportando PDF...", Toast.LENGTH_SHORT).show()
-                // viewModel.exportClassification(context, classification!!, limit!!)
             },
             modifier = Modifier.fillMaxWidth()
         ) {
