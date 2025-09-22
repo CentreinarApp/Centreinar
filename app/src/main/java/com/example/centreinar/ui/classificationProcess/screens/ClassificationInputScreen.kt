@@ -34,7 +34,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.example.centreinar.Sample
+import com.example.centreinar.SampleSoja
 import com.example.centreinar.ui.classificationProcess.viewmodel.ClassificationViewModel
 import java.math.RoundingMode
 
@@ -49,9 +49,9 @@ fun ClassificationInputScreen(
     // State from ViewModel
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
-    val classification by viewModel.classification.collectAsState()
-    val selectedGroup by viewModel.classification.collectAsState()
-    val selectedGrain  by viewModel.classification.collectAsState()
+    val classification by viewModel.classificationSoja.collectAsState()
+    val selectedGroup by viewModel.classificationSoja.collectAsState()
+    val selectedGrain  by viewModel.classificationSoja.collectAsState()
 
     // Form state variables
     var showClassConfirmation by remember { mutableStateOf(false) }
@@ -197,7 +197,7 @@ fun ClassificationInputScreen(
             if (group == null) {
                 group = 1
             } //test this
-            val sample = Sample(
+            val sample = SampleSoja(
                 grain = grain.toString(),
                 group = group,
                 lotWeight = lotWeight

@@ -7,10 +7,10 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.saveable
-import com.example.centreinar.Classification
+import com.example.centreinar.ClassificationSoja
 import com.example.centreinar.ColorClassificationSoja
-import com.example.centreinar.Limit
-import com.example.centreinar.Sample
+import com.example.centreinar.LimitSoja
+import com.example.centreinar.SampleSoja
 import com.example.centreinar.data.repository.ClassificationRepository
 import com.example.centreinar.util.PDFExporter
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -28,8 +28,8 @@ class ClassificationViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
-    private val _classification = MutableStateFlow<Classification?>(null)
-    val classification: StateFlow<Classification?> = _classification.asStateFlow()
+    private val _classification = MutableStateFlow<ClassificationSoja?>(null)
+    val classification: StateFlow<ClassificationSoja?> = _classification.asStateFlow()
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
@@ -40,8 +40,8 @@ class ClassificationViewModel @Inject constructor(
     private val _defaultLimits = MutableStateFlow<Map<String, Float>?>(null)
     val defaultLimits: StateFlow<Map<String, Float>?> = _defaultLimits.asStateFlow()
 
-    private val _lastUsedLimit = MutableStateFlow<Limit?>(null)
-    val lastUsedLimit: StateFlow<Limit?> = _lastUsedLimit.asStateFlow()
+    private val _lastUsedLimit = MutableStateFlow<LimitSoja?>(null)
+    val lastUsedLimit: StateFlow<LimitSoja?> = _lastUsedLimit.asStateFlow()
 
     var selectedGrain by savedStateHandle.saveable {
         mutableStateOf<String?>(null)
@@ -79,7 +79,7 @@ class ClassificationViewModel @Inject constructor(
         doesDefineColorClass = null
     }
 
-    fun classifySample(sample: Sample) {
+    fun classifySample(sample: SampleSoja) {
         val grain = selectedGrain?:' '
         val group = selectedGroup?:0
         val isOfficial = isOfficial
@@ -232,7 +232,7 @@ class ClassificationViewModel @Inject constructor(
         else return repository.getObservations(idClassification = classification.id)
     }
 
-    fun exportClassification(context: Context, classification: Classification, limit: Limit) {
+    fun exportClassification(context: Context, classification: ClassificationSoja, limit: LimitSoja) {
         viewModelScope.launch {
             try {
                 // Fetch data sequentially - each call will wait for completion

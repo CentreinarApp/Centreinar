@@ -20,11 +20,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.example.centreinar.Classification
+import com.example.centreinar.ClassificationSoja
 
 @Composable
 fun ClassificationTable(
-    classification: Classification,
+    classification: ClassificationSoja,
     modifier: Modifier = Modifier
 ) {
     Card(
