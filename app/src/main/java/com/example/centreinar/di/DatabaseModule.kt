@@ -2,43 +2,21 @@ package com.example.centreinar.di
 
 import android.content.Context
 import androidx.room.Room
-import com.example.centreinar.data.local.AppDatabase
-
-// DAOs Soja
-import com.example.centreinar.data.local.dao.ClassificationSojaDao
-import com.example.centreinar.data.local.dao.ColorClassificationSojaDao
-import com.example.centreinar.data.local.dao.DiscountSojaDao
-import com.example.centreinar.data.local.dao.DisqualificationSojaDao
-import com.example.centreinar.data.local.dao.InputDiscountSojaDao
-import com.example.centreinar.data.local.dao.LimitSojaDao
-import com.example.centreinar.data.local.dao.SampleSojaDao
-
-// DAOs Milho
-import com.example.centreinar.data.local.dao.ClassificationMilhoDao
-import com.example.centreinar.data.local.dao.ColorClassificationMilhoDao
-import com.example.centreinar.data.local.dao.DiscountMilhoDao
-import com.example.centreinar.data.local.dao.DisqualificationMilhoDao
-import com.example.centreinar.data.local.dao.InputDiscountMilhoDao
+import androidx.room.RoomDatabase
+import androidx.sqlite.db.SupportSQLiteDatabase
 import com.example.centreinar.data.local.dao.LimitMilhoDao
-import com.example.centreinar.data.local.dao.SampleMilhoDao
-
-// Repositórios Soja
-import com.example.centreinar.data.repository.ClassificationRepositoryImpl
-import com.example.centreinar.data.repository.DiscountRepositoryImp
-import com.example.centreinar.data.repository.DiscountRepository
-import com.example.centreinar.data.repository.ClassificationRepository
-// Repositórios Milho
-import com.example.centreinar.data.repository.ClassificationRepositoryMilhoImpl
-import com.example.centreinar.data.repository.DiscountRepositoryMilhoImpl
-import com.example.centreinar.domain.repository.ClassificationRepositoryMilho
-import com.example.centreinar.domain.repository.DiscountRepositoryMilho
-
-import com.example.centreinar.util.Utilities
+import com.example.centreinar.data.local.dao.LimitSojaDao
+import com.example.centreinar.data.local.AppDatabase
+import com.example.centreinar.LimitSoja
+import com.example.centreinar.data.local.entity.LimitMilho
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import javax.inject.Singleton
 
 @Module
@@ -51,113 +29,95 @@ object DatabaseModule {
         return Room.databaseBuilder(
             context,
             AppDatabase::class.java,
-            "grains_db"
-        )
-            .fallbackToDestructiveMigration()
-            .build()
+            "app_database.db"
+        ).addCallback(object : RoomDatabase.Callback() {
+            override fun onCreate(db: SupportSQLiteDatabase) {
+                super.onCreate(db)
+                CoroutineScope(Dispatchers.IO).launch {
+                    // ✅ aqui usamos a instância correta já criada
+                    val database = Room.databaseBuilder(
+                        context,
+                        AppDatabase::class.java,
+                        "app_database.db"
+                    ).build()
+
+                    val sojaDao = database.limitSojaDao()
+                    val milhoDao = database.limitMilhoDao()
+
+                    // ========== SOJA ==========
+                    sojaDao.insertLimit(
+                        LimitSoja(
+                            id = 0, source = 0, grain = "soja", group = 1, type = 1,
+                            moistureLowerLim = 14f, moistureUpLim = 14f,
+                            impuritiesLowerLim = 0f, impuritiesUpLim = 1f,
+                            brokenCrackedDamagedLowerLim = 0f, brokenCrackedDamagedUpLim = 8f,
+                            greenishLowerLim = 0f, greenishUpLim = 2f,
+                            burntLowerLim = 0f, burntUpLim = 0.3f,
+                            moldyLowerLim = 0f, moldyUpLim = 0.5f,
+                            burntOrSourLowerLim = 0f, burntOrSourUpLim = 1f,
+                            spoiledTotalLowerLim = 0f, spoiledTotalUpLim = 4f
+                        )
+                    )
+                    sojaDao.insertLimit(
+                        LimitSoja(
+                            id = 0, source = 0, grain = "soja", group = 1, type = 2,
+                            moistureLowerLim = 14f, moistureUpLim = 14f,
+                            impuritiesLowerLim = 0f, impuritiesUpLim = 1f,
+                            brokenCrackedDamagedLowerLim = 0f, brokenCrackedDamagedUpLim = 15f,
+                            greenishLowerLim = 0f, greenishUpLim = 4f,
+                            burntLowerLim = 0f, burntUpLim = 1f,
+                            moldyLowerLim = 0f, moldyUpLim = 1.5f,
+                            burntOrSourLowerLim = 0f, burntOrSourUpLim = 2f,
+                            spoiledTotalLowerLim = 0f, spoiledTotalUpLim = 6f
+                        )
+                    )
+                    sojaDao.insertLimit(
+                        LimitSoja(
+                            id = 0, source = 0, grain = "soja", group = 2, type = 1,
+                            moistureLowerLim = 14f, moistureUpLim = 14f,
+                            impuritiesLowerLim = 0f, impuritiesUpLim = 1f,
+                            brokenCrackedDamagedLowerLim = 0f, brokenCrackedDamagedUpLim = 30f,
+                            greenishLowerLim = 0f, greenishUpLim = 8f,
+                            burntLowerLim = 0f, burntUpLim = 1f,
+                            moldyLowerLim = 0f, moldyUpLim = 6f,
+                            burntOrSourLowerLim = 0f, burntOrSourUpLim = 4f,
+                            spoiledTotalLowerLim = 0f, spoiledTotalUpLim = 8f
+                        )
+                    )
+
+                    // ========== MILHO ==========
+                    milhoDao.insertLimit(
+                        LimitMilho(
+                            id = 0, source = 0, grain = "milho", group = 1, type = 1,
+                            moistureUpLim = 14f, impuritiesUpLim = 1f,
+                            brokenUpLim = 3f, ardidoUpLim = 1f,
+                            mofadoUpLim = 6f, carunchadoUpLim = 2f
+                        )
+                    )
+                    milhoDao.insertLimit(
+                        LimitMilho(
+                            id = 0, source = 0, grain = "milho", group = 1, type = 2,
+                            moistureUpLim = 14f, impuritiesUpLim = 1.5f,
+                            brokenUpLim = 4f, ardidoUpLim = 2f,
+                            mofadoUpLim = 10f, carunchadoUpLim = 3f
+                        )
+                    )
+                    milhoDao.insertLimit(
+                        LimitMilho(
+                            id = 0, source = 0, grain = "milho", group = 1, type = 3,
+                            moistureUpLim = 14f, impuritiesUpLim = 2f,
+                            brokenUpLim = 5f, ardidoUpLim = 3f,
+                            mofadoUpLim = 15f, carunchadoUpLim = 4f
+                        )
+                    )
+                }
+            }
+        }).build()
     }
 
-    // ---------- DAOs Soja ----------
-    @Provides fun limitSojaDao(db: AppDatabase) = db.limitSojaDao()
-    @Provides fun classificationSojaDao(db: AppDatabase) = db.classificationSojaDao()
-    @Provides fun sampleSojaDao(db: AppDatabase) = db.sampleSojaDao()
-    @Provides fun discountSojaDao(db: AppDatabase) = db.discountSojaDao()
-    @Provides fun inputDiscountSojaDao(db: AppDatabase) = db.inputDiscountSojaDao()
-    @Provides fun colorClassificationSojaDao(db: AppDatabase) = db.colorClassificationSojaDao()
-    @Provides fun disqualificationSojaDao(db: AppDatabase) = db.disqualificationSojaDao()
+    @Provides
+    fun provideLimitSojaDao(database: AppDatabase): LimitSojaDao = database.limitSojaDao()
 
-    // ---------- DAOs Milho ----------
-    @Provides fun limitMilhoDao(db: AppDatabase) = db.limitMilhoDao()
-    @Provides fun classificationMilhoDao(db: AppDatabase) = db.classificationMilhoDao()
-    @Provides fun sampleMilhoDao(db: AppDatabase) = db.sampleMilhoDao()
-    @Provides fun discountMilhoDao(db: AppDatabase) = db.discountMilhoDao()
-    @Provides fun inputDiscountMilhoDao(db: AppDatabase) = db.inputDiscountMilhoDao()
-    @Provides fun colorClassificationMilhoDao(db: AppDatabase) = db.colorClassificationMilhoDao()
-    @Provides fun disqualificationMilhoDao(db: AppDatabase) = db.disqualificationMilhoDao()
+    @Provides
+    fun provideLimitMilhoDao(database: AppDatabase): LimitMilhoDao = database.limitMilhoDao()
 }
-
-@Module
-@InstallIn(SingletonComponent::class)
-object RepositoryModule {
-
-    // ---------- Repositórios Soja ----------
-    @Provides
-    @Singleton
-    fun provideClassificationRepository(
-        limitDao: LimitSojaDao,
-        classificationDao: ClassificationSojaDao,
-        sampleDao: SampleSojaDao,
-        tools: Utilities,
-        colorClassificationDao: ColorClassificationSojaDao,
-        disqualificationDao: DisqualificationSojaDao
-    ): ClassificationRepository {
-        return ClassificationRepositoryImpl(
-            limitDao,
-            classificationDao,
-            sampleDao,
-            tools,
-            colorClassificationDao,
-            disqualificationDao
-        )
-    }
-
-    @Provides
-    @Singleton
-    fun provideDiscountRepository(
-        limitDao: LimitSojaDao,
-        classificationDao: ClassificationSojaDao,
-        sampleDao: SampleSojaDao,
-        discountDao: DiscountSojaDao,
-        tools: Utilities,
-        inputDiscountDao: InputDiscountSojaDao,
-        colorClassificationDao: ColorClassificationSojaDao,
-        disqualificationDao: DisqualificationSojaDao
-    ): DiscountRepository {
-        return DiscountRepositoryImp(
-            limitDao,
-            classificationDao,
-            sampleDao,
-            discountDao,
-            inputDiscountDao,
-            tools
-        )
-    }
-
-    // ---------- Repositórios Milho ----------
-    @Provides
-    @Singleton
-    fun provideClassificationRepositoryMilho(
-        limitDao: LimitMilhoDao,
-        classificationDao: ClassificationMilhoDao,
-        sampleDao: SampleMilhoDao,
-        tools: Utilities
-    ): ClassificationRepositoryMilho {
-        return ClassificationRepositoryMilhoImpl(
-            limitDao,
-            classificationDao,
-            sampleDao,
-            tools
-        )
-    }
-
-    @Provides
-    @Singleton
-    fun provideDiscountRepositoryMilho(
-        limitDao: LimitMilhoDao,
-        classificationDao: ClassificationMilhoDao,
-        sampleDao: SampleMilhoDao,
-        discountDao: DiscountMilhoDao,
-        inputDiscountDao: InputDiscountMilhoDao,
-        tools: Utilities
-    ): DiscountRepositoryMilho {
-        return DiscountRepositoryMilhoImpl(
-            limitDao,
-            classificationDao,
-            sampleDao,
-            discountDao,
-            inputDiscountDao,
-            tools
-        )
-    }
-}
-
