@@ -37,7 +37,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
-import com.example.centreinar.InputDiscount
+import com.example.centreinar.InputDiscountSoja
 import com.example.centreinar.ui.discount.viewmodel.DiscountViewModel
 import java.math.RoundingMode
 
@@ -196,7 +196,7 @@ fun DiscountInputScreen(
                 Button(
                     onClick = {
 
-                        val inputDiscount = InputDiscount(
+                        val inputDiscount = InputDiscountSoja(
                             grain = grain!!,
                             group = group!!,
                             limitSource = 0,
