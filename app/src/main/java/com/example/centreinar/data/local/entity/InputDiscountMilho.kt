@@ -10,7 +10,7 @@ data class InputDiscountMilho(
     @ColumnInfo(name = "classificationId") val classificationId: Int?,
     @ColumnInfo(name = "grain") val grain: String = "milho",
     @ColumnInfo(name = "group") val group: Int = 0,
-    @ColumnInfo(name = "limitSource") val limitSource: Int = 0,
+    @ColumnInfo(name = "limitSource") var limitSource: Int = 0,
     @ColumnInfo(name = "daysOfStorage") val daysOfStorage: Int = 0,
     @ColumnInfo(name = "lotWeight") val lotWeight: Float = 0.0f,
     @ColumnInfo(name = "lotPrice") val lotPrice: Float = 0.0f,
