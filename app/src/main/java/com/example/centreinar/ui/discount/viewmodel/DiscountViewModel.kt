@@ -7,11 +7,11 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.saveable
-import com.example.centreinar.Classification
+import com.example.centreinar.ClassificationSoja
 import com.example.centreinar.DiscountSoja
-import com.example.centreinar.InputDiscount
-import com.example.centreinar.Limit
-import com.example.centreinar.Sample
+import com.example.centreinar.InputDiscountSoja
+import com.example.centreinar.LimitSoja
+import com.example.centreinar.SampleSoja
 import com.example.centreinar.data.repository.DiscountRepository
 import com.example.centreinar.util.PDFExporter
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -40,8 +40,8 @@ class DiscountViewModel @Inject constructor(
     private val _defaultLimits = MutableStateFlow<Map<String, Float>?>(null)
     val defaultLimits: StateFlow<Map<String, Float>?> = _defaultLimits.asStateFlow()
 
-    private val _lastUsedLimit = MutableStateFlow<Limit?>(null)
-    val lastUsedLimit: StateFlow<Limit?> = _lastUsedLimit.asStateFlow()
+    private val _lastUsedLimit = MutableStateFlow<LimitSoja?>(null)
+    val lastUsedLimit: StateFlow<LimitSoja?> = _lastUsedLimit.asStateFlow()
 
     var selectedGrain by savedStateHandle.saveable {
         mutableStateOf<String?>(null)
@@ -67,7 +67,7 @@ class DiscountViewModel @Inject constructor(
         isOfficial = null
     }
 
-    fun setDiscount(inputDiscount : InputDiscount,doesTechnicalLoss:Boolean,doesClassificationLoss: Boolean,
+    fun setDiscount(inputDiscount : InputDiscountSoja,doesTechnicalLoss:Boolean,doesClassificationLoss: Boolean,
                     doesDeduction: Boolean):Long{
         var discountId = 0L
         viewModelScope.launch {
@@ -193,7 +193,7 @@ class DiscountViewModel @Inject constructor(
             }
         }
     }
-    fun exportDiscount(context: Context, discount: DiscountSoja, limit: Limit) {
+    fun exportDiscount(context: Context, discount: DiscountSoja, limit: LimitSoja) {
         viewModelScope.launch {
             try {
                 Log.e("Export", "Got ito exportDiscount")
@@ -201,8 +201,8 @@ class DiscountViewModel @Inject constructor(
                 // Fetch data sequentially - each call will wait for completion
                 val sample = repository.getLastInputDiscount()
                 Log.e("Export", "Got sample")
-                var classification: Classification?=  null
-                var sampleClassification: Sample? = null
+                var classification: ClassificationSoja?=  null
+                var sampleClassification: SampleSoja? = null
                 if(sample.classificationId != null){
                     classification = repository.getLastClassification()
                     val logClassification = classification.toString()
