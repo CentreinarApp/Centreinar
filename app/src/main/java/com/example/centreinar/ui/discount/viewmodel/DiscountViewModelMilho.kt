@@ -132,11 +132,13 @@ class DiscountViewModelMilho @Inject constructor(
         viewModelScope.launch {
             try {
                 val sample = repository.getLastInputDiscount()
-                pdfExporter.exportDiscountToPdfMilho(
+                pdfExporter.exportDiscountToPdf(
                     context,
                     discount,
                     sample,
-                    limit
+                    limit,
+                    null,
+                    null
                 )
             } catch (e: Exception) {
                 _error.value = "Falha ao exportar PDF: ${e.message ?: "Erro desconhecido"}"
