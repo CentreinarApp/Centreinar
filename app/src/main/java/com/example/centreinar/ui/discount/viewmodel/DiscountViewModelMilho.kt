@@ -9,7 +9,7 @@ import com.example.centreinar.data.local.entity.InputDiscountMilho
 import com.example.centreinar.data.local.entity.DiscountMilho
 import com.example.centreinar.data.local.entity.LimitMilho
 import com.example.centreinar.domain.repository.DiscountRepositoryMilho
-import com.example.centreinar.util.PDFExporter
+import com.example.centreinar.util.PDFExporterMilho
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -20,7 +20,7 @@ import javax.inject.Inject
 @HiltViewModel
 class DiscountViewModelMilho @Inject constructor(
     private val repository: DiscountRepositoryMilho,
-    private val pdfExporter: PDFExporter,
+    private val pdfExporter: PDFExporterMilho,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -132,13 +132,11 @@ class DiscountViewModelMilho @Inject constructor(
         viewModelScope.launch {
             try {
                 val sample = repository.getLastInputDiscount()
-                pdfExporter.exportDiscountToPdf(
+                pdfExporter.exportDiscountToPdfMilho(
                     context,
                     discount,
                     sample,
-                    limit,
-                    null,
-                    null
+                    limit
                 )
             } catch (e: Exception) {
                 _error.value = "Falha ao exportar PDF: ${e.message ?: "Erro desconhecido"}"
