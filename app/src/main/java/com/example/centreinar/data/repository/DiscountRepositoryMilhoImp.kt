@@ -110,7 +110,7 @@ class DiscountRepositoryMilhoImpl @Inject constructor(
         val discount = DiscountMilho(
             inputDiscountId = sample.id,
             impuritiesLoss = impuritiesLoss,
-            humidityLoss = 0f, // milho não tem desconto por umidade
+            humidityLoss = 0f,
             technicalLoss = technicalLoss,
             brokenLoss = brokenLoss,
             ardidoLoss = ardidoLoss,

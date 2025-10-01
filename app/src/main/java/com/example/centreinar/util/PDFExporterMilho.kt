@@ -74,7 +74,7 @@ class PDFExporterMilho @Inject constructor() {
 
     private fun createDefectLimitsPage(document: PdfDocument, pageWidth: Int, pageHeight: Int, limits: LimitMilho): PdfDocument.Page {
         val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, 3).create()
-        return document.startPage(pageInfo) // simplificado
+        return document.startPage(pageInfo)
     }
 
     private fun setupPaints(): Paints {

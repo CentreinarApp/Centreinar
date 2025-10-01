@@ -23,8 +23,6 @@ class ClassificationRepositoryMilhoImpl @Inject constructor(
         val limit = limitsList.firstOrNull()
             ?: throw Exception("Limites não encontrados para: grain=${sample.grain}, group=${sample.group}, source=$limitSource")
 
-        // Usa cleanWeight baseado na sua entidade (sampleWeight ou cleanWeight)
-        // Preferimos usar sample.cleanWeight se estiver preenchido (você preenche cleanWeight ao criar amostra).
         val cleanWeight = if (sample.cleanWeight > 0f) sample.cleanWeight else sample.sampleWeight
 
         // Calcula percentuais (defeito/cleanWeight * 100) ja fazendo o arredondamento correto

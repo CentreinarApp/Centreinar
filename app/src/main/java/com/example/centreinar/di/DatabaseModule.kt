@@ -39,9 +39,8 @@ object DatabaseModule {
                     val sojaDao = database.limitSojaDao()
                     val milhoDao = database.limitMilhoDao()
 
-                    // =============================
-                    // 🚀 Inicialização SOJA (MAPA)
-                    // =============================
+                    //  Inicialização SOJA (MAPA)
+
                     sojaDao.insertLimit(
                         LimitSoja(
                             id = 0, source = 0, grain = "soja", group = 1, type = 1,
@@ -84,9 +83,9 @@ object DatabaseModule {
                         )
                     )
 
-                    // =============================
-                    // 🚀 Inicialização MILHO (MAPA)
-                    // =============================
+                    // Inicialização MILHO (MAPA)
+
+
                     milhoDao.insertLimit(
                         LimitMilho(
                             id = 0, source = 0, grain = "milho", group = 1, type = 1,

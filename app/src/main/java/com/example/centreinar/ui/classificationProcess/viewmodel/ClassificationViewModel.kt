@@ -248,14 +248,14 @@ class ClassificationViewModel @Inject constructor(
                     return@launch
                 }
 
-                // Export with null-safe optional parameters
+
                 pdfExporter.exportClassificationToPdf(
                     context,
                     classification,
                     sample,
-                    colorClassification,  // Can be null
-                    observation,          // Can be null
-                    limit                // Can be null
+                    colorClassification,
+                    observation,
+                    limit
                 )
             } catch (e: Exception) {
                 _error.value = "Export failed: ${e.message ?: "Unknown error"}"

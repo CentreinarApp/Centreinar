@@ -20,11 +20,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.example.centreinar.Limit
+import com.example.centreinar.LimitSoja
 
 @Composable
 fun UsedLimitTable(
-    defectLimits: Limit,
+    defectLimits: LimitSoja,
     modifier: Modifier = Modifier
 ) {
     Card(

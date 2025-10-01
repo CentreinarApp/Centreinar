@@ -19,28 +19,13 @@ fun MilhoClassificationResultScreen(
     viewModel: ClassificationViewModel = hiltViewModel()
 ) {
     val classification by viewModel.classification.collectAsState()
-    // classification for milho will be Classification (soja) in your current ViewModel.
-    // If you store milho Classification in the same state, adapt below. Here we try to cast safely.
 
     Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)) {
         Text("Resultado — Milho", style = MaterialTheme.typography.headlineMedium, modifier = Modifier.padding(8.dp))
         Spacer(Modifier.height(8.dp))
 
-        // Try to convert your stored classification to ClassificationMilho (if you store both in same repo,
-        // replace repository calls if necessary).
-        // For now display a placeholder or call an endpoint that fetches the last inserted milho classification.
-
-        // If you have a function repository.getLastClassificationMilho() use it via ViewModel and display here.
-        // For compatibility, if classification is a generic object, adapt accordingly.
-        // We'll show a fallback message if not available:
-
         val lastMilhoClassification = remember { mutableStateOf<ClassificationMilho?>(null) }
-
-        // NOTE: You must implement in your ViewModel a method to fetch last milho classification (similar to getLastClassification())
-        // If you added method classificationRepositoryMilho.getLastClassification() then call it.
-        // Here we simply render lastMilhoClassification when available.
-
-        if (lastMilhoClassification.value != null) {
+            if (lastMilhoClassification.value != null) {
             MilhoClassificationTable(lastMilhoClassification.value!!)
         } else {
             Text("Nenhuma classificação de milho encontrada neste estado. Garanta que o repositório devolve a classificação e que o ViewModel a expõe.", modifier = Modifier.padding(16.dp))

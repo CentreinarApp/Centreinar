@@ -19,8 +19,7 @@ fun MilhoDiscountResultScreen(
     navController: NavController,
     viewModel: DiscountViewModel = hiltViewModel()
 ) {
-    // NOTE: DiscountViewModel currently exposes DiscountSoja. You should add a StateFlow<DiscountMilho?> similar to _discounts for milho
-    // For now, we read it via repository (implement getLastDiscountMilho in your DiscountRepositoryMilho and expose via ViewModel).
+
     val discountsMilho = remember { mutableStateOf<DiscountMilho?>(null) }
 
     Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)) {
