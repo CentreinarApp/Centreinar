@@ -15,6 +15,7 @@ import com.example.centreinar.DiscountSoja
 import com.example.centreinar.InputDiscountSoja
 import com.example.centreinar.LimitSoja
 import com.example.centreinar.SampleSoja
+import com.example.centreinar.utils.PdfPaints
 import java.io.File
 import java.io.FileOutputStream
 import javax.inject.Inject
@@ -28,6 +29,93 @@ class PDFExporterSoja @Inject constructor() {
         val type: String
     )
 
+    fun exportClassificationToPdf(
+        context: Context,
+        classification: ClassificationSoja,
+        sample: SampleSoja,
+        colorClassification: ColorClassificationSoja?,
+        observation: String?,
+        limit: LimitSoja?,
+    ) {
+        val document = PdfDocument()
+        val pageInfo = PdfDocument.PageInfo.Builder(595, 842, 1).create()
+        val page = document.startPage(pageInfo)
+        val canvas = page.canvas
+
+        val paints = PdfPaints()
+        var xStart = 50f
+        var yStart = 80f
+
+        // 🔹 Cabeçalho
+        canvas.drawText("Relatório de Classificação - Soja", xStart, yStart, paints.titlePaint)
+        yStart += 40f
+
+        // 🔹 Dados gerais de classificação
+        canvas.drawText("Classificação: ${classification.finalType}", xStart, yStart, paints.cellPaint)
+        yStart += 20f
+
+        canvas.drawText("Classe de Cor: ${colorClassification?.framingClass ?: "N/A"}", xStart, yStart, paints.cellPaint)
+        yStart += 20f
+
+        canvas.drawText("Limite: ${limit?.id ?: "N/A"}", xStart, yStart, paints.cellPaint)
+        yStart += 20f
+
+        canvas.drawText("Observações: ${observation ?: "Nenhuma"}", xStart, yStart, paints.cellPaint)
+        yStart += 40f
+
+        // 🔹 Dados da amostra
+        canvas.drawText("Grão: ${sample.grain}", xStart, yStart, paints.cellPaint)
+        yStart += 20f
+        canvas.drawText("Grupo: ${sample.group}", xStart, yStart, paints.cellPaint)
+        yStart += 20f
+        canvas.drawText("Peso do Lote: ${sample.lotWeight} kg", xStart, yStart, paints.cellPaint)
+        yStart += 20f
+        canvas.drawText("Peso da Amostra: ${sample.sampleWeight} kg", xStart, yStart, paints.cellPaint)
+        yStart += 20f
+        canvas.drawText("Peso Limpo: ${sample.cleanWeight} kg", xStart, yStart, paints.cellPaint)
+        yStart += 40f
+
+        // 🔹 Características da classificação
+        canvas.drawText("Umidade: ${sample.humidity}%", xStart, yStart, paints.cellPaint)
+        yStart += 20f
+        canvas.drawText("Impurezas: ${sample.foreignMattersAndImpurities}%", xStart, yStart, paints.cellPaint)
+        yStart += 20f
+        canvas.drawText("Partidos e Danificados: ${sample.brokenCrackedDamaged}%", xStart, yStart, paints.cellPaint)
+        yStart += 20f
+        canvas.drawText("Verdes (Greenish): ${sample.greenish}%", xStart, yStart, paints.cellPaint)
+        yStart += 20f
+        canvas.drawText("Queimados: ${sample.burnt}%", xStart, yStart, paints.cellPaint)
+        yStart += 20f
+        canvas.drawText("Mofados: ${sample.moldy}%", xStart, yStart, paints.cellPaint)
+        yStart += 20f
+        canvas.drawText("Ardidos (Sour): ${sample.sour}%", xStart, yStart, paints.cellPaint)
+        yStart += 20f
+        canvas.drawText("Fermentados: ${sample.fermented}%", xStart, yStart, paints.cellPaint)
+        yStart += 20f
+        canvas.drawText("Germinados: ${sample.germinated}%", xStart, yStart, paints.cellPaint)
+        yStart += 20f
+        canvas.drawText("Imaturos: ${sample.immature}%", xStart, yStart, paints.cellPaint)
+        yStart += 20f
+        canvas.drawText("Enrugados (Shriveled): ${sample.shriveled}%", xStart, yStart, paints.cellPaint)
+        yStart += 30f
+
+        // 🔹 Rodapé
+        canvas.drawText("Relatório gerado automaticamente pelo sistema", xStart, yStart, paints.footerPaint)
+        yStart += 15f
+        canvas.drawText(
+            "Data: ${java.text.SimpleDateFormat("dd/MM/yyyy HH:mm").format(java.util.Date())}",
+            xStart, yStart, paints.footerPaint
+        )
+
+        // Finaliza a página e grava o PDF
+        document.finishPage(page)
+
+        // Salva e compartilha
+        saveAndShareDocument(context, document)
+    }
+
+
+    // 🔹 Função para exportar descontos e limites
     fun exportDiscountToPdf(
         context: Context,
         discount: DiscountSoja,
@@ -61,7 +149,8 @@ class PDFExporterSoja @Inject constructor() {
         saveAndShareDocument(context, document)
     }
 
-    // --- Métodos auxiliares (mesmos do seu PDF antigo, mas ajustados p/ Soja) ---
+    // --- Métodos auxiliares ---
+
     private fun createDiscountPage(document: PdfDocument, pageWidth: Int, pageHeight: Int, discount: DiscountSoja): PdfDocument.Page {
         val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, 1).create()
         val page = document.startPage(pageInfo)
@@ -129,12 +218,12 @@ class PDFExporterSoja @Inject constructor() {
 
     private fun createClassificationPage(document: PdfDocument, pageWidth: Int, pageHeight: Int, classification: ClassificationSoja, sample: SampleSoja): PdfDocument.Page {
         val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, 3).create()
-        return document.startPage(pageInfo) // apenas simplificado
+        return document.startPage(pageInfo)
     }
 
     private fun createDefectLimitsPage(document: PdfDocument, pageWidth: Int, pageHeight: Int, limits: LimitSoja): PdfDocument.Page {
         val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, 4).create()
-        return document.startPage(pageInfo) // simplificado
+        return document.startPage(pageInfo)
     }
 
     private fun setupPaints(): Paints {
@@ -161,5 +250,10 @@ class PDFExporterSoja @Inject constructor() {
         context.startActivity(Intent.createChooser(intent, "Compartilhar PDF via"))
     }
 
-    data class Paints(val titlePaint: Paint, val headerPaint: Paint, val cellPaint: Paint, val borderPaint: Paint)
+    data class Paints(
+        val titlePaint: Paint,
+        val headerPaint: Paint,
+        val cellPaint: Paint,
+        val borderPaint: Paint
+    )
 }
