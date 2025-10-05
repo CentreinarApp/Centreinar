@@ -6,9 +6,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.centreinar.ui.classificationProcess.viewmodel.ClassificationViewModel
 
 @Composable
-fun MilhoDefeitosScreen(navController: NavController) {
+fun MilhoDefeitosScreen(
+    navController: NavController,
+    viewModel: ClassificationViewModel = hiltViewModel()
+) {
     var ardidos by remember { mutableStateOf("") }
     var queimados by remember { mutableStateOf("") }
     var mofados by remember { mutableStateOf("") }

@@ -218,7 +218,7 @@ fun CentreinarApp() {
                 val parentEntry = remember(backStackEntry) {
                     navController.getBackStackEntry("main_flow")
                 }
-                MilhoGrainSelectionScreen(
+                MilhoClasseScreen(
                     navController,
                     hiltViewModel<ClassificationViewModel>(parentEntry)
                 )
@@ -228,7 +228,7 @@ fun CentreinarApp() {
                 val parentEntry = remember(backStackEntry) {
                     navController.getBackStackEntry("main_flow")
                 }
-                MilhoGroupSelectionScreen(
+                MilhoDefeitosScreen(
                     navController,
                     hiltViewModel<ClassificationViewModel>(parentEntry)
                 )
@@ -238,7 +238,7 @@ fun CentreinarApp() {
                 val parentEntry = remember(backStackEntry) {
                     navController.getBackStackEntry("main_flow")
                 }
-                MilhoOfficialOrNotScreen(
+                MilhoDefinirLimitesScreen(
                     navController,
                     hiltViewModel<ClassificationViewModel>(parentEntry)
                 )
@@ -248,7 +248,7 @@ fun CentreinarApp() {
                 val parentEntry = remember(backStackEntry) {
                     navController.getBackStackEntry("main_flow")
                 }
-                MilhoLimitInputScreen(
+                MilhoImpurezaUmidadeScreen(
                     navController,
                     hiltViewModel<ClassificationViewModel>(parentEntry)
                 )
@@ -258,7 +258,7 @@ fun CentreinarApp() {
                 val parentEntry = remember(backStackEntry) {
                     navController.getBackStackEntry("main_flow")
                 }
-                MilhoDisqualificationScreen(
+                MilhoDescontosScreen(
                     navController,
                     hiltViewModel<ClassificationViewModel>(parentEntry)
                 )
@@ -268,7 +268,7 @@ fun CentreinarApp() {
                 val parentEntry = remember(backStackEntry) {
                     navController.getBackStackEntry("main_flow")
                 }
-                `MilhoClassificationInputScreen.kt`(
+                MilhoResultadoScreen(
                     navController,
                     hiltViewModel<ClassificationViewModel>(parentEntry)
                 )

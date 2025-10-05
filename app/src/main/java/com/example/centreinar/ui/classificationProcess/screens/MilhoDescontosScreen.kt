@@ -6,9 +6,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.centreinar.ui.classificationProcess.viewmodel.ClassificationViewModel
 
 @Composable
-fun MilhoDescontosScreen(navController: NavController) {
+fun MilhoDescontosScreen(
+    navController: NavController,
+    viewModel: ClassificationViewModel = hiltViewModel()
+) {
     var descontoTotal by remember { mutableStateOf("0.0") }
     var pesoFinal by remember { mutableStateOf("0.0") }
 
