@@ -15,9 +15,9 @@ interface SampleMilhoDao {
     @Delete
     suspend fun delete(sample: SampleMilho)
 
-    @Query("SELECT * FROM samples_milho WHERE id = :id LIMIT 1")
+    @Query("SELECT * FROM sample_milho WHERE id = :id LIMIT 1")
     suspend fun getById(id: Int): SampleMilho?
 
-    @Query("SELECT * FROM samples_milho ORDER BY id DESC LIMIT 1")
+    @Query("SELECT * FROM sample_milho ORDER BY id DESC LIMIT 1")
     suspend fun getLastSample(): SampleMilho
 }

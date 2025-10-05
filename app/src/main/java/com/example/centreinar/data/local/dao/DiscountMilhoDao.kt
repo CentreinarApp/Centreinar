@@ -14,9 +14,9 @@ interface DiscountMilhoDao {
     @Delete
     suspend fun delete(discount: DiscountMilho)
 
-    @Query("SELECT * FROM discounts_milho WHERE id = :id LIMIT 1")
+    @Query("SELECT * FROM discount_milho WHERE id = :id LIMIT 1")
     suspend fun getDiscountById(id: Int): DiscountMilho?
 
-    @Query("SELECT * FROM discounts_milho ORDER BY id DESC LIMIT 1")
+    @Query("SELECT * FROM discount_milho ORDER BY id DESC LIMIT 1")
     suspend fun getLastDiscount(): DiscountMilho
 }

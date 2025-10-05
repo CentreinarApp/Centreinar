@@ -14,10 +14,10 @@ interface InputDiscountMilhoDao {
     @Delete
     suspend fun delete(input: InputDiscountMilho)
 
-    @Query("SELECT * FROM input_discounts_milho WHERE id = :id LIMIT 1")
+    @Query("SELECT * FROM input_discount_milho WHERE id = :id LIMIT 1")
     suspend fun getById(id: Int): InputDiscountMilho?
 
-    @Query("SELECT * FROM input_discounts_milho ORDER BY id DESC LIMIT 1")
+    @Query("SELECT * FROM input_discount_milho ORDER BY id DESC LIMIT 1")
     suspend fun getLastInputDiscount(): InputDiscountMilho
 }
 
