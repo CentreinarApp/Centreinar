@@ -49,9 +49,10 @@ fun ClassificationInputScreen(
     // State from ViewModel
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
-    val classification by viewModel.classificationSoja.collectAsState()
-    val selectedGroup by viewModel.classificationSoja.collectAsState()
-    val selectedGrain  by viewModel.classificationSoja.collectAsState()
+    val classification by viewModel.classification.collectAsState()
+    val selectedGroup = viewModel.selectedGroup
+    val selectedGrain = viewModel.selectedGrain
+
 
     // Form state variables
     var showClassConfirmation by remember { mutableStateOf(false) }

@@ -136,9 +136,8 @@ class DiscountViewModelMilho @Inject constructor(
                     context,
                     discount,
                     sample,
-                    limit,
-                    null,
-                    null
+                    limit
+
                 )
             } catch (e: Exception) {
                 _error.value = "Falha ao exportar PDF: ${e.message ?: "Erro desconhecido"}"

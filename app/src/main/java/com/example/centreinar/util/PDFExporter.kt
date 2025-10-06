@@ -15,6 +15,7 @@ import com.example.centreinar.DiscountSoja
 import com.example.centreinar.InputDiscountSoja
 import com.example.centreinar.LimitSoja
 import com.example.centreinar.SampleSoja
+import com.example.centreinar.ColorClassificationSoja
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
 import java.io.FileOutputStream
@@ -69,6 +70,65 @@ class PDFExporterSoja @Inject constructor(
     }
 
 
+    fun exportClassificationToPdf(
+        context: Context,
+        classification: ClassificationSoja,
+        sample: SampleSoja,
+        colorClassification: ColorClassificationSoja?,
+        observation: String?,
+        limit: LimitSoja?
+    ) {
+        val document = PdfDocument()
+        val pageWidth = 595
+        val pageHeight = 842
+
+        // Página 1 - Dados da classificação
+        val classPage = createClassificationPage(document, pageWidth, pageHeight, classification)
+        document.finishPage(classPage)
+
+        // Página 2 - Dados da amostra
+        val samplePage = createSampleClassificationPage(document, pageWidth, pageHeight, sample)
+        document.finishPage(samplePage)
+
+        // Página 3 - Classificação de cor (se houver)
+        colorClassification?.let { colorClass ->
+            val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, 3).create()
+            val page = document.startPage(pageInfo)
+            val canvas = page.canvas
+            val paints = setupPaints()
+
+            var yStart = 60f
+            canvas.drawText("CLASSIFICAÇÃO DE COR", pageWidth / 2f, yStart, paints.titlePaint)
+            yStart += 36f
+            drawMultilineText(canvas, colorClass.toString(), 50f, yStart, paints.cellPaint, pageWidth - 100)
+
+            document.finishPage(page)
+        }
+
+        // Página 4 - Observações (se houver)
+        observation?.takeIf { it.isNotBlank() }?.let { obs ->
+            val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, 4).create()
+            val page = document.startPage(pageInfo)
+            val canvas = page.canvas
+            val paints = setupPaints()
+
+            var yStart = 60f
+            canvas.drawText("OBSERVAÇÕES", pageWidth / 2f, yStart, paints.titlePaint)
+            yStart += 36f
+            drawMultilineText(canvas, obs, 50f, yStart, paints.cellPaint, pageWidth - 100)
+
+            document.finishPage(page)
+        }
+
+        // Página 5 - Limites (se houver)
+        limit?.let {
+            val limitPage = createDefectLimitsPage(document, pageWidth, pageHeight, it)
+            document.finishPage(limitPage)
+        }
+
+        saveAndShareDocument(context, document)
+    }
+
     private fun createDiscountPage(document: PdfDocument, pageWidth: Int, pageHeight: Int, discount: DiscountSoja): PdfDocument.Page {
         val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, 1).create()
         val page = document.startPage(pageInfo)
@@ -99,15 +159,7 @@ class PDFExporterSoja @Inject constructor(
         return page
     }
 
-    /**
-     * Página que imprime o objeto classification (usa toString() para segurança).
-     */
-    private fun createClassificationPage(
-        document: PdfDocument,
-        pageWidth: Int,
-        pageHeight: Int,
-        classification: ClassificationSoja
-    ): PdfDocument.Page {
+    private fun createClassificationPage(document: PdfDocument, pageWidth: Int, pageHeight: Int, classification: ClassificationSoja): PdfDocument.Page {
         val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, 4).create()
         val page = document.startPage(pageInfo)
         val canvas: Canvas = page.canvas
@@ -123,15 +175,7 @@ class PDFExporterSoja @Inject constructor(
         return page
     }
 
-    /**
-     * Página que imprime os dados da amostra vinculada à classificação (usa toString()).
-     */
-    private fun createSampleClassificationPage(
-        document: PdfDocument,
-        pageWidth: Int,
-        pageHeight: Int,
-        sampleClassification: SampleSoja
-    ): PdfDocument.Page {
+    private fun createSampleClassificationPage(document: PdfDocument, pageWidth: Int, pageHeight: Int, sampleClassification: SampleSoja): PdfDocument.Page {
         val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, 5).create()
         val page = document.startPage(pageInfo)
         val canvas: Canvas = page.canvas
@@ -169,9 +213,6 @@ class PDFExporterSoja @Inject constructor(
         return page
     }
 
-    /**
-     * Quebra texto longo em várias linhas para caber no PDF.
-     */
     private fun drawMultilineText(
         canvas: Canvas,
         text: String,

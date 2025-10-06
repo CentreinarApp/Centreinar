@@ -22,7 +22,7 @@ import java.math.RoundingMode
 @Composable
 fun MilhoClassificationInputScreen(
     navController: NavController,
-    viewModel: ClassificationViewModel = hiltViewModel()
+    viewModel: ClassificationViewModelMilho = hiltViewModel()
 ) {
     var lotWeight by remember { mutableStateOf("") }
     var sampleWeight by remember { mutableStateOf("") }
