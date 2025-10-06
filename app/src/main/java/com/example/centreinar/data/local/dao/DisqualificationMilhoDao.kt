@@ -25,8 +25,4 @@ interface DisqualificationMilhoDao {
 
     @Query("UPDATE disqualification_milho SET classificationId = :classificationId WHERE id = :id")
     suspend fun updateClassificationId(id: Int, classificationId: Int)
-
-    @Query("UPDATE disqualification_milho SET graveDefectSum = :graveDefectSum WHERE id = :id")
-    suspend fun updateGraveDefectSum(id: Int, graveDefectSum: Int)
 }
-

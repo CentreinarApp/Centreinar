@@ -13,7 +13,7 @@ import com.example.centreinar.InputDiscountSoja
 import com.example.centreinar.LimitSoja
 import com.example.centreinar.SampleSoja
 import com.example.centreinar.data.repository.DiscountRepository
-import com.example.centreinar.util.PDFExporter
+import com.example.centreinar.util.PDFExporterSoja
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -24,7 +24,7 @@ import javax.inject.Inject
 @HiltViewModel
 class DiscountViewModel @Inject constructor(
     private val repository: DiscountRepository,
-    private val pdfExporter: PDFExporter,
+    private val pdfExporter: PDFExporterSoja,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
