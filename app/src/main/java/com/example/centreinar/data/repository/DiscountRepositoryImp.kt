@@ -186,17 +186,27 @@ class DiscountRepositoryImpl @Inject constructor(
         tipo: Int,
         limitSource: Int
     ): Map<String, Float> {
-        val limit: LimitSoja = limitDao.getLimitsByType(grain, group, tipo, limitSource)
-        return mapOf(
-            "impurities" to limit.impuritiesUpLim,
-            "humidity" to limit.moistureUpLim,
-            "broken" to limit.brokenCrackedDamagedUpLim,
-            "greenish" to limit.greenishUpLim,
-            "burnt" to limit.burntUpLim,
-            "burntOrSour" to limit.burntOrSourUpLim,
-            "moldy" to limit.moldyUpLim,
-            "spoiled" to limit.spoiledTotalUpLim
-        )
+        // Tenta buscar o limite e lida com o caso de ser nulo ou exceção.
+        val limit: LimitSoja? = try {
+            limitDao.getLimitsByType(grain, group, tipo, limitSource)
+        } catch (e: Exception) {
+            null
+        }
+
+        return if (limit != null) {
+            mapOf(
+                "impurities" to limit.impuritiesUpLim,
+                "humidity" to limit.moistureUpLim,
+                "broken" to limit.brokenCrackedDamagedUpLim,
+                "greenish" to limit.greenishUpLim,
+                "burnt" to limit.burntUpLim,
+                "burntOrSour" to limit.burntOrSourUpLim,
+                "moldy" to limit.moldyUpLim,
+                "spoiled" to limit.spoiledTotalUpLim
+            )
+        } else {
+            emptyMap()
+        }
     }
 
     override suspend fun setLimit(
@@ -239,14 +249,20 @@ class DiscountRepositoryImpl @Inject constructor(
         return limitDao.insertLimit(limit)
     }
 
-    override suspend fun getLimit(grain: String, group: Int, tipo: Int, source: Int): LimitSoja {
+    // CORREÇÃO: Assinatura alterada para retornar LimitSoja? (anulável)
+    override suspend fun getLimit(
+        grain: String,
+        group: Int,
+        tipo: Int,
+        source: Int
+    ): LimitSoja? { // <-- MUDANÇA AQUI
         return limitDao.getLimitsByType(grain, group, tipo, source)
     }
 
     override suspend fun getLimitOfType1Official(group: Int, grain: String): Map<String, Float> {
         val limit = limitDao.getLimitsByType(grain, group, 1, 0)
         return mapOf(
-            "impuritiesLowerLim" to limit.impuritiesLowerLim,
+            "impuritiesLowerLim" to limit!!.impuritiesLowerLim, // ATENÇÃO: Aqui estou usando !! para manter seu código original, mas a função chamadora deve tratar o nulo
             "impuritiesUpLim" to limit.impuritiesUpLim,
             "moistureLowerLim" to limit.moistureLowerLim,
             "moistureUpLim" to limit.moistureUpLim,

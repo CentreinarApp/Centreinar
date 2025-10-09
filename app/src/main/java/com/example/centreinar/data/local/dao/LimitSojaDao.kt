@@ -34,7 +34,7 @@ interface LimitSojaDao {
     suspend fun getLimitsBySource(grain: String, group: Int, limitSource: Int): List<LimitSoja>
 
     @Query("SELECT * FROM limits_soja WHERE grain = :grain AND type = :tipo AND `group` = :group AND source = :limitSource")
-    suspend fun getLimitsByType(grain: String, group: Int, tipo: Int, limitSource: Int): LimitSoja
+    suspend fun getLimitsByType(grain: String, group: Int, tipo: Int, limitSource: Int): LimitSoja? // CORREÇÃO APLICADA AQUI
 
     @Query("SELECT type, impuritiesLowerLim AS lowerL, impuritiesUpLim AS upperL FROM limits_soja WHERE grain = :grain AND `group` = :group AND source = :limitSource")
     suspend fun getLimitsForImpurities(grain: String, group: Int, limitSource: Int): List<LimitCategory>

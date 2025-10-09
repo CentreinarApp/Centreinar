@@ -1,12 +1,13 @@
 package com.example.centreinar.ui.classificationProcess.screens
 
-
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
@@ -30,6 +31,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.example.centreinar.ui.classificationProcess.viewmodel.ClassificationViewModel
+import android.util.Log // Adicionado para Log.d/e
 
 @Composable
 fun LimitInputScreen(
@@ -38,6 +40,10 @@ fun LimitInputScreen(
 ) {
     // Collect default limits from ViewModel
     val defaultLimits by viewModel.defaultLimits.collectAsStateWithLifecycle()
+
+    // --- NOVO: Obtenha os valores do ViewModel para reatividade ---
+    val currentGrain = viewModel.selectedGrain
+    val currentGroup = viewModel.selectedGroup
 
     // State variables
     var impurities by remember { mutableStateOf("") }
@@ -52,7 +58,7 @@ fun LimitInputScreen(
     var defaultsSet by remember { mutableStateOf(false) } // Track if defaults are set
     val isEditable = viewModel.isOfficial != true
 
-    // Focus requesters
+    // Focus requesters (mantidos)
     val impuritiesFocus = remember { FocusRequester() }
     val moistureFocus= remember { FocusRequester() }
     val brokenFocus = remember { FocusRequester() }
@@ -65,10 +71,20 @@ fun LimitInputScreen(
     // Get keyboard controller
     val keyboardController = LocalSoftwareKeyboardController.current
 
-    LaunchedEffect(Unit) {
-        viewModel.loadDefaultLimits()
-        impuritiesFocus.requestFocus()
+    // 1. Defina o estado da rolagem
+    val scrollState = rememberScrollState()
+
+    // CORREÇÃO: LaunchedEffect agora reage a mudanças no Grão e Grupo
+    LaunchedEffect(currentGrain, currentGroup) {
+        if (currentGrain != null && currentGroup != null) {
+            Log.d("LimiteDebug", "Parâmetros prontos. Carregando limites para: $currentGrain, Grupo $currentGroup")
+            viewModel.loadDefaultLimits() // Chamado apenas quando Grão e Grupo existem
+            impuritiesFocus.requestFocus()
+        } else {
+            Log.w("LimiteDebug", "Aguardando seleção de Grão/Grupo antes de carregar limites.")
+        }
     }
+
     LaunchedEffect(defaultLimits) {
         if (defaultLimits != null && !defaultsSet) {
             impurities = defaultLimits?.get("impuritiesUpLim")?.toString() ?: ""
@@ -83,10 +99,12 @@ fun LimitInputScreen(
         }
     }
 
+    // 2. Aplique a rolagem ao Column principal
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(32.dp)
+            .verticalScroll(scrollState) // <-- APLICAÇÃO DA ROLAGEM
     ) {
         if(isEditable) {
             Text(
@@ -281,34 +299,6 @@ private fun NumberInputField(
         enabled = enabled,
         readOnly = !enabled
     )
-}
-
-private fun sanitizeFloatInput(input: String): String {
-    if (input.isEmpty()) return input
-
-    // Filter non-digit/non-decimal characters
-    var filtered = input.filter { it.isDigit() || it == '.' }
-
-    // Handle multiple decimals
-    val decimalCount = filtered.count { it == '.' }
-    if (decimalCount > 1) {
-        val firstDecimalIndex = filtered.indexOfFirst { it == '.' }
-        // Get the part after the first decimal point
-        val afterDecimal = filtered.substring(firstDecimalIndex + 1)
-        // Remove any additional decimals from the part after the first decimal
-        filtered = filtered.replaceRange(
-            firstDecimalIndex + 1,
-            filtered.length,
-            afterDecimal.replace(".", "")
-        )
-    }
-
-    // Prevent leading zero issues
-    if (filtered.startsWith("00") && !filtered.startsWith("0.")) {
-        filtered = "0" + filtered.drop(2)
-    }
-
-    return filtered
 }
 
 private fun toFloat(value : String): Float {

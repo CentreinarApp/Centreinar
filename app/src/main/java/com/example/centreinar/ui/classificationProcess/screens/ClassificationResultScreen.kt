@@ -16,6 +16,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -37,6 +38,8 @@ import com.example.centreinar.ui.classificationProcess.components.ObservationCar
 import com.example.centreinar.ui.classificationProcess.components.SimplifiedResultsTable
 import com.example.centreinar.ui.classificationProcess.components.UsedLimitTable
 import com.example.centreinar.ui.classificationProcess.viewmodel.ClassificationViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 @Composable
 fun ClassificationResult(
@@ -48,26 +51,42 @@ fun ClassificationResult(
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
     var showLimitsDialog by remember { mutableStateOf(false) }
+
+    // --- Otimização para o Diálogo de Limites ---
+    // Usamos o 'lastUsedLimit' para exibir os limites usados
     val lastUsedLimit by viewModel.lastUsedLimit.collectAsStateWithLifecycle()
+    var isLimitLoading by remember { mutableStateOf(false) } // Novo estado para o diálogo
+
     val context = LocalContext.current
 
-    //val doesDefineColorClass = viewModel.doesDefineColorClass
     var colorClassificationResult by remember { mutableStateOf<ColorClassificationSoja?>(null) }
     var observation by remember { mutableStateOf<String?>(null) }
 
 
-    // When doesDefineColorClass becomes true, call the suspend function
+    // Quando doesDefineColorClass for verdadeiro, busca a cor e observação
     if (viewModel.doesDefineColorClass == true) {
         LaunchedEffect(Unit) {
+            // Envolvendo em Dispatchers.IO para segurança, embora ViewModelScope use Main por padrão,
+            // as chamadas internas do repo já usam IO. Mantenho a estrutura LaunchedEffect(Unit).
             colorClassificationResult = viewModel.getClassColor()
             observation = viewModel.getObservations(colorClassificationResult)
         }
     }
+
+    // Lógica para pré-carregar os limites do Diálogo quando o resultado da classificação estiver pronto
+    LaunchedEffect(classification) {
+        if (classification != null) {
+            // Carrega os limites em background assim que o resultado da classificação estiver disponível
+            viewModel.loadLastUsedLimit()
+        }
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
     ) {
+        // COLUNA PRINCIPAL COM SCROLL
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -77,6 +96,7 @@ fun ClassificationResult(
         ) {
             when {
                 isLoading -> {
+                    // ... (Indicador de Progresso)
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
@@ -88,6 +108,7 @@ fun ClassificationResult(
                 }
 
                 error != null -> {
+                    // ... (Mensagem de Erro)
                     Text(
                         text = error!!,
                         color = MaterialTheme.colorScheme.error,
@@ -98,7 +119,7 @@ fun ClassificationResult(
                 }
 
                 classification != null -> {
-
+                    // ... (SimpliedResultsTable)
                     if (viewModel.doesDefineColorClass == true && colorClassificationResult != null) {
                         SimplifiedResultsTable(
                             classification!!.finalType.toString(),
@@ -123,12 +144,16 @@ fun ClassificationResult(
 
                     Spacer(Modifier.height(10.dp))
 
+                    // Botão para abrir o Diálogo de Limites
                     Text(
                         text = "Ver limites utilizados",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier
-                            .clickable { showLimitsDialog = true }
+                            .clickable {
+                                // O limite já deve estar carregado pelo LaunchedEffect(classification)
+                                showLimitsDialog = true
+                            }
                             .padding(vertical = 8.dp)
                     )
 
@@ -149,6 +174,7 @@ fun ClassificationResult(
                     Log.e("Observations", "observations in screen:${observation}")
                     Spacer(Modifier.height(16.dp))
 
+                    // Botões de Navegação e Exportação
                     Button(
                         onClick = {
                             navController.navigate("home")
@@ -173,7 +199,7 @@ fun ClassificationResult(
 
                     }
                     Button(onClick = {
-                        viewModel.loadLastUsedLimit()
+                        // Não é mais necessário chamar loadLastUsedLimit() aqui, pois já foi feito no LaunchedEffect
                         lastUsedLimit?.let{
                             viewModel.exportClassification(context, classification!!, lastUsedLimit!!)
                         }
@@ -183,6 +209,8 @@ fun ClassificationResult(
                 }
             }
         }
+
+        // --- DIÁLOGO DE LIMITES ---
         if (showLimitsDialog) {
             AlertDialog(
                 onDismissRequest = { showLimitsDialog = false },
@@ -193,36 +221,37 @@ fun ClassificationResult(
                     )
                 },
                 text = {
+                    // Coluna com Scroll para garantir que a tabela caiba no diálogo
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .verticalScroll(rememberScrollState())
+                            .verticalScroll(rememberScrollState()) // <-- SCROLL NO DIÁLOGO
+                            .padding(vertical = 8.dp)
                     ) {
-                        viewModel.loadLastUsedLimit()
-                        lastUsedLimit?.let {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 8.dp)
-                            ) {
-                                UsedLimitTable(
-                                    it,
-                                    modifier = Modifier.fillMaxWidth()
-                                )
+                        if (lastUsedLimit != null) {
+                            UsedLimitTable(
+                                lastUsedLimit!!,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        } else {
+                            // Mensagem enquanto carrega ou se falhar
+                            Text("Carregando limites...")
+                            // Otimização: Força o carregamento novamente se estiver faltando, mas só no Main
+                            LaunchedEffect(Unit) {
+                                viewModel.loadLastUsedLimit()
                             }
                         }
                     }
                 },
                 confirmButton = {
-                    Button(
+                    TextButton(
                         onClick = { showLimitsDialog = false },
                         modifier = Modifier.padding(bottom = 8.dp)
                     ) {
                         Text("Fechar")
                     }
                 },
-                modifier = Modifier
-                    .padding(24.dp)  // Reduced dialog padding
+                // Removido o padding do modifier do AlertDialog para dar mais espaço ao conteúdo
             )
         }
     }

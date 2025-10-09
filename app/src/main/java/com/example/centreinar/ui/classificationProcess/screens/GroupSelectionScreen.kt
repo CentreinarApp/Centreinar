@@ -30,7 +30,7 @@ public fun GroupSelectionScreen(
             .fillMaxSize()
             .padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        verticalArrangement = Arrangement.Center // <-- Centralização mantida
     ) {
         Button(
             onClick = {
@@ -54,7 +54,7 @@ public fun GroupSelectionScreen(
             onClick = {
                 viewModel.selectedGroup = 2
                 navController.navigate("officialOrNot")
-                      },
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(80.dp)

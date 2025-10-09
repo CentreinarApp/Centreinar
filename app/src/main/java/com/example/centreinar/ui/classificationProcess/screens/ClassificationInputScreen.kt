@@ -7,7 +7,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState // <-- NOVO: Import necessário
+import androidx.compose.foundation.verticalScroll  // <-- NOVO: Import necessário
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
@@ -316,6 +317,10 @@ fun ClassificationInputScreen(
     }
 }
 
+// --------------------------------------------------------------------------
+// Funções de Abas Corrigidas (Com Vertical Scroll e usando Column)
+// --------------------------------------------------------------------------
+
 @Composable
 fun BasicInfoTab(
     lotWeight: String,
@@ -331,43 +336,43 @@ fun BasicInfoTab(
     humidityFocus: FocusRequester,
     foreignMattersFocus: FocusRequester
 ) {
-    LazyColumn(modifier = Modifier.padding(16.dp)) {
-        item {
-            NumberInputField(
-                value = lotWeight,
-                onValueChange = onLotWeightChange,
-                label = "Peso do lote (kg)",
-                focusRequester = lotWeightFocus,
-                nextFocus = sampleWeightFocus
-            )
-        }
-        item {
-            NumberInputField(
-                value = sampleWeight,
-                onValueChange = onSampleWeightChange,
-                label = "Peso da amostra de trabalho (g)",
-                focusRequester = sampleWeightFocus,
-                nextFocus = humidityFocus
-            )
-        }
-        item {
-            NumberInputField(
-                value = humidity,
-                onValueChange = onHumidityChange,
-                label = "Umidade (%) ",
-                focusRequester = humidityFocus,
-                nextFocus = foreignMattersFocus
-            )
-        }
-        item {
-            NumberInputField(
-                value = foreignMatters,
-                onValueChange = onForeignMattersChange,
-                label = "Matéria Estranha e Impurezas (g)",
-                focusRequester = foreignMattersFocus,
-                nextFocus = null
-            )
-        }
+    // 1. Definição do estado da rolagem
+    val scrollState = rememberScrollState()
+
+    Column(
+        modifier = Modifier
+            .padding(16.dp)
+            .verticalScroll(scrollState) // <-- Aplica a rolagem
+    ) {
+        // Removido LazyColumn e 'item {}'
+        NumberInputField(
+            value = lotWeight,
+            onValueChange = onLotWeightChange,
+            label = "Peso do lote (kg)",
+            focusRequester = lotWeightFocus,
+            nextFocus = sampleWeightFocus
+        )
+        NumberInputField(
+            value = sampleWeight,
+            onValueChange = onSampleWeightChange,
+            label = "Peso da amostra de trabalho (g)",
+            focusRequester = sampleWeightFocus,
+            nextFocus = humidityFocus
+        )
+        NumberInputField(
+            value = humidity,
+            onValueChange = onHumidityChange,
+            label = "Umidade (%) ",
+            focusRequester = humidityFocus,
+            nextFocus = foreignMattersFocus
+        )
+        NumberInputField(
+            value = foreignMatters,
+            onValueChange = onForeignMattersChange,
+            label = "Matéria Estranha e Impurezas (g)",
+            focusRequester = foreignMattersFocus,
+            nextFocus = null
+        )
     }
 }
 
@@ -383,34 +388,36 @@ fun GraveDefectsTab(
     sourFocus: FocusRequester,
     moldyFocus: FocusRequester
 ) {
-    LazyColumn(modifier = Modifier.padding(16.dp)) {
-        item {
-            NumberInputField(
-                value = burnt,
-                onValueChange = onBurntChange,
-                label = "Queimados (g)",
-                focusRequester = burntFocus,
-                nextFocus = sourFocus
-            )
-        }
-        item {
-            NumberInputField(
-                value = sour,
-                onValueChange = onSourChange,
-                label = "Ardidos (g)",
-                focusRequester = sourFocus,
-                nextFocus = moldyFocus
-            )
-        }
-        item {
-            NumberInputField(
-                value = moldy,
-                onValueChange = onMoldyChange,
-                label = "Mofados (g)",
-                focusRequester = moldyFocus,
-                nextFocus = null
-            )
-        }
+    // 1. Definição do estado da rolagem
+    val scrollState = rememberScrollState()
+
+    Column(
+        modifier = Modifier
+            .padding(16.dp)
+            .verticalScroll(scrollState) // <-- Aplica a rolagem
+    ) {
+        // Removido LazyColumn e 'item {}'
+        NumberInputField(
+            value = burnt,
+            onValueChange = onBurntChange,
+            label = "Queimados (g)",
+            focusRequester = burntFocus,
+            nextFocus = sourFocus
+        )
+        NumberInputField(
+            value = sour,
+            onValueChange = onSourChange,
+            label = "Ardidos (g)",
+            focusRequester = sourFocus,
+            nextFocus = moldyFocus
+        )
+        NumberInputField(
+            value = moldy,
+            onValueChange = onMoldyChange,
+            label = "Mofados (g)",
+            focusRequester = moldyFocus,
+            nextFocus = null
+        )
     }
 }
 
@@ -436,95 +443,91 @@ fun OtherDefectsTab(
     piercingInputFocus: FocusRequester,
     damagedInputFocus: FocusRequester
 ) {
-    LazyColumn(modifier = Modifier.padding(16.dp)) {
-        item {
+    // 1. Definição do estado da rolagem
+    val scrollState = rememberScrollState()
+
+    Column(
+        modifier = Modifier
+            .padding(16.dp)
+            .verticalScroll(scrollState) // <-- Aplica a rolagem
+    ) {
+        // Removido LazyColumn e 'item {}'
+        NumberInputField(
+            value = fermented,
+            onValueChange = onFermentedChange,
+            label = "Fermentados (g)",
+            focusRequester = fermentedFocus,
+            nextFocus = germinatedFocus
+        )
+        NumberInputField(
+            value = germinated,
+            onValueChange = onGerminatedChange,
+            label = "Germinados (g)",
+            focusRequester = germinatedFocus,
+            nextFocus = immatureFocus
+        )
+        NumberInputField(
+            value = immature,
+            onValueChange = onImmatureChange,
+            label = "Imaturos (g)",
+            focusRequester = immatureFocus,
+            nextFocus = shriveledFocus
+        )
+        NumberInputField(
+            value = shriveled,
+            onValueChange = onShriveledChange,
+            label = "Chochos (g)",
+            focusRequester = shriveledFocus,
+            nextFocus = piercingInputFocus
+        )
+
+        Column(Modifier.fillMaxWidth()) {
             NumberInputField(
-                value = fermented,
-                onValueChange = onFermentedChange,
-                label = "Fermentados (g)",
-                focusRequester = fermentedFocus,
-                nextFocus = germinatedFocus
+                value = piercingInput,
+                onValueChange = onPiercingInputChange,
+                label = "Picados (g)",
+                focusRequester = piercingInputFocus,
+                nextFocus = damagedInputFocus
             )
         }
-        item {
+
+        Text(
+            text = if (piercingInput.isNotEmpty()) {
+                val value = piercingInput.toFloatOrNull() ?: 0f
+                val result = value / 4
+                "$value / 4 = ${"%.2f".format(result)}"
+            } else "",
+            style = MaterialTheme.typography.bodySmall,
+            modifier = Modifier.padding(start = 16.dp)
+        )
+
+        Column(Modifier.fillMaxWidth()) {
             NumberInputField(
-                value = germinated,
-                onValueChange = onGerminatedChange,
-                label = "Germinados (g)",
-                focusRequester = germinatedFocus,
-                nextFocus = immatureFocus
+                value = damagedInput,
+                onValueChange = onDamagedInputChange,
+                label = "Danificados por outras pragas (g)",
+                focusRequester = damagedInputFocus,
+                nextFocus = null
             )
-        }
-        item {
-            NumberInputField(
-                value = immature,
-                onValueChange = onImmatureChange,
-                label = "Imaturos (g)",
-                focusRequester = immatureFocus,
-                nextFocus = shriveledFocus
-            )
-        }
-        item {
-            NumberInputField(
-                value = shriveled,
-                onValueChange = onShriveledChange,
-                label = "Chochos (g)",
-                focusRequester = shriveledFocus,
-                nextFocus = piercingInputFocus
-            )
-        }
-        item {
-            Column(Modifier.fillMaxWidth()) {
-                NumberInputField(
-                    value = piercingInput,
-                    onValueChange = onPiercingInputChange,
-                    label = "Picados (g)",
-                    focusRequester = piercingInputFocus,
-                    nextFocus = damagedInputFocus
-                )
-            }
-        }
-        item{
             Text(
-                text = if (piercingInput.isNotEmpty()) {
-                    val value = piercingInput.toFloatOrNull() ?: 0f
-                    val result = value / 4
-                    "$value / 4 = ${"%.2f".format(result)}"
+                text = if (damagedInput.isNotEmpty() || piercingInput.isNotEmpty()) {
+                    val dValue = damagedInput.toFloatOrNull() ?: 0f
+                    val pValue = piercingInput.toFloatOrNull()?.div(4) ?: 0f
+                    val sum = dValue + pValue
+                    "$dValue + $pValue = ${"%.2f".format(sum)}"
                 } else "",
                 style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(start = 16.dp)
-            )
+                modifier = Modifier.padding(start = 16.dp) )
         }
-        item {
-            Column(Modifier.fillMaxWidth()) {
-                NumberInputField(
-                    value = damagedInput,
-                    onValueChange = onDamagedInputChange,
-                    label = "Danificados por outras pragas (g)",
-                    focusRequester = damagedInputFocus,
-                    nextFocus = null
-                )
-                Text(
-                    text = if (damagedInput.isNotEmpty() || piercingInput.isNotEmpty()) {
-                        val dValue = damagedInput.toFloatOrNull() ?: 0f
-                        val pValue = piercingInput.toFloatOrNull()?.div(4) ?: 0f
-                        val sum = dValue + pValue
-                        "$dValue + $pValue = ${"%.2f".format(sum)}"
-                    } else "",
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(start = 16.dp) )
-            }
-        }
-        item { // Wrapped in item
-            OutlinedTextField(
-                value = damaged,
-                onValueChange = {},
-                label = { Text("Soma de Grãos Danificados (g)") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                enabled = false
-            )
-        }
+
+        OutlinedTextField(
+            value = damaged,
+            onValueChange = {},
+            label = { Text("Soma de Grãos Danificados (g)") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            enabled = false
+        )
     }
 }
 
@@ -537,25 +540,29 @@ fun FinalDefectsTab(
     greenishFocus: FocusRequester,
     brokenCrackedDamagedFocus: FocusRequester
 ) {
-    LazyColumn(modifier = Modifier.padding(16.dp)) {
-        item {
-            NumberInputField(
-                value = greenish,
-                onValueChange = onGreenishChange,
-                label = "Esverdeados (g)",
-                focusRequester = greenishFocus,
-                nextFocus = brokenCrackedDamagedFocus
-            )
-        }
-        item {
-            NumberInputField(
-                value = brokenCrackedDamaged,
-                onValueChange = onBrokenCrackedDamagedChange,
-                label = "Partidos, Quebrados e Amassados (g)",
-                focusRequester = brokenCrackedDamagedFocus,
-                nextFocus = null
-            )
-        }
+    // 1. Definição do estado da rolagem
+    val scrollState = rememberScrollState()
+
+    Column(
+        modifier = Modifier
+            .padding(16.dp)
+            .verticalScroll(scrollState) // <-- Aplica a rolagem
+    ) {
+        // Removido LazyColumn e 'item {}'
+        NumberInputField(
+            value = greenish,
+            onValueChange = onGreenishChange,
+            label = "Esverdeados (g)",
+            focusRequester = greenishFocus,
+            nextFocus = brokenCrackedDamagedFocus
+        )
+        NumberInputField(
+            value = brokenCrackedDamaged,
+            onValueChange = onBrokenCrackedDamagedChange,
+            label = "Partidos, Quebrados e Amassados (g)",
+            focusRequester = brokenCrackedDamagedFocus,
+            nextFocus = null
+        )
     }
 }
 

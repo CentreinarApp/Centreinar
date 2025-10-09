@@ -15,6 +15,7 @@ import com.example.centreinar.data.repository.ClassificationRepository
 
 import com.example.centreinar.util.PDFExporterSoja
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -85,7 +86,7 @@ class ClassificationViewModel @Inject constructor(
         val group = selectedGroup?:0
         val isOfficial = isOfficial
 
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) { // Adicionado Dispatchers.IO
             try {
                 _isLoading.value = true
                 _error.value = null
@@ -115,27 +116,29 @@ class ClassificationViewModel @Inject constructor(
     }
 
     fun setLimit(
-                 impurities:Float,
-                 moisture:Float,
-                 brokenCrackedDamaged: Float,
-                 greenish: Float,
-                 burnt:Float,
-                 burntOrSour:Float,
-                 moldy:Float,
-                 spoiled:Float) {
+        impurities:Float,
+        moisture:Float,
+        brokenCrackedDamaged: Float,
+        greenish: Float,
+        burnt:Float,
+        burntOrSour:Float,
+        moldy:Float,
+        spoiled:Float) {
 
-        val grain = selectedGrain?:' '
-        val group = selectedGroup?:0
-
-        if (grain == null || group == null) {
-            Log.e("HomeViewModel", "Grain or group not selected")
+        val grain = selectedGrain?.toString() ?: run {
+            Log.e("LimiteDebug", "ERRO: selectedGrain é nulo ao tentar salvar. Cancelando setLimit.")
             return
         }
-        viewModelScope.launch {
+        val group = selectedGroup ?: run {
+            Log.e("LimiteDebug", "ERRO: selectedGroup é nulo ao tentar salvar. Cancelando setLimit.")
+            return
+        }
+
+        viewModelScope.launch(Dispatchers.IO) { // Adicionado Dispatchers.IO
             try {
                 _isLoading.value = true
                 _error.value = null
-                repository.setLimit(grain.toString(),group,1,impurities,moisture,brokenCrackedDamaged, greenish, burnt, burntOrSour, moldy, spoiled)
+                repository.setLimit(grain,group,1,impurities,moisture,brokenCrackedDamaged, greenish, burnt, burntOrSour, moldy, spoiled)
 
             } catch (e: Exception) {
                 _error.value = e.message ?: "Unknown error"
@@ -147,7 +150,7 @@ class ClassificationViewModel @Inject constructor(
     }
 
     fun setDisqualification(badConservation: Int, strangeSmell: Int , insects: Int, toxicGrains: Int){
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) { // Adicionado Dispatchers.IO
             try{
                 repository.setDisqualification(0,badConservation,0,strangeSmell,toxicGrains,insects)
             } catch (e: Exception) {
@@ -159,22 +162,22 @@ class ClassificationViewModel @Inject constructor(
         }
     }
 
-    suspend fun getClassColor(): ColorClassificationSoja? { // Return a nullable type for safety
+    suspend fun getClassColor(): ColorClassificationSoja? {
         return try {
-            _isLoading.value = true // Show loading indicator while fetching
-            repository.getLastColorClass() // This will now wait and return the real data
+            _isLoading.value = true
+            repository.getLastColorClass()
         } catch (e: Exception) {
             _error.value = e.message ?: "Falha ao buscar a classe de cor"
             Log.e("ClassColor", "Class Color failed", e)
-            null // Return null if there's an error
+            null
         } finally {
-            _isLoading.value = false // Hide loading indicator
+            _isLoading.value = false
         }
     }
 
 
     fun setClassColor(totalWeight: Float, otherColorsWeight: Float) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) { // Adicionado Dispatchers.IO
             val grain = selectedGrain ?: run {
                 _error.value = "Grain not selected"
                 return@launch
@@ -189,25 +192,37 @@ class ClassificationViewModel @Inject constructor(
     }
 
     fun loadDefaultLimits(){
-        viewModelScope.launch {
-            val grain = selectedGrain?.toString() ?: ""
-            val group = selectedGroup ?: 0
+        // CORREÇÃO DE LÓGICA: Retorna imediatamente se os filtros não estiverem prontos
+        val grain = selectedGrain?.toString() ?: run {
+            Log.w("LimiteDebug", "ERRO: selectedGrain é nulo. Cancelando loadDefaultLimits.")
+            return
+        }
+        val group = selectedGroup ?: run {
+            Log.w("LimiteDebug", "ERRO: selectedGroup é nulo. Cancelando loadDefaultLimits.")
+            return
+        }
+
+        viewModelScope.launch(Dispatchers.IO) { // Adicionado Dispatchers.IO
+            Log.d("LimiteDebug", "Buscando limites para: Grão=$grain, Grupo=$group")
             try {
                 _defaultLimits.value = repository.getLimitOfType1Official(
                     grain = grain,
                     group = group
                 )
+                Log.d("LimiteDebug", "Busca concluída. Itens carregados: ${_defaultLimits.value?.size}")
+
             } catch (e: Exception) {
                 _error.value = e.message ?: "Unknown error"
-                Log.e("ClassColor", "Class Color failed", e)
+                Log.e("ClassColor", "Falha ao carregar limites", e)
             }
         }
     }
 
     fun loadLastUsedLimit(){
-        viewModelScope.launch {
-            val grain = selectedGrain?.toString() ?: ""
-            val group = selectedGroup ?: 0
+        val grain = selectedGrain?.toString() ?: run { return }
+        val group = selectedGroup ?: run { return }
+
+        viewModelScope.launch(Dispatchers.IO) { // Adicionado Dispatchers.IO
             try {
                 if(isOfficial == true){
                     _lastUsedLimit.value = repository.getLimit(grain,group,1,0)
@@ -234,7 +249,7 @@ class ClassificationViewModel @Inject constructor(
     }
 
     fun exportClassification(context: Context, classification: ClassificationSoja, limit: LimitSoja) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) { // Adicionado Dispatchers.IO
             try {
                 // Fetch data sequentially - each call will wait for completion
                 val sample = repository.getSample(classification.sampleId)
@@ -265,4 +280,3 @@ class ClassificationViewModel @Inject constructor(
         }
     }
 }
-

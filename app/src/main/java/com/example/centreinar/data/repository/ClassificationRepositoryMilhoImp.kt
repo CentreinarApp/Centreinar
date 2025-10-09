@@ -7,6 +7,7 @@ import com.example.centreinar.data.local.dao.SampleMilhoDao
 import com.example.centreinar.data.local.entity.LimitMilho
 import com.example.centreinar.data.local.entity.SampleMilho
 import com.example.centreinar.util.Utilities
+import com.example.centreinar.data.repository.ClassificationRepositoryMilho
 import javax.inject.Inject
 import javax.inject.Singleton
 

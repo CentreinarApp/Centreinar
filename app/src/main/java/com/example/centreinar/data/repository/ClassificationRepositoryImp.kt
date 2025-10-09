@@ -212,30 +212,45 @@ class ClassificationRepositoryImpl @Inject constructor(
         disqualificationDao.updateGraveDefectSum(disqualificationId, defectSum)
     }
 
+    // CORREÇÃO DE LÓGICA APLICADA AQUI
     override suspend fun getLimitOfType1Official(group: Int, grain: String): Map<String, Float> {
-        val limit = limitDao.getLimitsByType(grain, group, 1, 0)
-        return mapOf(
-            "impuritiesLowerLim" to limit.impuritiesLowerLim,
-            "impuritiesUpLim" to limit.impuritiesUpLim,
-            "moistureLowerLim" to limit.moistureLowerLim,
-            "moistureUpLim" to limit.moistureUpLim,
-            "brokenLowerLim" to limit.brokenCrackedDamagedLowerLim,
-            "brokenUpLim" to limit.brokenCrackedDamagedUpLim,
-            "greenishLowerLim" to limit.greenishLowerLim,
-            "greenishUpLim" to limit.greenishUpLim,
-            "burntLowerLim" to limit.burntLowerLim,
-            "burntUpLim" to limit.burntUpLim,
-            "burntOrSourLowerLim" to limit.burntOrSourLowerLim,
-            "burntOrSourUpLim" to limit.burntOrSourUpLim,
-            "moldyLowerLim" to limit.moldyLowerLim,
-            "moldyUpLim" to limit.moldyUpLim,
-            "spoiledTotalLowerLim" to limit.spoiledTotalLowerLim,
-            "spoiledTotalUpLim" to limit.spoiledTotalUpLim
-        )
+
+        // 1. Tenta buscar o limite oficial (source=0) e lida com o caso de ser nulo (Limites não encontrados)
+        val limit: LimitSoja? = try {
+            limitDao.getLimitsByType(grain, group, 1, 0)
+        } catch (e: Exception) {
+            Log.e("Repo", "Exceção ao buscar limite oficial: ${e.message}")
+            null
+        }
+
+        // 2. Se o limite for encontrado, faz o mapeamento. Caso contrário, retorna um mapa vazio.
+        return if (limit != null) {
+            mapOf(
+                "impuritiesLowerLim" to limit.impuritiesLowerLim,
+                "impuritiesUpLim" to limit.impuritiesUpLim,
+                "moistureLowerLim" to limit.moistureLowerLim,
+                "moistureUpLim" to limit.moistureUpLim,
+                "brokenLowerLim" to limit.brokenCrackedDamagedLowerLim,
+                "brokenUpLim" to limit.brokenCrackedDamagedUpLim,
+                "greenishLowerLim" to limit.greenishLowerLim,
+                "greenishUpLim" to limit.greenishUpLim,
+                "burntLowerLim" to limit.burntLowerLim,
+                "burntUpLim" to limit.burntUpLim,
+                "burntOrSourLowerLim" to limit.burntOrSourLowerLim,
+                "burntOrSourUpLim" to limit.burntOrSourUpLim,
+                "moldyLowerLim" to limit.moldyLowerLim,
+                "moldyUpLim" to limit.moldyUpLim,
+                "spoiledTotalLowerLim" to limit.spoiledTotalLowerLim,
+                "spoiledTotalUpLim" to limit.spoiledTotalUpLim
+            )
+        } else {
+            Log.w("Repo", "Limites oficiais (Source 0) não encontrados para Grão: $grain, Grupo: $group. Retornando mapa vazio.")
+            emptyMap()
+        }
     }
 
     override suspend fun getLimit(grain: String, group: Int, tipo: Int, source: Int): LimitSoja =
-        limitDao.getLimitsByType(grain, group, tipo, source)
+        limitDao.getLimitsByType(grain, group, tipo, source)!! // **ATENÇÃO**: Isso pode falhar se não for o limite oficial.
 
     override suspend fun getObservations(idClassification: Int, colorClass: ColorClassificationSoja?): String {
         val classification = classificationDao.getById(idClassification)

@@ -58,12 +58,13 @@ interface DiscountRepositoryMilho {
         carunchado: Float
     ): Long
 
+    // CORREÇÃO: Tipo de retorno alterado para LimitMilho? (anulável)
     suspend fun getLimit(
         grain: String,
         group: Int,
         tipo: Int,
         source: Int
-    ): LimitMilho
+    ): LimitMilho? // <-- CORREÇÃO AQUI
 
     suspend fun getLimitOfType1Official(
         group: Int,

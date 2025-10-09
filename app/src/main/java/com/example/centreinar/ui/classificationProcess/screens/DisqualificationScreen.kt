@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState // <-- NOVO: Import para o estado do scroll
+import androidx.compose.foundation.verticalScroll  // <-- NOVO: Import para o modificador
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
@@ -35,13 +37,18 @@ public fun DisqualificationScreen(
     var insects by remember { mutableStateOf(false) }
     var toxicGrains by remember { mutableStateOf(false) }
 
+    // 1. Defina o estado da rolagem
+    val scrollState = rememberScrollState()
+
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
     ) {
+        // 2. Aplique a rolagem ao Column principal
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .verticalScroll(scrollState) // <-- APLICAÇÃO DA ROLAGEM
                 .padding(32.dp)
         ) {
             Text(

@@ -29,13 +29,13 @@ fun GrainScreen(
             .fillMaxSize()
             .padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        verticalArrangement = Arrangement.Center // <-- Centralização mantida
     ) {
         Button(
             onClick = {
                 viewModel.selectedGrain = "Soja"
                 navController.navigate("groupSelection")
-                      },
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(80.dp)
@@ -54,7 +54,7 @@ fun GrainScreen(
             onClick = {
                 viewModel.selectedGrain = "Milho"
                 navController.navigate("groupSelection")
-                      },
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(80.dp)

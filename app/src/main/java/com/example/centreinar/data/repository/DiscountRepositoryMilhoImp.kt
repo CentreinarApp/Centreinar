@@ -53,6 +53,7 @@ class DiscountRepositoryMilhoImpl @Inject constructor(
         val deductionValue = sample.deductionValue
 
         // perdas por defeitos
+        // CORREÇÃO: Variáveis alteradas de 'val' para 'var'
         var impuritiesLoss = tools.calculateDifference(sample.impurities, limit["impurities"]!!)
         var brokenLoss = tools.calculateDifference(sample.broken, limit["broken"]!!)
         var ardidoLoss = tools.calculateDifference(sample.ardidos, limit["ardido"]!!)
@@ -101,6 +102,7 @@ class DiscountRepositoryMilhoImpl @Inject constructor(
         val finalWeightPrice = lotPrice - finalDiscountPrice
 
         // converter perdas percentuais para peso (kg)
+        // ESTAS REATRIBUIÇÕES AGORA FUNCIONAM
         impuritiesLoss = impuritiesLoss * lotWeight / 100
         brokenLoss = brokenLoss * lotWeight / 100
         ardidoLoss = ardidoLoss * lotWeight / 100
@@ -151,15 +153,20 @@ class DiscountRepositoryMilhoImpl @Inject constructor(
         tipo: Int,
         limitSource: Int
     ): Map<String, Float> {
-        val limit = limitDao.getLimitsBySource(grain, group, limitSource).first()
-        return mapOf(
-            "impurities" to limit.impuritiesUpLim,
-            "broken" to limit.brokenUpLim,
-            "ardido" to limit.ardidoUpLim,
-            "mofado" to limit.mofadoUpLim,
-            "carunchado" to limit.carunchadoUpLim,
-            "moisture" to limit.moistureUpLim
-        )
+        val limit: LimitMilho? = limitDao.getLimitsBySource(grain, group, limitSource).firstOrNull()
+
+        return if (limit != null) {
+            mapOf(
+                "impurities" to limit.impuritiesUpLim,
+                "broken" to limit.brokenUpLim,
+                "ardido" to limit.ardidoUpLim,
+                "mofado" to limit.mofadoUpLim,
+                "carunchado" to limit.carunchadoUpLim,
+                "moisture" to limit.moistureUpLim
+            )
+        } else {
+            emptyMap()
+        }
     }
 
     override suspend fun setLimit(
@@ -195,23 +202,28 @@ class DiscountRepositoryMilhoImpl @Inject constructor(
         group: Int,
         tipo: Int,
         source: Int
-    ): LimitMilho {
-        return limitDao.getLimitsBySource(grain, group, source).first()
+    ): LimitMilho? {
+        return limitDao.getLimitsBySource(grain, group, source).firstOrNull()
     }
 
     override suspend fun getLimitOfType1Official(
         group: Int,
         grain: String
     ): Map<String, Float> {
-        val limit = limitDao.getLimitsBySource(grain, group, 0).first()
-        return mapOf(
-            "impurities" to limit.impuritiesUpLim,
-            "broken" to limit.brokenUpLim,
-            "ardido" to limit.ardidoUpLim,
-            "mofado" to limit.mofadoUpLim,
-            "carunchado" to limit.carunchadoUpLim,
-            "moisture" to limit.moistureUpLim
-        )
+        val limit: LimitMilho? = limitDao.getLimitsBySource(grain, group, 0).firstOrNull() // source=0
+
+        return if (limit != null) {
+            mapOf(
+                "impurities" to limit.impuritiesUpLim,
+                "broken" to limit.brokenUpLim,
+                "ardido" to limit.ardidoUpLim,
+                "mofado" to limit.mofadoUpLim,
+                "carunchado" to limit.carunchadoUpLim,
+                "moisture" to limit.moistureUpLim
+            )
+        } else {
+            emptyMap()
+        }
     }
 
     override suspend fun getLastClassification(): ClassificationMilho {

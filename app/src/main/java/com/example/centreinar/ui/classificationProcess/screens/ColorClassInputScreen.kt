@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState // <-- NOVO: Import para o estado do scroll
+import androidx.compose.foundation.verticalScroll  // <-- NOVO: Import para o modificador
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
@@ -28,7 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.centreinar.ui.classificationProcess.viewmodel.ClassificationViewModel
-import com.example.centreinar.util.Utilities
+// Removido import desnecessário: com.example.centreinar.util.Utilities
 
 @Composable
 fun ColorClassInput(
@@ -50,13 +52,19 @@ fun ColorClassInput(
 
     val keyboardController = LocalSoftwareKeyboardController.current
 
+    // 1. Defina o estado da rolagem
+    val scrollState = rememberScrollState()
+
     LaunchedEffect(Unit) {
         totalWeightFocus.requestFocus()
     }
+
+    // 2. Aplique a rolagem ao Column principal
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(32.dp)
+            .verticalScroll(scrollState) // <-- APLICAÇÃO DA ROLAGEM
     ) {
         Text(
             "Insira os dados para obter a classe",

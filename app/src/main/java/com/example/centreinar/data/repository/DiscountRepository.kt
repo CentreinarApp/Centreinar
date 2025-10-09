@@ -63,12 +63,13 @@ interface DiscountRepository {
         spoiled: Float
     ): Long
 
+    // CORREÇÃO: Tipo de retorno alterado para LimitSoja? (anulável)
     suspend fun getLimit(
         grain: String,
         group: Int,
         tipo: Int,
         source: Int
-    ): LimitSoja
+    ): LimitSoja?
 
     suspend fun getLimitOfType1Official(
         group: Int,
