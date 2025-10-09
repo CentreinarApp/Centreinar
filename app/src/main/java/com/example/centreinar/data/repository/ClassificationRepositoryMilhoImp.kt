@@ -1,5 +1,6 @@
 package com.example.centreinar.data.repository
 
+import android.util.Log // Adicionar import de Log
 import com.example.centreinar.ClassificationMilho
 import com.example.centreinar.data.local.dao.ClassificationMilhoDao
 import com.example.centreinar.data.local.dao.LimitMilhoDao
@@ -106,24 +107,51 @@ class ClassificationRepositoryMilhoImpl @Inject constructor(
 
     override suspend fun setSample(sample: SampleMilho): Long = sampleDao.insert(sample)
 
-    // 🟢 MÉTODOS ADICIONADOS (agora com override para implementar a interface)
+    // 🟢 MÉTODOS EXISTENTES 🟢
 
-    /**
-     * Retorna a classificação pelo ID (para o ViewModel usar após inserir)
-     */
     override suspend fun getClassification(id: Int): ClassificationMilho? {
         return classificationDao.getById(id)
     }
 
-    /**
-     * Retorna o último valor de limitSource cadastrado na tabela de limites
-     */
     override suspend fun getLastLimitSource(): Int {
         return try {
             limitDao.getLastSource()
         } catch (e: Exception) {
-            0 // caso não exista ainda, evita crash
+            0
+        }
+    }
+
+    // 🟢 IMPLEMENTAÇÃO DOS NOVOS MÉTODOS DE BUSCA DE LIMITE (CORREÇÃO DO ERRO) 🟢
+
+    override suspend fun getLimit(
+        grain: String,
+        group: Int,
+        tipo: Int,
+        source: Int
+    ): LimitMilho? {
+        // Implementação para buscar um único limite (pode ser o oficial ou personalizado)
+        return limitDao.getLimitsBySource(grain, group, source).firstOrNull()
+    }
+
+    override suspend fun getLimitOfType1Official(
+        group: Int,
+        grain: String
+    ): Map<String, Float> {
+        // Implementação para buscar o limite oficial (source = 0) e retornar como Map<String, Float>
+        val limit: LimitMilho? = limitDao.getLimitsBySource(grain, group, 0).firstOrNull()
+
+        return if (limit != null) {
+            mapOf(
+                "impuritiesUpLim" to limit.impuritiesUpLim,
+                "moistureUpLim" to limit.moistureUpLim,
+                "brokenUpLim" to limit.brokenUpLim,
+                "ardidoUpLim" to limit.ardidoUpLim,
+                "mofadoUpLim" to limit.mofadoUpLim,
+                "carunchadoUpLim" to limit.carunchadoUpLim
+            )
+        } else {
+            Log.w("RepoMilho", "Limites oficiais Milho (Source 0) não encontrados para Grão: $grain, Grupo: $group. Retornando mapa vazio.")
+            emptyMap()
         }
     }
 }
-
