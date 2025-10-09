@@ -17,6 +17,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.centreinar.data.local.entity.SampleMilho
 import com.example.centreinar.ui.classificationProcess.viewmodel.ClassificationViewModel
+import com.example.centreinar.ui.classificationProcess.viewmodel.ClassificationViewModelMilho
 import java.math.RoundingMode
 
 @Composable

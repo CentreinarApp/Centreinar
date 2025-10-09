@@ -42,6 +42,14 @@ class ClassificationViewModelMilho @Inject constructor(
      * Corrige o erro de tipo: repository.classifySample retorna Long (id),
      * e depois buscamos a classificação completa.
      */
+    // Grupo selecionado pelo usuário (ex: 1 = Grupo 1, 2 = Grupo 2, etc.)
+    var selectedGroup: Int? = null
+        private set
+
+    fun selectGroup(group: Int) {
+        selectedGroup = group
+    }
+
     fun classifySample(sample: SampleMilho) {
         viewModelScope.launch {
             _isLoading.value = true

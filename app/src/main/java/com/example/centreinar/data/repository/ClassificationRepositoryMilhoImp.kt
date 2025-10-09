@@ -4,6 +4,7 @@ import com.example.centreinar.ClassificationMilho
 import com.example.centreinar.data.local.dao.ClassificationMilhoDao
 import com.example.centreinar.data.local.dao.LimitMilhoDao
 import com.example.centreinar.data.local.dao.SampleMilhoDao
+import com.example.centreinar.data.local.entity.LimitMilho
 import com.example.centreinar.data.local.entity.SampleMilho
 import com.example.centreinar.util.Utilities
 import javax.inject.Inject
@@ -18,21 +19,18 @@ class ClassificationRepositoryMilhoImpl @Inject constructor(
 ) : ClassificationRepositoryMilho {
 
     override suspend fun classifySample(sample: SampleMilho, limitSource: Int): Long {
-        // Obtém a lista de limites para o grain/group/source solicitado ou milho ou soja
         val limitsList = limitDao.getLimitsBySource(sample.grain, sample.group, limitSource)
         val limit = limitsList.firstOrNull()
             ?: throw Exception("Limites não encontrados para: grain=${sample.grain}, group=${sample.group}, source=$limitSource")
 
         val cleanWeight = if (sample.cleanWeight > 0f) sample.cleanWeight else sample.sampleWeight
 
-        // Calcula percentuais (defeito/cleanWeight * 100) ja fazendo o arredondamento correto
         val percentageImpurities = tools.calculateDefectPercentage(sample.impurities, cleanWeight)
         val percentageBroken = tools.calculateDefectPercentage(sample.broken, cleanWeight)
         val percentageArdido = tools.calculateDefectPercentage(sample.ardido, cleanWeight)
         val percentageMofado = tools.calculateDefectPercentage(sample.mofado, cleanWeight)
         val percentageCarunchado = tools.calculateDefectPercentage(sample.carunchado, cleanWeight)
 
-        // Determina tipo final usando a regra do pior defeito (Utilities.defineFinalTypeMilho)
         val finalType = tools.defineFinalTypeMilho(
             impurities = percentageImpurities,
             broken = percentageBroken,
@@ -41,8 +39,6 @@ class ClassificationRepositoryMilhoImpl @Inject constructor(
             carunchado = percentageCarunchado,
             limits = limitsList
         )
-
-        // Verifica desclassificação
 
         val anyExceeds = (percentageImpurities > limit.impuritiesUpLim
                 || percentageBroken > limit.brokenUpLim
@@ -61,7 +57,7 @@ class ClassificationRepositoryMilhoImpl @Inject constructor(
             carunchadoPercentage = percentageCarunchado,
             ardidoPercentage = percentageArdido,
             mofadoPercentage = percentageMofado,
-            fermentedPercentage = sample.fermented, // se você prefere percentual, calcule com tools
+            fermentedPercentage = sample.fermented,
             germinatedPercentage = sample.germinated,
             immaturePercentage = sample.immature,
             gessadoPercentage = sample.gessado,
@@ -108,4 +104,25 @@ class ClassificationRepositoryMilhoImpl @Inject constructor(
     }
 
     override suspend fun setSample(sample: SampleMilho): Long = sampleDao.insert(sample)
+
+    // 🟢 MÉTODOS ADICIONADOS (agora com override para implementar a interface)
+
+    /**
+     * Retorna a classificação pelo ID (para o ViewModel usar após inserir)
+     */
+    override suspend fun getClassification(id: Int): ClassificationMilho? {
+        return classificationDao.getById(id)
+    }
+
+    /**
+     * Retorna o último valor de limitSource cadastrado na tabela de limites
+     */
+    override suspend fun getLastLimitSource(): Int {
+        return try {
+            limitDao.getLastSource()
+        } catch (e: Exception) {
+            0 // caso não exista ainda, evita crash
+        }
+    }
 }
+
