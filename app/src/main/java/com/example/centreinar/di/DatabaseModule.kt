@@ -48,7 +48,7 @@ object DatabaseModule {
                     // Valores baseados na IN MAPA Nº 11/2007
                     // ----------------------------------------------------
 
-                    // === 🅰️ SOJA: LIMITE OFICIAL GRUPO I (Tipo 1) ===
+                    //  SOJA: LIMITE OFICIAL GRUPO I (Tipo 1) ===
                     sojaDao.insertLimit(
                         LimitSoja(
                             source = 0, grain = "Soja", group = 1, type = 1,
@@ -63,7 +63,7 @@ object DatabaseModule {
                         )
                     )
 
-                    // === 🅱️ SOJA: LIMITE OFICIAL GRUPO II (Padrão Básico) ===
+                    //  SOJA: LIMITE OFICIAL GRUPO II
                     sojaDao.insertLimit(
                         LimitSoja(
                             source = 0, grain = "Soja", group = 2, type = 1,
@@ -83,7 +83,7 @@ object DatabaseModule {
                     // NOMES DAS VARIÁVEIS AJUSTADAS PARA LimitMilho ENTIDADE
                     // ----------------------------------------------------
 
-                    // === 🅰️ MILHO: LIMITE OFICIAL TIPO 1 ===
+                    //  MILHO: LIMITE OFICIAL TIPO 1 ===
                     milhoDao.insertLimit(
                         LimitMilho(
                             source = 0, grain = "Milho", group = 1, type = 1,
@@ -96,7 +96,7 @@ object DatabaseModule {
                         )
                     )
 
-                    // === 🅱️ MILHO: LIMITE OFICIAL TIPO 2 ===
+                    // MILHO: LIMITE OFICIAL TIPO 2 ===
                     milhoDao.insertLimit(
                         LimitMilho(
                             source = 0, grain = "Milho", group = 1, type = 2,
@@ -109,7 +109,7 @@ object DatabaseModule {
                         )
                     )
 
-                    // === 🇨 MILHO: LIMITE OFICIAL TIPO 3 ===
+
                     milhoDao.insertLimit(
                         LimitMilho(
                             source = 0, grain = "Milho", group = 1, type = 3,
