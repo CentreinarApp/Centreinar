@@ -7,6 +7,9 @@ import com.example.centreinar.domain.repository.DiscountRepositoryMilho
 import com.example.centreinar.util.Utilities
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.collections.Map
+import kotlin.collections.emptyMap
+import kotlin.collections.set
 
 @Singleton
 class DiscountRepositoryMilhoImpl @Inject constructor(
@@ -52,8 +55,7 @@ class DiscountRepositoryMilhoImpl @Inject constructor(
         val storageDays = sample.daysOfStorage
         val deductionValue = sample.deductionValue
 
-        // perdas por defeitos
-        // CORREÇÃO: Variáveis alteradas de 'val' para 'var'
+        // perdas por defeitos (Declaradas como 'var' - CORRIGIDO ERRO VAL)
         var impuritiesLoss = tools.calculateDifference(sample.impurities, limit["impurities"]!!)
         var brokenLoss = tools.calculateDifference(sample.broken, limit["broken"]!!)
         var ardidoLoss = tools.calculateDifference(sample.ardidos, limit["ardido"]!!)
@@ -62,21 +64,26 @@ class DiscountRepositoryMilhoImpl @Inject constructor(
 
         var classificationDiscount = 0f
         if (doesClassificationLoss) {
-            classificationDiscount =
-                ((impuritiesLoss + brokenLoss + ardidoLoss + mofadoLoss + carunchadoLoss) / 100) * lotWeight
+            val totalDefectLossPercent = impuritiesLoss + brokenLoss + ardidoLoss + mofadoLoss + carunchadoLoss
+            classificationDiscount = (totalDefectLossPercent / 100) * lotWeight
         }
+
+        // Perda de Umidade e Quebra Técnica (Correção Lógica de Desconto)
+        val humidityLossPercent = tools.calculateDifference(sample.humidity, limit["moisture"]!!)
+        val impuritiesLossKg = (impuritiesLoss / 100) * lotWeight
+        val humidityLossKg = (humidityLossPercent / 100) * (lotWeight - impuritiesLossKg)
 
         var technicalLoss = 0f
         if (doesTechnicalLoss && storageDays > 0) {
             technicalLoss = calculateTechnicalLoss(storageDays, impuritiesLoss, lotWeight)
         }
 
-        var finalLoss = classificationDiscount + technicalLoss
+        var finalLoss = classificationDiscount + humidityLossKg + technicalLoss
         var deduction = 0f
 
         if (doesDeduction && deductionValue > 0) {
             deduction = calculateDeduction(deductionValue, classificationDiscount)
-            finalLoss = finalLoss + deduction - classificationDiscount
+            finalLoss = finalLoss - classificationDiscount + deduction
         }
 
         val finalWeight = lotWeight - finalLoss
@@ -92,17 +99,18 @@ class DiscountRepositoryMilhoImpl @Inject constructor(
             impuritiesLossPrice + brokenLossPrice + ardidoLossPrice + mofadoLossPrice + carunchadoLossPrice
 
         val technicalLossPrice = (lotPrice / lotWeight) * technicalLoss
+        val humidityLossPrice = (lotPrice / lotWeight) * humidityLossKg
 
-        var finalDiscountPrice = classificationDiscountPrice + technicalLossPrice
+        var finalDiscountPrice = classificationDiscountPrice + technicalLossPrice + humidityLossPrice
+
         if (doesDeduction && deductionValue > 0) {
-            finalDiscountPrice =
-                finalDiscountPrice - classificationDiscountPrice + (lotPrice * (deduction * 100 / lotWeight) / 100)
+            val deductionPrice = (lotPrice * (deduction * 100 / lotWeight) / 100)
+            finalDiscountPrice = finalDiscountPrice - classificationDiscountPrice + deductionPrice
         }
 
         val finalWeightPrice = lotPrice - finalDiscountPrice
 
         // converter perdas percentuais para peso (kg)
-        // ESTAS REATRIBUIÇÕES AGORA FUNCIONAM
         impuritiesLoss = impuritiesLoss * lotWeight / 100
         brokenLoss = brokenLoss * lotWeight / 100
         ardidoLoss = ardidoLoss * lotWeight / 100
@@ -112,7 +120,7 @@ class DiscountRepositoryMilhoImpl @Inject constructor(
         val discount = DiscountMilho(
             inputDiscountId = sample.id,
             impuritiesLoss = impuritiesLoss,
-            humidityLoss = 0f,
+            humidityLoss = humidityLossKg,
             technicalLoss = technicalLoss,
             brokenLoss = brokenLoss,
             ardidoLoss = ardidoLoss,
@@ -147,6 +155,7 @@ class DiscountRepositoryMilhoImpl @Inject constructor(
         return discountDao.getDiscountById(id.toInt())
     }
 
+    // FUNÇÃO QUE O COMPILADOR ESTÁ RECLAMANDO (Implementação)
     override suspend fun getLimitsByType(
         grain: String,
         group: Int,

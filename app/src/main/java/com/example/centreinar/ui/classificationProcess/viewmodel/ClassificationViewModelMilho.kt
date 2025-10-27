@@ -2,9 +2,11 @@ package com.example.centreinar.ui.classificationProcess.viewmodel
 
 import android.content.Context
 import android.util.Log
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.compose.saveable
 import com.example.centreinar.ClassificationMilho
 import com.example.centreinar.data.local.entity.DiscountMilho
 import com.example.centreinar.data.local.entity.InputDiscountMilho
@@ -13,6 +15,7 @@ import com.example.centreinar.data.local.entity.SampleMilho
 import com.example.centreinar.data.repository.ClassificationRepositoryMilhoImpl
 import com.example.centreinar.util.PDFExporterMilho
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -23,7 +26,7 @@ import javax.inject.Inject
 class ClassificationViewModelMilho @Inject constructor(
     private val repository: ClassificationRepositoryMilhoImpl,
     private val pdfExporter: PDFExporterMilho,
-    savedStateHandle: SavedStateHandle
+    savedStateHandle: SavedStateHandle // <-- INJETADO
 ) : ViewModel() {
 
     private val _classification = MutableStateFlow<ClassificationMilho?>(null)
@@ -35,23 +38,26 @@ class ClassificationViewModelMilho @Inject constructor(
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
-    var isOfficial: Boolean? = null
+    // --- ESTADO SALVÁVEL (SavedStateHandle) ---
+    // CORREÇÃO: Usando savedStateHandle para persistir o estado ao navegar/minimizar (Erro 4)
 
-    /**
-     * Classifica uma amostra de milho.
-     * Corrige o erro de tipo: repository.classifySample retorna Long (id),
-     * e depois buscamos a classificação completa.
-     */
-    // Grupo selecionado pelo usuário (ex: 1 = Grupo 1, 2 = Grupo 2, etc.)
-    var selectedGroup: Int? = null
-        private set
-
-    fun selectGroup(group: Int) {
-        selectedGroup = group
+    var selectedGrain by savedStateHandle.saveable {
+        mutableStateOf<String?>("Milho") // Milho é o valor padrão
     }
 
+    var isOfficial by savedStateHandle.saveable {
+        mutableStateOf<Boolean?>(null)
+    }
+
+    // Grupo selecionado pelo usuário (ex: 1 = Grupo 1, 2 = Grupo 2, etc.)
+    var selectedGroup by savedStateHandle.saveable {
+        mutableStateOf<Int?>(null)
+    }
+    // ---------------------------------------------------------------------
+
     fun classifySample(sample: SampleMilho) {
-        viewModelScope.launch {
+        // Garantindo que a operação de I/O é executada na thread correta
+        viewModelScope.launch(Dispatchers.IO) {
             _isLoading.value = true
             _error.value = null
             try {
@@ -73,8 +79,6 @@ class ClassificationViewModelMilho @Inject constructor(
 
     /**
      * Exporta a classificação para PDF.
-     * Compatível com a assinatura:
-     * pdfExporter.exportDiscountToPdf(context, discount, sampleInput, limit)
      */
     fun exportClassificationToPdf(
         context: Context,
@@ -82,8 +86,10 @@ class ClassificationViewModelMilho @Inject constructor(
         sample: SampleMilho,
         limit: LimitMilho
     ) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) { // Adicionado Dispatchers.IO
             try {
+                // ... (O restante da lógica de exportação) ...
+
                 // Monta o InputDiscountMilho com base na amostra
                 val inputDiscount = InputDiscountMilho(
                     classificationId = classification.id,
@@ -94,6 +100,7 @@ class ClassificationViewModelMilho @Inject constructor(
                     lotWeight = sample.lotWeight,
                     lotPrice = 0f,
                     impurities = sample.impurities,
+                    // Note: Os campos aqui devem corresponder à Entidade InputDiscountMilho
                     humidity = 0f,
                     broken = sample.broken,
                     ardidos = sample.ardido,

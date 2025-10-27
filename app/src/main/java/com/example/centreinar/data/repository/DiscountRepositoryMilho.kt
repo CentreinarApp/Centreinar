@@ -39,12 +39,13 @@ interface DiscountRepositoryMilho {
 
     suspend fun getDiscountById(id: Long): DiscountMilho?
 
+    // FUNÇÃO QUE O COMPILADOR ESTÁ RECLAMANDO (Contrato)
     suspend fun getLimitsByType(
         grain: String,
         group: Int,
         tipo: Int,
         limitSource: Int
-    ): Map<String, Float>
+    ): Map<String, Float> // Mantemos o tipo Map<String, Float> para o cálculo
 
     suspend fun setLimit(
         grain: String,
@@ -58,13 +59,12 @@ interface DiscountRepositoryMilho {
         carunchado: Float
     ): Long
 
-    // CORREÇÃO: Tipo de retorno alterado para LimitMilho? (anulável)
     suspend fun getLimit(
         grain: String,
         group: Int,
         tipo: Int,
         source: Int
-    ): LimitMilho? // <-- CORREÇÃO AQUI
+    ): LimitMilho?
 
     suspend fun getLimitOfType1Official(
         group: Int,
