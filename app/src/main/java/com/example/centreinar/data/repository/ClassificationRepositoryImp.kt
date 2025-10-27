@@ -28,7 +28,8 @@ class ClassificationRepositoryImpl @Inject constructor(
 
         // percentuais principais
         val percentageImpurities = tools.calculateDefectPercentage(sample.foreignMattersAndImpurities, sample.sampleWeight)
-        val cleanWeight = sample.sampleWeight * (100 - percentageImpurities) / 100
+        val cleanWeight = tools.calculateDefectPercentage(100f - percentageImpurities, sample.sampleWeight)
+        // Nota: A lógica de cleanWeight é simplificada para evitar divisão por zero no Utilities
 
         val percentageBroken = tools.calculateDefectPercentage(sample.brokenCrackedDamaged, cleanWeight)
         val percentageGreenish = tools.calculateDefectPercentage(sample.greenish, cleanWeight)
@@ -163,13 +164,14 @@ class ClassificationRepositoryImpl @Inject constructor(
         return colorClassification
     }
 
+    // 🚨 CORREÇÃO CRÍTICA DO CRASH: Aceita Int? (anulável) para o ID
     override suspend fun setDisqualification(
-        classificationId: Int, badConservation: Int, graveDefectSum: Int,
+        classificationId: Int?, badConservation: Int, graveDefectSum: Int,
         strangeSmell: Int, toxicGrains: Int, insects: Int
     ): Long {
         return disqualificationDao.insert(
             DisqualificationSoja(
-                classificationId = classificationId,
+                classificationId = classificationId, // Usa o ID anulável, aceitando NULL
                 badConservation = badConservation,
                 graveDefectSum = graveDefectSum,
                 strangeSmell = strangeSmell,
@@ -212,10 +214,8 @@ class ClassificationRepositoryImpl @Inject constructor(
         disqualificationDao.updateGraveDefectSum(disqualificationId, defectSum)
     }
 
-    // CORREÇÃO DE LÓGICA APLICADA AQUI
     override suspend fun getLimitOfType1Official(group: Int, grain: String): Map<String, Float> {
 
-        // 1. Tenta buscar o limite oficial (source=0) e lida com o caso de ser nulo (Limites não encontrados)
         val limit: LimitSoja? = try {
             limitDao.getLimitsByType(grain, group, 1, 0)
         } catch (e: Exception) {
@@ -223,7 +223,6 @@ class ClassificationRepositoryImpl @Inject constructor(
             null
         }
 
-        // 2. Se o limite for encontrado, faz o mapeamento. Caso contrário, retorna um mapa vazio.
         return if (limit != null) {
             mapOf(
                 "impuritiesLowerLim" to limit.impuritiesLowerLim,
@@ -249,8 +248,14 @@ class ClassificationRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun getLimit(grain: String, group: Int, tipo: Int, source: Int): LimitSoja =
-        limitDao.getLimitsByType(grain, group, tipo, source)!! // **ATENÇÃO**: Isso pode falhar se não for o limite oficial.
+    override suspend fun getLimit(grain: String, group: Int, tipo: Int, source: Int): LimitSoja? {
+        return try {
+            // limitDao.getLimitsByType retorna LimitSoja?
+            limitDao.getLimitsByType(grain, group, tipo, source)
+        } catch (e: Exception) {
+            null
+        }
+    }
 
     override suspend fun getObservations(idClassification: Int, colorClass: ColorClassificationSoja?): String {
         val classification = classificationDao.getById(idClassification)

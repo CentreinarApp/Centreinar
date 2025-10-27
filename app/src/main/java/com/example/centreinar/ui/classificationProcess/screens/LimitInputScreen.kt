@@ -1,25 +1,16 @@
 package com.example.centreinar.ui.classificationProcess.screens
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import android.util.Log
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -31,21 +22,16 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.example.centreinar.ui.classificationProcess.viewmodel.ClassificationViewModel
-import android.util.Log // Adicionado para Log.d/e
 
 @Composable
 fun LimitInputScreen(
     navController: NavController,
     viewModel: ClassificationViewModel = hiltViewModel()
 ) {
-    // Collect default limits from ViewModel
     val defaultLimits by viewModel.defaultLimits.collectAsStateWithLifecycle()
-
-    // --- NOVO: Obtenha os valores do ViewModel para reatividade ---
     val currentGrain = viewModel.selectedGrain
     val currentGroup = viewModel.selectedGroup
 
-    // State variables
     var impurities by remember { mutableStateOf("") }
     var moisture by remember { mutableStateOf("") }
     var brokenCrackedDamaged by remember { mutableStateOf("") }
@@ -55,12 +41,11 @@ fun LimitInputScreen(
     var moldy by remember { mutableStateOf("") }
     var spoiled by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
-    var defaultsSet by remember { mutableStateOf(false) } // Track if defaults are set
+    var defaultsSet by remember { mutableStateOf(false) }
     val isEditable = viewModel.isOfficial != true
 
-    // Focus requesters (mantidos)
     val impuritiesFocus = remember { FocusRequester() }
-    val moistureFocus= remember { FocusRequester() }
+    val moistureFocus = remember { FocusRequester() }
     val brokenFocus = remember { FocusRequester() }
     val greenishFocus = remember { FocusRequester() }
     val burntFocus = remember { FocusRequester() }
@@ -68,27 +53,23 @@ fun LimitInputScreen(
     val moldyFocus = remember { FocusRequester() }
     val spoiledFocus = remember { FocusRequester() }
 
-    // Get keyboard controller
     val keyboardController = LocalSoftwareKeyboardController.current
-
-    // 1. Defina o estado da rolagem
     val scrollState = rememberScrollState()
 
-    // CORREÇÃO: LaunchedEffect agora reage a mudanças no Grão e Grupo
     LaunchedEffect(currentGrain, currentGroup) {
         if (currentGrain != null && currentGroup != null) {
-            Log.d("LimiteDebug", "Parâmetros prontos. Carregando limites para: $currentGrain, Grupo $currentGroup")
-            viewModel.loadDefaultLimits() // Chamado apenas quando Grão e Grupo existem
+            Log.d("LimiteDebug", "Carregando limites para: $currentGrain, Grupo $currentGroup")
+            viewModel.loadDefaultLimits()
             impuritiesFocus.requestFocus()
         } else {
-            Log.w("LimiteDebug", "Aguardando seleção de Grão/Grupo antes de carregar limites.")
+            Log.d("LimiteDebug", "Grão/Grupo não definidos ainda")
         }
     }
 
     LaunchedEffect(defaultLimits) {
         if (defaultLimits != null && !defaultsSet) {
             impurities = defaultLimits?.get("impuritiesUpLim")?.toString() ?: ""
-            moisture = defaultLimits?.get("moistureUpLim")?.toString()?:""
+            moisture = defaultLimits?.get("moistureUpLim")?.toString() ?: ""
             brokenCrackedDamaged = defaultLimits?.get("brokenUpLim")?.toString() ?: ""
             greenish = defaultLimits?.get("greenishUpLim")?.toString() ?: ""
             burnt = defaultLimits?.get("burntUpLim")?.toString() ?: ""
@@ -99,194 +80,156 @@ fun LimitInputScreen(
         }
     }
 
-    // 2. Aplique a rolagem ao Column principal
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(32.dp)
-            .verticalScroll(scrollState) // <-- APLICAÇÃO DA ROLAGEM
-    ) {
-        if(isEditable) {
-            Text(
-                "Insira os limites de tolerância",
-                style = MaterialTheme.typography.headlineSmall,
-                color = MaterialTheme.colorScheme.onBackground
-            )
-        }
-        else{
-            Text(
-                "Limites de tolerância",
-                style = MaterialTheme.typography.headlineSmall,
-                color = MaterialTheme.colorScheme.onBackground
-            )
-        }
-        Spacer(modifier = Modifier.height(24.dp))
+    Column(modifier = Modifier.fillMaxSize().padding(32.dp)) {
+        Box(modifier = Modifier.weight(1f).verticalScroll(scrollState)) {
+            Column {
+                Text(
+                    if (isEditable) "Insira os limites de tolerância" else "Limites de tolerância",
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+                Spacer(modifier = Modifier.height(24.dp))
 
-        // Impurities
-        NumberInputField(
-            value = impurities,
-            onValueChange = { impurities = it },
-            label = "Matéria estranha e Impurezas (%)",
-            focusRequester = impuritiesFocus,
-            nextFocus = moistureFocus,
-            enabled = isEditable
-        )
+                NumberInputField(
+                    label = "Matéria estranha e Impurezas (%)",
+                    value = impurities,
+                    onValueChange = { impurities = it },
+                    focusRequester = impuritiesFocus,
+                    nextFocus = moistureFocus,
+                    enabled = isEditable
+                )
+                Spacer(Modifier.height(16.dp))
 
-        Spacer(modifier = Modifier.height(16.dp))
+                NumberInputField(
+                    label = "Umidade (%)",
+                    value = moisture,
+                    onValueChange = { moisture = it },
+                    focusRequester = moistureFocus,
+                    nextFocus = burntFocus,
+                    enabled = isEditable
+                )
+                Spacer(Modifier.height(16.dp))
 
-        // Moisture
-        NumberInputField(
-            value = moisture,
-            onValueChange = { moisture = it },
-            label = "Umidade (%)",
-            focusRequester = moistureFocus,
-            nextFocus = burntFocus,
-            enabled = isEditable
-        )
+                NumberInputField(
+                    label = "Queimados (%)",
+                    value = burnt,
+                    onValueChange = { burnt = it },
+                    focusRequester = burntFocus,
+                    nextFocus = burntOrSourFocus,
+                    enabled = isEditable
+                )
+                Spacer(Modifier.height(16.dp))
 
-        Spacer(modifier = Modifier.height(16.dp))
+                NumberInputField(
+                    label = "Ardidos e Queimados (%)",
+                    value = burntOrSour,
+                    onValueChange = { burntOrSour = it },
+                    focusRequester = burntOrSourFocus,
+                    nextFocus = moldyFocus,
+                    enabled = isEditable
+                )
+                Spacer(Modifier.height(16.dp))
 
-        // Burnt
-        NumberInputField(
-            value = burnt,
-            onValueChange = { burnt = it },
-            label = "Queimados (%)",
-            focusRequester = burntFocus,
-            nextFocus = burntOrSourFocus,
-            enabled = isEditable
-        )
+                NumberInputField(
+                    label = "Mofados (%)",
+                    value = moldy,
+                    onValueChange = { moldy = it },
+                    focusRequester = moldyFocus,
+                    nextFocus = spoiledFocus,
+                    enabled = isEditable
+                )
+                Spacer(Modifier.height(16.dp))
 
-        Spacer(modifier = Modifier.height(16.dp))
+                NumberInputField(
+                    label = "Total de Avariados (%)",
+                    value = spoiled,
+                    onValueChange = { spoiled = it },
+                    focusRequester = spoiledFocus,
+                    nextFocus = greenishFocus,
+                    enabled = isEditable
+                )
+                Spacer(Modifier.height(16.dp))
 
-        // Burnt or Sour
-        NumberInputField(
-            value = burntOrSour,
-            onValueChange = { burntOrSour = it },
-            label = "Ardidos e Queimados (%)",
-            focusRequester = burntOrSourFocus,
-            nextFocus = moldyFocus,
-            enabled = isEditable
-        )
-        Spacer(modifier = Modifier.height(16.dp))
+                NumberInputField(
+                    label = "Esverdeados (%)",
+                    value = greenish,
+                    onValueChange = { greenish = it },
+                    focusRequester = greenishFocus,
+                    nextFocus = brokenFocus,
+                    enabled = isEditable
+                )
+                Spacer(Modifier.height(16.dp))
 
-        // Moldy
-        NumberInputField(
-            value = moldy,
-            onValueChange = { moldy = it },
-            label = "Mofados (%)",
-            focusRequester = moldyFocus,
-            nextFocus = spoiledFocus,
-            enabled = isEditable
-        )
+                NumberInputField(
+                    label = "Partidos, Quebrados e Amassados (%)",
+                    value = brokenCrackedDamaged,
+                    onValueChange = { if (isEditable) brokenCrackedDamaged = it },
+                    focusRequester = brokenFocus,
+                    nextFocus = null,
+                    onDone = { keyboardController?.hide() },
+                    enabled = isEditable
+                )
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // spoiled
-        NumberInputField(
-            value = spoiled,
-            onValueChange = { spoiled = it },
-            label = "Total de Avariados (%)",
-            focusRequester = spoiledFocus,
-            nextFocus = greenishFocus,
-            enabled = isEditable
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // greenish
-        NumberInputField(
-            value = greenish,
-            onValueChange = { greenish = it },
-            label = "Esverdeados (%)",
-            focusRequester = greenishFocus,
-            nextFocus = brokenFocus,
-            enabled = isEditable
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // broken
-        NumberInputField(
-            value = brokenCrackedDamaged,
-            onValueChange = { if (isEditable) brokenCrackedDamaged = it },
-            label = "Partidos, Quebrados e Amassados (%)",
-            focusRequester = brokenFocus,
-            nextFocus = null,
-            onDone = { keyboardController?.hide() },
-            enabled = isEditable
-        )
-
-        errorMessage?.let {
-            Text(
-                text = it,
-                color = MaterialTheme.colorScheme.error,
-                modifier = Modifier.padding(vertical = 8.dp)
-            )
+                errorMessage?.let {
+                    Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(vertical = 8.dp))
+                }
+            }
         }
 
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
         Button(
             onClick = {
-                val allFields = listOf(
-                    impurities, brokenCrackedDamaged, greenish,
-                    burnt, burntOrSour, moldy, spoiled
-                )
-
-                // Validate all fields
+                val allFields = listOf(impurities, brokenCrackedDamaged, greenish, burnt, burntOrSour, moldy, spoiled)
                 if (allFields.any { it.isEmpty() || it == "." }) {
-                    errorMessage = "Por favor preencha todos os campos com valores válidos"
+                    errorMessage = "Por favor, preencha todos os campos."
                     return@Button
                 }
-
-                if(isEditable){
+                if (isEditable) {
                     try {
                         viewModel.setLimit(
-                            impurities = toFloat(impurities),
-                            moisture = toFloat(moisture),
-                            brokenCrackedDamaged = toFloat(brokenCrackedDamaged),
-                            greenish = toFloat(greenish),
-                            burnt = toFloat(burnt),
-                            burntOrSour = toFloat(burntOrSour),
-                            moldy = toFloat(moldy),
-                            spoiled = toFloat(spoiled)
+                            impurities = impurities.toFloatOrDefault(),
+                            moisture = moisture.toFloatOrDefault(),
+                            brokenCrackedDamaged = brokenCrackedDamaged.toFloatOrDefault(),
+                            greenish = greenish.toFloatOrDefault(),
+                            burnt = burnt.toFloatOrDefault(),
+                            burntOrSour = burntOrSour.toFloatOrDefault(),
+                            moldy = moldy.toFloatOrDefault(),
+                            spoiled = spoiled.toFloatOrDefault()
                         )
                     } catch (e: NumberFormatException) {
-                        errorMessage = "Valores numéricos inválidos detectados"
+                        errorMessage = "Valores numéricos inválidos."
                     }
                 }
                 navController.navigate("disqualification")
             },
             modifier = Modifier.fillMaxWidth()
         ) {
-            if(isEditable){
-                Text("Enviar Limites")
-            }
-            else{
-                Text("Próximo")
-            }
+            Text(if (isEditable) "Enviar Limites" else "Próximo")
         }
     }
 }
 
-
 @Composable
 private fun NumberInputField(
+    label: String,
     value: String,
     onValueChange: (String) -> Unit,
-    label: String,
     focusRequester: FocusRequester,
-    nextFocus: FocusRequester? = null,
-    onDone: (() -> Unit)? = null,
-    enabled: Boolean = true
+    nextFocus: FocusRequester?,
+    enabled: Boolean,
+    onDone: (() -> Unit)? = null
 ) {
     OutlinedTextField(
         value = value,
-        onValueChange = onValueChange,
+        onValueChange = {
+            // Permite apenas dígitos e ponto
+            if (it.isEmpty() || it.matches(Regex("^(\\d*\\.?\\d*)$"))) {
+                onValueChange(it)
+            }
+        },
         label = { Text(label) },
-        modifier = Modifier
-            .fillMaxWidth()
-            .focusRequester(focusRequester),
+        modifier = Modifier.fillMaxWidth().focusRequester(focusRequester),
         keyboardOptions = KeyboardOptions(
             keyboardType = KeyboardType.Number,
             imeAction = if (nextFocus != null) ImeAction.Next else ImeAction.Done
@@ -301,10 +244,4 @@ private fun NumberInputField(
     )
 }
 
-private fun toFloat(value : String): Float {
-    var valueFloat = value.toFloat()
-    if(valueFloat == 0.0f){
-        valueFloat = 100.0f
-    }
-    return valueFloat
-}
+private fun String.toFloatOrDefault(): Float = this.toFloatOrNull()?.takeIf { it > 0f } ?: 100f

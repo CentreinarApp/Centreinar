@@ -13,7 +13,7 @@ data class DisqualificationSoja(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
     @ColumnInfo(name = "classificationId")
-    val classificationId: Int,
+    val classificationId: Int?,
     @ColumnInfo(name = "badConservation")
     val badConservation: Int,
     @ColumnInfo(name = "graveDefectSum")

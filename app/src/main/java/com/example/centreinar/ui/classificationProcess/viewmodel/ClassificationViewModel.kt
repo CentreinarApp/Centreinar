@@ -11,7 +11,7 @@ import com.example.centreinar.ClassificationSoja
 import com.example.centreinar.ColorClassificationSoja
 import com.example.centreinar.LimitSoja
 import com.example.centreinar.SampleSoja
-import com.example.centreinar.data.repository.ClassificationRepository // Assumindo que este é o Repositório de Soja
+import com.example.centreinar.data.repository.ClassificationRepository
 import com.example.centreinar.util.PDFExporterSoja
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -44,7 +44,7 @@ class ClassificationViewModel @Inject constructor(
     private val _lastUsedLimit = MutableStateFlow<LimitSoja?>(null)
     val lastUsedLimit: StateFlow<LimitSoja?> = _lastUsedLimit.asStateFlow()
 
-    // --- ESTADO SALVÁVEL (SavedStateHandle) ---
+    // --- ESTADO SALVÁVEL ---
     var selectedGrain by savedStateHandle.saveable {
         mutableStateOf<String?>(null)
     }
@@ -66,14 +66,12 @@ class ClassificationViewModel @Inject constructor(
     // ------------------------------------------
 
     fun clearStates() {
-        // Reset StateFlow values
         _classification.value = null
         _isLoading.value = false
         _error.value = null
         _defaultLimits.value = null
         _lastUsedLimit.value = null
 
-        // Reset savedStateHandle properties
         selectedGrain = null
         selectedGroup = null
         isOfficial = null
@@ -82,11 +80,10 @@ class ClassificationViewModel @Inject constructor(
     }
 
     fun classifySample(sample: SampleSoja) {
-        // Garantindo que selectedGrain e selectedGroup não são nulos antes de usar
         val grain = selectedGrain ?: run { _error.value = "Grão não selecionado"; return }
         val group = selectedGroup ?: run { _error.value = "Grupo não selecionado"; return }
 
-        viewModelScope.launch(Dispatchers.IO) { // Adicionado Dispatchers.IO
+        viewModelScope.launch(Dispatchers.IO) {
             try {
                 _isLoading.value = true
                 _error.value = null
@@ -101,11 +98,14 @@ class ClassificationViewModel @Inject constructor(
 
                 val resultId = repository.classifySample(sample, source)
                 val resultClassification = repository.getClassification(resultId.toInt())
+
+                // 🚨 ATUALIZAÇÃO DA DESCLASSIFICAÇÃO
+                // Atualiza o registro de desclassificação que foi inserido previamente com ID=null/0
                 if (resultClassification != null) {
                     repository.updateDisqualification(resultId.toInt(), resultClassification.finalType)
                 }
+
                 _classification.value = resultClassification
-                //fetchObservation()
             } catch (e: Exception) {
                 _error.value = e.message ?: "Unknown error"
                 Log.e("SampleInput", "Classification failed", e)
@@ -135,7 +135,7 @@ class ClassificationViewModel @Inject constructor(
             return
         }
 
-        viewModelScope.launch(Dispatchers.IO) { // Adicionado Dispatchers.IO
+        viewModelScope.launch(Dispatchers.IO) {
             try {
                 _isLoading.value = true
                 _error.value = null
@@ -162,11 +162,19 @@ class ClassificationViewModel @Inject constructor(
         }
     }
 
+    // 🚨 CORREÇÃO CRÍTICA DO CRASH: Passa null para o classificationId na inserção inicial
     fun setDisqualification(badConservation: Int, strangeSmell: Int, insects: Int, toxicGrains: Int) {
-        viewModelScope.launch(Dispatchers.IO) { // Adicionado Dispatchers.IO
+        viewModelScope.launch(Dispatchers.IO) {
             try {
-                // Assumindo que o ID da Disqualification é 0 (padrão) ou você usa outro método para obtê-lo
-                repository.setDisqualification(0, badConservation, 0, strangeSmell, toxicGrains, insects)
+                // classificationId é passado como null para evitar o erro de Chave Estrangeira
+                repository.setDisqualification(
+                    classificationId = null, // <-- CORREÇÃO
+                    badConservation = badConservation,
+                    graveDefectSum = 0, // Inserido como 0 (será atualizado em classifySample)
+                    strangeSmell = strangeSmell,
+                    toxicGrains = toxicGrains,
+                    insects = insects
+                )
             } catch (e: Exception) {
                 _error.value = e.message ?: "Unknown error"
                 Log.e("SetDisqualification", "Disqualification failed", e)
@@ -191,7 +199,7 @@ class ClassificationViewModel @Inject constructor(
 
 
     fun setClassColor(totalWeight: Float, otherColorsWeight: Float) {
-        viewModelScope.launch(Dispatchers.IO) { // Adicionado Dispatchers.IO
+        viewModelScope.launch(Dispatchers.IO) {
             val grain = selectedGrain ?: run {
                 _error.value = "Grain not selected"
                 return@launch
@@ -215,7 +223,7 @@ class ClassificationViewModel @Inject constructor(
             return
         }
 
-        viewModelScope.launch(Dispatchers.IO) { // Adicionado Dispatchers.IO
+        viewModelScope.launch(Dispatchers.IO) {
             Log.d("LimiteDebug", "Buscando limites para: Grão=$grain, Grupo=$group")
             try {
                 _defaultLimits.value = repository.getLimitOfType1Official(
@@ -235,7 +243,7 @@ class ClassificationViewModel @Inject constructor(
         val grain = selectedGrain?.toString() ?: run { return }
         val group = selectedGroup ?: run { return }
 
-        viewModelScope.launch(Dispatchers.IO) { // Adicionado Dispatchers.IO
+        viewModelScope.launch(Dispatchers.IO) {
             try {
                 if (isOfficial == true) {
                     _lastUsedLimit.value = repository.getLimit(grain, group, 1, 0)
@@ -260,7 +268,7 @@ class ClassificationViewModel @Inject constructor(
         }
     }
 
-    // --- NOVO MÉTODO PÚBLICO: Mapeia o código numérico para o rótulo de texto (Correção Erro 1) ---
+    // --- NOVO MÉTODO PÚBLICO: Mapeia o código numérico para o rótulo de texto (Correção de Rótulos) ---
     fun getFinalTypeLabel(finalType: Int): String {
         val group = selectedGroup
         val grain = selectedGrain
@@ -280,7 +288,7 @@ class ClassificationViewModel @Inject constructor(
                     else -> "Fora de Tipo" // Qualquer outro código > 2
                 }
                 2 -> when (finalType) {
-                    // CORREÇÃO: Grupo 2 só tem Padrão Básico (o tipo 1 e 2 são Padrão Básico)
+                    // CORREÇÃO: Grupo 2 só tem Padrão Básico
                     1, 2, 3 -> "Padrão Básico"
                     else -> "Fora de Tipo"
                 }
@@ -304,8 +312,9 @@ class ClassificationViewModel @Inject constructor(
     }
     // ---------------------------------------------------------------------------------------------
 
+
     fun exportClassification(context: Context, classification: ClassificationSoja, limit: LimitSoja) {
-        viewModelScope.launch(Dispatchers.IO) { // Adicionado Dispatchers.IO
+        viewModelScope.launch(Dispatchers.IO) {
             try {
                 // Fetch data sequentially - each call will wait for completion
                 val sample = repository.getSample(classification.sampleId)

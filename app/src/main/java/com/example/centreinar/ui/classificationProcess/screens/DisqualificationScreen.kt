@@ -1,5 +1,6 @@
 package com.example.centreinar.ui.classificationProcess.screens
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -7,8 +8,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState // <-- NOVO: Import para o estado do scroll
-import androidx.compose.foundation.verticalScroll  // <-- NOVO: Import para o modificador
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
@@ -37,74 +36,72 @@ public fun DisqualificationScreen(
     var insects by remember { mutableStateOf(false) }
     var toxicGrains by remember { mutableStateOf(false) }
 
-    // 1. Defina o estado da rolagem
-    val scrollState = rememberScrollState()
-
     Surface(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier.fillMaxSize(), // Surface preenche
         color = MaterialTheme.colorScheme.background
     ) {
-        // 2. Aplique a rolagem ao Column principal
+        // CORREÇÃO: Usamos fillMaxSize com SpaceBetween (sem scroll) para layout fixo
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(scrollState) // <-- APLICAÇÃO DA ROLAGEM
-                .padding(32.dp)
+                .padding(32.dp),
+            verticalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(
-                "O lote apresenta ",
-                style = MaterialTheme.typography.headlineSmall,
-                color = MaterialTheme.colorScheme.onBackground
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Checkbox(
-                    checked = badConservation,
-                    onCheckedChange = { badConservation = it }
-                )
+            Column { // Coluna interna para o conteúdo de cima (Checkboxes)
                 Text(
-                    "Mal estado de conservação?",
+                    "O lote apresenta ",
+                    style = MaterialTheme.typography.headlineSmall,
                     color = MaterialTheme.colorScheme.onBackground
                 )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Checkbox(
+                        checked = badConservation,
+                        onCheckedChange = { badConservation = it }
+                    )
+                    Text(
+                        "Mal estado de conservação?",
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                }
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Checkbox(
+                        checked = strangeSmell,
+                        onCheckedChange = { strangeSmell = it }
+                    )
+                    Text(
+                        "Cheiro estranho?",
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                }
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Checkbox(
+                        checked = insects,
+                        onCheckedChange = { insects = it }
+                    )
+                    Text(
+                        "Insetos vivos ou mortos?",
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                }
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Checkbox(
+                        checked = toxicGrains,
+                        onCheckedChange = { toxicGrains = it }
+                    )
+                    Text(
+                        "Sementes tóxicas?",
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                }
             }
 
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Checkbox(
-                    checked = strangeSmell,
-                    onCheckedChange = { strangeSmell = it }
-                )
-                Text(
-                    "Cheiro estranho?",
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-            }
-
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Checkbox(
-                    checked = insects,
-                    onCheckedChange = { insects = it }
-                )
-                Text(
-                    "Insetos vivos ou mortos?",
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-            }
-
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Checkbox(
-                    checked = toxicGrains,
-                    onCheckedChange = { toxicGrains = it }
-                )
-                Text(
-                    "Sementes tóxicas?",
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-            }
-
-            Spacer(modifier = Modifier.height(32.dp))
-
+            // O botão é fixado na parte inferior graças ao SpaceBetween
             Button(
                 onClick = {
                     val badConservationInt = if (badConservation) 1 else 0

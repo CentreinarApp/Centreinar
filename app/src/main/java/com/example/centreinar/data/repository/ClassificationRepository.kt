@@ -42,7 +42,7 @@ interface ClassificationRepository {
     ): ColorClassificationSoja
 
     suspend fun setDisqualification(
-        classificationId: Int,
+        classificationId: Int?,
         badConservation: Int,
         graveDefectSum: Int,
         strangeSmell: Int,
@@ -69,6 +69,6 @@ interface ClassificationRepository {
     suspend fun getDisqualificationByClassificationId(idClassification: Int): DisqualificationSoja?
     suspend fun updateDisqualification(classificationId: Int, finalType: Int)
     suspend fun getLimitOfType1Official(group: Int, grain: String): Map<String, Float>
-    suspend fun getLimit(grain: String, group: Int, tipo: Int, source: Int): LimitSoja
+    suspend fun getLimit(grain: String, group: Int, tipo: Int, source: Int): LimitSoja?
     suspend fun getObservations(idClassification: Int, colorClass: ColorClassificationSoja? = null): String
 }

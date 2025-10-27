@@ -1,15 +1,7 @@
 package com.example.centreinar.ui.classificationProcess.screens
 
 import android.util.Log
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardActions
@@ -21,12 +13,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -36,29 +23,26 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
-import com.example.centreinar.SampleSoja // Importe a entidade de Soja
-import com.example.centreinar.ui.classificationProcess.viewmodel.ClassificationViewModel // Importe o ViewModel
+import com.example.centreinar.SampleSoja
+import com.example.centreinar.data.local.entity.SampleMilho
+import com.example.centreinar.ui.classificationProcess.viewmodel.ClassificationViewModel
 import java.math.RoundingMode
-import com.example.centreinar.data.local.entity.SampleMilho // Importe a entidade de Milho
-
 
 @Composable
-fun ClassificationInputScreen( // Função Principal, nome corrigido
+fun ClassificationInputScreen( // Função Principal
     navController: NavController,
     viewModel: ClassificationViewModel = hiltViewModel()
 ) {
-    val scrollState = rememberScrollState()
-
-    // CORREÇÃO: Leitura direta das variáveis 'var' do ViewModel
+    // Leitura das variáveis 'val' do ViewModel
     val currentGrain = viewModel.selectedGrain
     val currentGroup = viewModel.selectedGroup
 
-    // Variável para determinar se é Milho (para lógica de interface)
     val isMilho = currentGrain == "Milho"
     val isSoja = !isMilho
 
-    // Variáveis de Estado para os Inputs
+    // Variáveis de Estado para os Inputs (mantidas)
     var lotWeight by remember { mutableStateOf("") }
     var sampleWeight by remember { mutableStateOf("") }
     var foreignMatters by remember { mutableStateOf("") }
@@ -97,23 +81,21 @@ fun ClassificationInputScreen( // Função Principal, nome corrigido
     val insectFocus = remember { FocusRequester() }
     val damagedFocus = remember { FocusRequester() }
 
-
     val tabTitles = listOf("Informação Básica", "Avariados", "Defeitos Finais")
     var selectedTab by remember { mutableStateOf(0) }
 
     LaunchedEffect(selectedTab) {
         when (selectedTab) {
             0 -> lotWeightFocus.requestFocus()
-            1 -> sourFocus.requestFocus() // Foco na nova ordem: Ardidos
-            2 -> insectFocus.requestFocus() // Foco nos picados
+            1 -> sourFocus.requestFocus()
+            2 -> insectFocus.requestFocus()
         }
     }
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(scrollState)
+        modifier = Modifier.fillMaxSize()
     ) {
+        // 1. TAB ROW (Altura Fixa)
         TabRow(selectedTabIndex = selectedTab) {
             tabTitles.forEachIndexed { index, title ->
                 Tab(
@@ -123,95 +105,103 @@ fun ClassificationInputScreen( // Função Principal, nome corrigido
                 )
             }
         }
-        Text(
-            "Insira os dados de classificação",
-            style = MaterialTheme.typography.headlineSmall,
-            color = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier.padding(16.dp)
-        )
 
-        Spacer(modifier = Modifier.height(5.dp))
-
-        when (selectedTab) {
-
-            0 -> BasicInfoTabClassification(
-                lotWeight = lotWeight,
-                onLotWeightChange = { lotWeight = it },
-                sampleWeight = sampleWeight,
-                onSampleWeightChange = { sampleWeight = it },
-                moisture = humidity,
-                onMoistureChange = { humidity = it },
-                impurities = foreignMatters,
-                onImpuritiesChange = { foreignMatters = it },
-                brokenCrackedDamaged = brokenCrackedDamaged,
-                onBrokenCrackedDamagedChange = { brokenCrackedDamaged = it },
-                greenish = greenish,
-                onGreenishChange = { greenish = it },
-                lotWeightFocus = lotWeightFocus,
-                sampleWeightFocus = sampleWeightFocus,
-                moistureFocus = moistureFocus,
-                impuritiesFocus = impuritiesFocus,
-                brokenCrackedDamagedFocus = brokenFocus,
-                greenishFocus = greenishFocus
+        // 2. TÍTULO (Altura Fixa)
+        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+            Text(
+                "Insira os dados de classificação",
+                style = MaterialTheme.typography.headlineSmall,
+                color = MaterialTheme.colorScheme.onBackground,
             )
-
-            1 -> DefectsTab1(
-                isMilho = isMilho,
-                burnt = burnt,
-                onBurntChange = { burnt = it },
-                sour = sour,
-                onSourChange = { sour = it },
-                moldy = moldy,
-                onMoldyChange = { moldy = it },
-                shriveled = shriveled,
-                onShriveledChange = { shriveled = it },
-                fermented = fermented,
-                onFermentedChange = { fermented = it },
-                germinated = germinated,
-                onGerminatedChange = { germinated = it },
-                immature = immature,
-                onImmatureChange = { immature = it },
-                gessado = gessado,
-                onGessadoChange = { gessado = it },
-                carunchado = carunchado,
-                onCarunchadoChange = { carunchado = it },
-                burntFocus = burntFocus,
-                sourFocus = sourFocus,
-                moldyFocus = moldyFocus,
-                shriveledFocus = remember { FocusRequester() },
-                fermentedFocus = remember { FocusRequester() },
-                germinatedFocus = remember { FocusRequester() },
-                immatureFocus = remember { FocusRequester() },
-                gessadoFocus = gessadoFocus,
-                carunchadoFocus = carunchadoFocus
-            )
-
-            2 -> DefectsTab2(
-                isSoja = isSoja,
-                piercingInput = piercingInput,
-                onPiercingInputChange = {
-                    piercingInput = it
-                    // Atualiza o valor para a soma de Danificados
-                    val calculatedPiercing = (it.toFloatOrZero() / 4f).toString()
-                    val dValue = damagedInput.toFloatOrZero().toString()
-                    damaged = calculateDamagedSum(dValue, calculatedPiercing)
-                },
-                damagedInput = damagedInput,
-                onDamagedInputChange = {
-                    damagedInput = it
-                    // Atualiza o valor para a soma de Danificados
-                    val calculatedPiercing = (piercingInput.toFloatOrZero() / 4f).toString()
-                    damaged = calculateDamagedSum(it, calculatedPiercing)
-                },
-                damaged = damaged, // Total de Danificados (read-only)
-                onDamagedChange = { damaged = it }, // Recebe a soma do cálculo
-                doesDefineColorClass = doesDefineColorClass,
-                onDoesDefineColorClassChange = { doesDefineColorClass = it },
-                insectFocus = insectFocus,
-                damagedFocus = damagedFocus
-            )
+            Spacer(modifier = Modifier.height(5.dp))
         }
 
+        // 3. CONTEÚDO DA ABA (ÁREA DE ROLAGEM) - USANDO WEIGHT(1F) + Box verticalScroll
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .verticalScroll(rememberScrollState())
+                .padding(8.dp)
+        ) {
+            when (selectedTab) {
+                0 -> BasicInfoTabClassification(
+                    lotWeight = lotWeight,
+                    onLotWeightChange = { lotWeight = it },
+                    sampleWeight = sampleWeight,
+                    onSampleWeightChange = { sampleWeight = it },
+                    moisture = humidity,
+                    onMoistureChange = { humidity = it },
+                    impurities = foreignMatters,
+                    onImpuritiesChange = { foreignMatters = it },
+                    brokenCrackedDamaged = brokenCrackedDamaged,
+                    onBrokenCrackedDamagedChange = { brokenCrackedDamaged = it },
+                    greenish = greenish,
+                    onGreenishChange = { greenish = it },
+                    lotWeightFocus = lotWeightFocus,
+                    sampleWeightFocus = sampleWeightFocus,
+                    moistureFocus = moistureFocus,
+                    impuritiesFocus = impuritiesFocus,
+                    brokenCrackedDamagedFocus = brokenFocus,
+                    greenishFocus = greenishFocus
+                )
+
+                1 -> DefectsTab1(
+                    isMilho = isMilho,
+                    burnt = burnt,
+                    onBurntChange = { burnt = it },
+                    sour = sour,
+                    onSourChange = { sour = it },
+                    moldy = moldy,
+                    onMoldyChange = { moldy = it },
+                    shriveled = shriveled,
+                    onShriveledChange = { shriveled = it },
+                    fermented = fermented,
+                    onFermentedChange = { fermented = it },
+                    germinated = germinated,
+                    onGerminatedChange = { germinated = it },
+                    immature = immature,
+                    onImmatureChange = { immature = it },
+                    gessado = gessado,
+                    onGessadoChange = { gessado = it },
+                    carunchado = carunchado,
+                    onCarunchadoChange = { carunchado = it },
+                    burntFocus = burntFocus,
+                    sourFocus = sourFocus,
+                    moldyFocus = moldyFocus,
+                    shriveledFocus = remember { FocusRequester() },
+                    fermentedFocus = remember { FocusRequester() },
+                    germinatedFocus = remember { FocusRequester() },
+                    immatureFocus = remember { FocusRequester() },
+                    gessadoFocus = gessadoFocus,
+                    carunchadoFocus = carunchadoFocus
+                )
+
+                2 -> DefectsTab2(
+                    isSoja = isSoja,
+                    piercingInput = piercingInput,
+                    onPiercingInputChange = {
+                        piercingInput = it
+                        val calculatedPiercing = (it.toFloatOrZero() / 4f).toString()
+                        val dValue = damagedInput.toFloatOrZero().toString()
+                        damaged = calculateDamagedSum(dValue, calculatedPiercing)
+                    },
+                    damagedInput = damagedInput,
+                    onDamagedInputChange = {
+                        damagedInput = it
+                        val calculatedPiercing = (piercingInput.toFloatOrZero() / 4f).toString()
+                        damaged = calculateDamagedSum(it, calculatedPiercing)
+                    },
+                    damaged = damaged, // Total de Danificados (read-only)
+                    onDamagedChange = { damaged = it },
+                    doesDefineColorClass = doesDefineColorClass,
+                    onDoesDefineColorClassChange = { doesDefineColorClass = it },
+                    insectFocus = insectFocus,
+                    damagedFocus = damagedFocus
+                )
+            }
+        }
+
+        // 4. BOTÕES DE NAVEGAÇÃO (Altura Fixa)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -226,7 +216,6 @@ fun ClassificationInputScreen( // Função Principal, nome corrigido
                 Spacer(modifier = Modifier.weight(1f))
             }
 
-
             if (selectedTab < tabTitles.lastIndex) {
                 Button(onClick = {
                     selectedTab++
@@ -238,7 +227,6 @@ fun ClassificationInputScreen( // Função Principal, nome corrigido
                     onClick = {
                         val group = currentGroup ?: 1
 
-                        // Validação de campos essenciais
                         if (sampleWeight.toFloatOrZero() <= 0f) {
                             errorMessage = "O peso da amostra não pode ser zero."
                             return@Button
@@ -265,7 +253,6 @@ fun ClassificationInputScreen( // Função Principal, nome corrigido
                             )
                             viewModel.classifySample(sample)
                         } else if (currentGrain == "Milho") {
-                            // CÓDIGO MILHO: Cria SampleMilho
                             val sample = SampleMilho(
                                 grain = "Milho",
                                 group = group,
@@ -281,7 +268,6 @@ fun ClassificationInputScreen( // Função Principal, nome corrigido
                                 immature = immature.toFloatOrZero(),
                                 gessado = gessado.toFloatOrZero()
                             )
-                            // A navegação para Milho requer o ViewModelMilho.
                             Log.e("ClassificationInput", "Milho deve ser classificado via ViewModelMilho.")
                         }
 
@@ -293,6 +279,7 @@ fun ClassificationInputScreen( // Função Principal, nome corrigido
                 }
             }
         }
+
         if (errorMessage != null) {
             Text(
                 text = errorMessage!!,
@@ -303,7 +290,7 @@ fun ClassificationInputScreen( // Função Principal, nome corrigido
     }
 }
 
-// --- FUNÇÕES DE ABA CORRIGIDAS ---
+// --- FUNÇÕES DE ABA (mesmas da sua versão, com pequenas garantias de validação) ---
 
 @Composable
 fun BasicInfoTabClassification(
@@ -326,12 +313,7 @@ fun BasicInfoTabClassification(
     brokenCrackedDamagedFocus: FocusRequester,
     greenishFocus: FocusRequester
 ) {
-    val scrollState = rememberScrollState()
-    Column(
-        modifier = Modifier
-            .padding(16.dp)
-            .verticalScroll(scrollState)
-    ) {
+    Column(modifier = Modifier.padding(16.dp)) {
         NumberInputField(
             value = lotWeight,
             onValueChange = onLotWeightChange,
@@ -357,7 +339,6 @@ fun BasicInfoTabClassification(
             focusRequester = moistureFocus,
             nextFocus = impuritiesFocus,
         )
-
         Spacer(modifier = Modifier.height(16.dp))
 
         NumberInputField(
@@ -367,7 +348,6 @@ fun BasicInfoTabClassification(
             focusRequester = impuritiesFocus,
             nextFocus = brokenCrackedDamagedFocus,
         )
-
         Spacer(modifier = Modifier.height(16.dp))
 
         NumberInputField(
@@ -377,7 +357,6 @@ fun BasicInfoTabClassification(
             focusRequester = brokenCrackedDamagedFocus,
             nextFocus = greenishFocus,
         )
-
         Spacer(modifier = Modifier.height(16.dp))
 
         NumberInputField(
@@ -387,8 +366,6 @@ fun BasicInfoTabClassification(
             focusRequester = greenishFocus,
             nextFocus = null
         )
-
-        Spacer(modifier = Modifier.height(16.dp))
     }
 }
 
@@ -423,13 +400,7 @@ fun DefectsTab1(
     gessadoFocus: FocusRequester,
     carunchadoFocus: FocusRequester
 ) {
-    val scrollState = rememberScrollState()
-    Column(
-        modifier = Modifier
-            .padding(16.dp)
-            .verticalScroll(scrollState)
-    ) {
-        // 1. Ardidos (Primeiro, ordem corrigida)
+    Column(modifier = Modifier.padding(16.dp)) {
         NumberInputField(
             value = sour,
             onValueChange = onSourChange,
@@ -438,7 +409,6 @@ fun DefectsTab1(
             nextFocus = if (isMilho) moldyFocus else burntFocus
         )
 
-        // 2. Queimados (Apenas Soja)
         if (!isMilho) {
             NumberInputField(
                 value = burnt,
@@ -449,7 +419,6 @@ fun DefectsTab1(
             )
         }
 
-        // 3. Mofados
         NumberInputField(
             value = moldy,
             onValueChange = onMoldyChange,
@@ -458,7 +427,6 @@ fun DefectsTab1(
             nextFocus = if (isMilho) carunchadoFocus else fermentedFocus
         )
 
-        // 4. Carunchados (Apenas Milho)
         if (isMilho) {
             NumberInputField(
                 value = carunchado,
@@ -469,7 +437,6 @@ fun DefectsTab1(
             )
         }
 
-        // 5. Outros Defeitos (Comuns, Milho e Soja)
         NumberInputField(
             value = fermented,
             onValueChange = onFermentedChange,
@@ -492,8 +459,7 @@ fun DefectsTab1(
             nextFocus = if (isMilho) gessadoFocus else shriveledFocus
         )
 
-        // 6. Chochos (Soja) / Gessados (Milho)
-        if (!isMilho) { // Soja
+        if (!isMilho) {
             NumberInputField(
                 value = shriveled,
                 onValueChange = onShriveledChange,
@@ -501,10 +467,10 @@ fun DefectsTab1(
                 focusRequester = shriveledFocus,
                 nextFocus = null
             )
-        } else { // Milho
+        } else {
             NumberInputField(
                 value = gessado,
-                onValueChange = onGessadoChange, // CORREÇÃO: onValueChange é o nome do parâmetro
+                onValueChange = onGessadoChange,
                 label = "Gessados (g)",
                 focusRequester = gessadoFocus,
                 nextFocus = null
@@ -527,14 +493,8 @@ fun DefectsTab2(
     insectFocus: FocusRequester,
     damagedFocus: FocusRequester
 ) {
-    val scrollState = rememberScrollState()
-    Column(
-        modifier = Modifier
-            .padding(16.dp)
-            .verticalScroll(scrollState)
-    ) {
+    Column(modifier = Modifier.padding(16.dp)) {
         if (isSoja) {
-            // Campos de Danificados/Picados são EXCLUSIVOS da Soja
             NumberInputField(
                 value = piercingInput,
                 onValueChange = onPiercingInputChange,
@@ -555,7 +515,6 @@ fun DefectsTab2(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Total de Danificados (ReadOnly)
             OutlinedTextField(
                 value = damaged,
                 onValueChange = onDamagedChange,
@@ -565,7 +524,6 @@ fun DefectsTab2(
                 readOnly = true
             )
         } else {
-            // Mensagem para Milho (se não houver campos de defeito adicionais)
             Text("Nenhum defeito adicional para Milho nesta aba.")
         }
 
@@ -578,7 +536,6 @@ fun DefectsTab2(
         }
     }
 }
-
 
 @Composable
 private fun NumberInputField(
@@ -595,7 +552,6 @@ private fun NumberInputField(
     OutlinedTextField(
         value = value,
         onValueChange = {
-            // Permite apenas números e pontos/vírgulas
             if (it.isEmpty() || it.matches(Regex("^(\\d*\\.?\\d*)$"))) {
                 onValueChange(it)
             }
@@ -610,7 +566,7 @@ private fun NumberInputField(
         ),
         keyboardActions = KeyboardActions(
             onNext = { nextFocus?.requestFocus() },
-            onDone = { keyboardController?.hide() }
+            onDone = { onDone?.invoke() }
         ),
         singleLine = true,
         enabled = enabled,
@@ -618,7 +574,7 @@ private fun NumberInputField(
     )
 }
 
-// Funções auxiliares de conversão (essenciais para evitar o bug de quebra)
+// --- Funções auxiliares de conversão ---
 private fun String.toFloatOrZero(): Float {
     return this.toBigDecimalOrNull()
         ?.setScale(2, RoundingMode.HALF_UP)

@@ -3,20 +3,21 @@ package com.example.centreinar.ui
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.fillMaxSize // Adicionado
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Surface // Adicionado
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier // Adicionado
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navigation
-import com.example.centreinar.ui.classificationProcess.screens.* // soja + milho
-import com.example.centreinar.ui.classificationProcess.viewmodel.ClassificationViewModel
-import com.example.centreinar.ui.discount.screens.* // soja + milho
-import com.example.centreinar.ui.discount.viewmodel.DiscountViewModel
+import com.example.centreinar.ui.classificationProcess.screens.* import com.example.centreinar.ui.classificationProcess.viewmodel.ClassificationViewModel
+import com.example.centreinar.ui.discount.screens.* import com.example.centreinar.ui.discount.viewmodel.DiscountViewModel
 import com.example.centreinar.ui.theme.CentreinarTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -26,7 +27,10 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             CentreinarTheme {
-                CentreinarApp()
+                // Surface é necessário para garantir que o NavHost preencha o espaço
+                Surface(modifier = Modifier.fillMaxSize()) {
+                    CentreinarApp()
+                }
             }
         }
     }
@@ -38,7 +42,8 @@ fun CentreinarApp() {
 
     NavHost(
         navController = navController,
-        startDestination = "main_flow"
+        startDestination = "main_flow",
+        modifier = Modifier.fillMaxSize() // 🚨 CORREÇÃO CRÍTICA AQUI: NavHost preenche o espaço
     ) {
         navigation(
             startDestination = "home",
@@ -212,7 +217,6 @@ fun CentreinarApp() {
 
             // -----------------------------
             // Fluxo CLASSIFICAÇÃO - MILHO
-            // (mesmo pacote da soja)
             // -----------------------------
             composable("milhoGrainSelection") { backStackEntry ->
                 val parentEntry = remember(backStackEntry) {

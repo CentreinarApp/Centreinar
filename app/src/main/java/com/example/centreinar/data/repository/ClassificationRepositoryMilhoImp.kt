@@ -121,15 +121,16 @@ class ClassificationRepositoryMilhoImpl @Inject constructor(
         }
     }
 
-    // 🟢 IMPLEMENTAÇÃO DOS NOVOS MÉTODOS DE BUSCA DE LIMITE (CORREÇÃO DO ERRO) 🟢
+    // 🟢 IMPLEMENTAÇÃO DOS NOVOS MÉTODOS DE BUSCA DE LIMITE 🟢
 
+    // CORREÇÃO: Assinatura alterada para LimitMilho? (Obrigatório para compilação)
     override suspend fun getLimit(
         grain: String,
         group: Int,
         tipo: Int,
         source: Int
     ): LimitMilho? {
-        // Implementação para buscar um único limite (pode ser o oficial ou personalizado)
+        // Usa firstOrNull() para retornar null de forma segura, alinhado à interface.
         return limitDao.getLimitsBySource(grain, group, source).firstOrNull()
     }
 
@@ -137,7 +138,7 @@ class ClassificationRepositoryMilhoImpl @Inject constructor(
         group: Int,
         grain: String
     ): Map<String, Float> {
-        // Implementação para buscar o limite oficial (source = 0) e retornar como Map<String, Float>
+        // Implementação para buscar o limite oficial (source = 0)
         val limit: LimitMilho? = limitDao.getLimitsBySource(grain, group, 0).firstOrNull()
 
         return if (limit != null) {
