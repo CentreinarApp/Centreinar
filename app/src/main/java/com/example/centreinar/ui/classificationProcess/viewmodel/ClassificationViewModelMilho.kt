@@ -28,7 +28,6 @@ class ClassificationViewModelMilho @Inject constructor(
     private val pdfExporter: PDFExporterMilho,
     savedStateHandle: SavedStateHandle // <-- INJETADO
 ) : ViewModel() {
-
     private val _classification = MutableStateFlow<ClassificationMilho?>(null)
     val classification: StateFlow<ClassificationMilho?> = _classification.asStateFlow()
 
@@ -38,38 +37,44 @@ class ClassificationViewModelMilho @Inject constructor(
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
-    // --- ESTADO SALVÁVEL (SavedStateHandle) ---
-    // CORREÇÃO: Usando savedStateHandle para persistir o estado ao navegar/minimizar (Erro 4)
-
+    // --- ESTADOS SALVÁVEIS (persistem entre recriações de tela)
     var selectedGrain by savedStateHandle.saveable {
-        mutableStateOf<String?>("Milho") // Milho é o valor padrão
+        mutableStateOf<String?>("Milho") // valor padrão
     }
 
     var isOfficial by savedStateHandle.saveable {
         mutableStateOf<Boolean?>(null)
     }
 
-    // Grupo selecionado pelo usuário (ex: 1 = Grupo 1, 2 = Grupo 2, etc.)
     var selectedGroup by savedStateHandle.saveable {
         mutableStateOf<Int?>(null)
     }
-    // ---------------------------------------------------------------------
 
+    /**
+     * Classifica a amostra de milho de forma segura.
+     * Protege contra exceções de ausência de limites e falhas de lógica.
+     */
     fun classifySample(sample: SampleMilho) {
-        // Garantindo que a operação de I/O é executada na thread correta
         viewModelScope.launch(Dispatchers.IO) {
             _isLoading.value = true
             _error.value = null
             try {
                 val limitSource = if (isOfficial == false) repository.getLastLimitSource() else 0
 
+                // Executa a classificação
                 val id = repository.classifySample(sample, limitSource)
                 val classification = repository.getClassification(id.toInt())
 
                 _classification.value = classification
+                Log.i("ClassificationMilho", "Classificação concluída com sucesso para o milho.")
 
+            } catch (e: IllegalStateException) {
+                // ⚠️ Caso específico: ausência de limites no banco
+                _error.value = e.message
+                Log.e("ClassificationMilho", "Erro de lógica: ${e.message}", e)
             } catch (e: Exception) {
-                _error.value = e.message ?: "Erro na classificação"
+                // ⚠️ Demais erros inesperados
+                _error.value = e.message ?: "Erro inesperado durante a classificação"
                 Log.e("ClassificationMilho", "Erro ao classificar", e)
             } finally {
                 _isLoading.value = false
@@ -78,7 +83,8 @@ class ClassificationViewModelMilho @Inject constructor(
     }
 
     /**
-     * Exporta a classificação para PDF.
+     * Exporta o resultado da classificação para PDF.
+     * Inclui tratamento de erros para evitar travamentos.
      */
     fun exportClassificationToPdf(
         context: Context,
@@ -86,21 +92,17 @@ class ClassificationViewModelMilho @Inject constructor(
         sample: SampleMilho,
         limit: LimitMilho
     ) {
-        viewModelScope.launch(Dispatchers.IO) { // Adicionado Dispatchers.IO
+        viewModelScope.launch(Dispatchers.IO) {
             try {
-                // ... (O restante da lógica de exportação) ...
-
-                // Monta o InputDiscountMilho com base na amostra
                 val inputDiscount = InputDiscountMilho(
                     classificationId = classification.id,
                     grain = sample.grain,
                     group = sample.group,
-                    limitSource = 0, // ou outro valor se você quiser usar o da classificação
+                    limitSource = 0,
                     daysOfStorage = 0,
                     lotWeight = sample.lotWeight,
                     lotPrice = 0f,
                     impurities = sample.impurities,
-                    // Note: Os campos aqui devem corresponder à Entidade InputDiscountMilho
                     humidity = 0f,
                     broken = sample.broken,
                     ardidos = sample.ardido,
@@ -109,7 +111,6 @@ class ClassificationViewModelMilho @Inject constructor(
                     deductionValue = 0f
                 )
 
-                // Monta um DiscountMilho com base nos dados de classificação
                 val discount = DiscountMilho(
                     id = 0,
                     inputDiscountId = inputDiscount.id,
@@ -127,13 +128,8 @@ class ClassificationViewModelMilho @Inject constructor(
                     finalWeight = 0f
                 )
 
-                // Chama o exportador de PDF
-                pdfExporter.exportDiscountToPdf(
-                    context,
-                    discount,
-                    inputDiscount,
-                    limit
-                )
+                pdfExporter.exportDiscountToPdf(context, discount, inputDiscount, limit)
+                Log.i("ClassificationMilho", "PDF exportado com sucesso para o milho.")
 
             } catch (e: Exception) {
                 _error.value = e.message ?: "Erro ao exportar PDF"

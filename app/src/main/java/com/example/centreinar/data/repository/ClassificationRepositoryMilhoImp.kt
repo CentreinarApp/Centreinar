@@ -19,11 +19,25 @@ class ClassificationRepositoryMilhoImpl @Inject constructor(
     private val sampleDao: SampleMilhoDao,
     private val tools: Utilities
 ) : ClassificationRepositoryMilho {
-
+    /**
+     * Classifica uma amostra de milho com base nos limites e defeitos calculados.
+     * Agora com verificação segura para evitar crash quando limites não existem.
+     */
     override suspend fun classifySample(sample: SampleMilho, limitSource: Int): Long {
         val limitsList = limitDao.getLimitsBySource(sample.grain, sample.group, limitSource)
-        val limit = limitsList.firstOrNull()
-            ?: throw Exception("Limites não encontrados para: grain=${sample.grain}, group=${sample.group}, source=$limitSource")
+
+        // 🚨 VERIFICAÇÃO CRÍTICA DE SEGURANÇA
+        if (limitsList.isNullOrEmpty()) {
+            Log.e(
+                "ClassificationRepoMilho",
+                "Nenhum limite encontrado para Milho: grain=${sample.grain}, group=${sample.group}, source=$limitSource"
+            )
+            throw IllegalStateException(
+                "Não foram encontrados limites de classificação para o grão ${sample.grain} (grupo ${sample.group})."
+            )
+        }
+
+        val limit = limitsList.first()
 
         val cleanWeight = if (sample.cleanWeight > 0f) sample.cleanWeight else sample.sampleWeight
 
@@ -42,11 +56,13 @@ class ClassificationRepositoryMilhoImpl @Inject constructor(
             limits = limitsList
         )
 
-        val anyExceeds = (percentageImpurities > limit.impuritiesUpLim
-                || percentageBroken > limit.brokenUpLim
-                || percentageArdido > limit.ardidoUpLim
-                || percentageMofado > limit.mofadoUpLim
-                || percentageCarunchado > limit.carunchadoUpLim)
+        val anyExceeds = (
+                percentageImpurities > limit.impuritiesUpLim ||
+                        percentageBroken > limit.brokenUpLim ||
+                        percentageArdido > limit.ardidoUpLim ||
+                        percentageMofado > limit.mofadoUpLim ||
+                        percentageCarunchado > limit.carunchadoUpLim
+                )
 
         val computedFinalType = if (anyExceeds) 0 else finalType
 
@@ -107,12 +123,12 @@ class ClassificationRepositoryMilhoImpl @Inject constructor(
 
     override suspend fun setSample(sample: SampleMilho): Long = sampleDao.insert(sample)
 
-    // 🟢 MÉTODOS EXISTENTES 🟢
-
+    // 🔹 Retorna a classificação existente
     override suspend fun getClassification(id: Int): ClassificationMilho? {
         return classificationDao.getById(id)
     }
 
+    // 🔹 Busca o último source de limite (0 = oficial, 1 = personalizado, etc.)
     override suspend fun getLastLimitSource(): Int {
         return try {
             limitDao.getLastSource()
@@ -121,24 +137,21 @@ class ClassificationRepositoryMilhoImpl @Inject constructor(
         }
     }
 
-    // 🟢 IMPLEMENTAÇÃO DOS NOVOS MÉTODOS DE BUSCA DE LIMITE 🟢
-
-    // CORREÇÃO: Assinatura alterada para LimitMilho? (Obrigatório para compilação)
+    // 🔹 Busca um limite específico
     override suspend fun getLimit(
         grain: String,
         group: Int,
         tipo: Int,
         source: Int
     ): LimitMilho? {
-        // Usa firstOrNull() para retornar null de forma segura, alinhado à interface.
         return limitDao.getLimitsBySource(grain, group, source).firstOrNull()
     }
 
+    // 🔹 Busca limites oficiais (source = 0)
     override suspend fun getLimitOfType1Official(
         group: Int,
         grain: String
     ): Map<String, Float> {
-        // Implementação para buscar o limite oficial (source = 0)
         val limit: LimitMilho? = limitDao.getLimitsBySource(grain, group, 0).firstOrNull()
 
         return if (limit != null) {
@@ -151,7 +164,10 @@ class ClassificationRepositoryMilhoImpl @Inject constructor(
                 "carunchadoUpLim" to limit.carunchadoUpLim
             )
         } else {
-            Log.w("RepoMilho", "Limites oficiais Milho (Source 0) não encontrados para Grão: $grain, Grupo: $group. Retornando mapa vazio.")
+            Log.w(
+                "RepoMilho",
+                "Limites oficiais Milho (Source 0) não encontrados para Grão: $grain, Grupo: $group. Retornando mapa vazio."
+            )
             emptyMap()
         }
     }

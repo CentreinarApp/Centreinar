@@ -5,6 +5,7 @@ import android.content.Intent
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.Rect
 import android.graphics.pdf.PdfDocument
 import android.net.Uri
 import android.os.Environment
@@ -61,8 +62,8 @@ class PDFExporterSoja @Inject constructor(
 
         // Página 5: limites de defeitos (se existir)
         defectLimits?.let { limits ->
-            val page3 = createDefectLimitsPage(document, pageWidth, pageHeight, limits)
-            document.finishPage(page3)
+            val limitPage = createDefectLimitsPage(document, pageWidth, pageHeight, limits)
+            document.finishPage(limitPage)
         }
 
         // Salva e compartilha o PDF
@@ -82,17 +83,23 @@ class PDFExporterSoja @Inject constructor(
         val pageWidth = 595
         val pageHeight = 842
 
-        // Página 1 - Dados da classificação
+        // Página 1 - Dados da classificação (Com Tabela)
         val classPage = createClassificationPage(document, pageWidth, pageHeight, classification)
         document.finishPage(classPage)
 
-        // Página 2 - Dados da amostra
+        // Página 2 - Dados da amostra (Sem alteração)
         val samplePage = createSampleClassificationPage(document, pageWidth, pageHeight, sample)
         document.finishPage(samplePage)
 
-        // Página 3 - Classificação de cor (se houver)
+        // Página 3 - Limites (Com Tabela)
+        limit?.let { limitData ->
+            val limitPage = createDefectLimitsPage(document, pageWidth, pageHeight, limitData)
+            document.finishPage(limitPage)
+        }
+
+        // Página 4 - Classificação de cor (se houver)
         colorClassification?.let { colorClass ->
-            val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, 3).create()
+            val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, 4).create()
             val page = document.startPage(pageInfo)
             val canvas = page.canvas
             val paints = setupPaints()
@@ -105,9 +112,9 @@ class PDFExporterSoja @Inject constructor(
             document.finishPage(page)
         }
 
-        // Página 4 - Observações (se houver)
+        // Página 5 - Observações (se houver)
         observation?.takeIf { it.isNotBlank() }?.let { obs ->
-            val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, 4).create()
+            val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, 5).create()
             val page = document.startPage(pageInfo)
             val canvas = page.canvas
             val paints = setupPaints()
@@ -120,14 +127,118 @@ class PDFExporterSoja @Inject constructor(
             document.finishPage(page)
         }
 
-        // Página 5 - Limites (se houver)
-        limit?.let {
-            val limitPage = createDefectLimitsPage(document, pageWidth, pageHeight, it)
-            document.finishPage(limitPage)
-        }
-
         saveAndShareDocument(context, document)
     }
+
+    // Funções de Criação de Página (Com Tabela)
+
+    private fun createClassificationPage(document: PdfDocument, pageWidth: Int, pageHeight: Int, classification: ClassificationSoja): PdfDocument.Page {
+        val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, 4).create()
+        val page = document.startPage(pageInfo)
+        val canvas: Canvas = page.canvas
+        val paints = setupPaints()
+        var yStart = 60f
+
+        canvas.drawText("RESULTADO DA CLASSIFICAÇÃO", pageWidth / 2f, yStart, paints.titlePaint)
+        yStart += 40f
+
+        // Dados para a tabela (Parameter, Percentage, Type Code)
+        val data = listOf(
+            listOf("Final Type", classification.finalType.toString(), ""),
+            listOf("-------------------", "-------------------", "------"),
+            listOf("Impurezas (%)", "%.2f".format(classification.foreignMattersPercentage), classification.foreignMatters.toString()),
+            listOf("Partidos/Quebrados (%)", "%.2f".format(classification.brokenCrackedDamagedPercentage), classification.brokenCrackedDamaged.toString()),
+            listOf("Esverdeados (%)", "%.2f".format(classification.greenishPercentage), classification.greenish.toString()),
+            listOf("Ardidos + Queimados (%)", "%.2f".format(classification.burntOrSourPercentage), classification.burntOrSour.toString()),
+            listOf("Mofados (%)", "%.2f".format(classification.moldyPercentage), classification.moldy.toString()),
+            listOf("Total Avariados (%)", "%.2f".format(classification.spoiledPercentage), classification.spoiled.toString()),
+            listOf("Queimados Máx (%)", "%.2f".format(classification.burntPercentage), classification.burnt.toString()),
+        )
+
+        // Desenha a tabela de classificação
+        drawClassificationTable(
+            canvas = canvas,
+            yStart = yStart,
+            pageWidth = pageWidth,
+            headers = listOf("PARÂMETRO", "PERCENTUAL", "TIPO"),
+            data = data,
+            paints = paints
+        )
+
+        return page
+    }
+
+    private fun createDefectLimitsPage(document: PdfDocument, pageWidth: Int, pageHeight: Int, limits: LimitSoja): PdfDocument.Page {
+        val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, 5).create()
+        val page = document.startPage(pageInfo)
+        val canvas: Canvas = page.canvas
+        val paints = setupPaints()
+        var yStart = 60f
+
+        canvas.drawText("LIMITES DE TOLERÂNCIA (SOJA)", pageWidth / 2f, yStart, paints.titlePaint)
+        yStart += 40f
+
+        // Dados para a tabela de limites
+        val data = listOf(
+            listOf("Defeito", "Limite Mín.", "Limite Máx."),
+            listOf("Matérias Estranhas", "%.2f".format(limits.impuritiesLowerLim), "%.2f".format(limits.impuritiesUpLim)),
+            listOf("Partidos/Quebrados", "%.2f".format(limits.brokenCrackedDamagedLowerLim), "%.2f".format(limits.brokenCrackedDamagedUpLim)),
+            listOf("Esverdeados", "%.2f".format(limits.greenishLowerLim), "%.2f".format(limits.greenishUpLim)),
+            listOf("Ardidos + Queimados", "%.2f".format(limits.burntOrSourLowerLim), "%.2f".format(limits.burntOrSourUpLim)),
+            listOf("Mofados", "%.2f".format(limits.moldyLowerLim), "%.2f".format(limits.moldyUpLim)),
+            listOf("Total Avariados", "%.2f".format(limits.spoiledTotalLowerLim), "%.2f".format(limits.spoiledTotalUpLim)),
+        )
+
+        // Desenha a tabela de limites
+        drawClassificationTable(
+            canvas = canvas,
+            yStart = yStart,
+            pageWidth = pageWidth,
+            headers = listOf("DEFEITO", "MÍN. (%)", "MÁX. (%)"),
+            data = data,
+            paints = paints
+        )
+
+        return page
+    }
+
+    // --- FUNÇÃO AUXILIAR PARA DESENHAR TABELA (NOVO) ---
+    private fun drawClassificationTable(
+        canvas: Canvas,
+        yStart: Float,
+        pageWidth: Int,
+        headers: List<String>,
+        data: List<List<String>>,
+        paints: Paints
+    ): Float {
+        val margin = 50f
+        val columnWidth = (pageWidth - 2 * margin) / headers.size.toFloat()
+        val rowHeight = 30f
+        var y = yStart
+        var x = margin
+
+        // Desenhar Cabeçalhos
+        canvas.drawRect(x, y, x + columnWidth * headers.size, y + rowHeight, paints.borderPaint)
+        for ((index, header) in headers.withIndex()) {
+            val cellX = x + index * columnWidth
+            canvas.drawText(header, cellX + 5f, y + rowHeight / 2f + 5f, paints.headerPaint)
+        }
+        y += rowHeight
+
+        // Desenhar Dados
+        for (row in data) {
+            canvas.drawRect(x, y, x + columnWidth * headers.size, y + rowHeight, paints.borderPaint)
+            for ((index, cell) in row.withIndex()) {
+                val cellX = x + index * columnWidth
+                canvas.drawText(cell, cellX + 5f, y + rowHeight / 2f + 5f, paints.cellPaint)
+            }
+            y += rowHeight
+        }
+        return y
+    }
+
+
+    // --- FUNÇÕES DE LAYOUT (Mantidas) ---
 
     private fun createDiscountPage(document: PdfDocument, pageWidth: Int, pageHeight: Int, discount: DiscountSoja): PdfDocument.Page {
         val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, 1).create()
@@ -138,7 +249,12 @@ class PDFExporterSoja @Inject constructor(
         var yStart = 60f
         canvas.drawText("RESULTADO DOS DESCONTOS (SOJA)", pageWidth / 2f, yStart, paints.titlePaint)
         yStart += 40f
-        canvas.drawText("Desconto total: ${discount.finalDiscount}", 50f, yStart, paints.cellPaint)
+        // Simplesmente listamos os dados importantes, você pode adaptar para tabela se quiser
+        canvas.drawText("Desconto total (Peso): ${"%.2f".format(discount.finalDiscount)} kg", 50f, yStart, paints.cellPaint)
+        yStart += 20f
+        canvas.drawText("Desconto total (Preço): ${"%.2f".format(discount.finalDiscountPrice)} R$", 50f, yStart, paints.cellPaint)
+        yStart += 20f
+        canvas.drawText("Quebra Impurezas: ${"%.2f".format(discount.impuritiesLoss)} kg", 50f, yStart, paints.cellPaint)
 
         return page
     }
@@ -150,27 +266,14 @@ class PDFExporterSoja @Inject constructor(
         val paints = setupPaints()
 
         var yStart = 60f
-        canvas.drawText("DADOS DA AMOSTRA (SOJA)", pageWidth / 2f, yStart, paints.titlePaint)
+        canvas.drawText("DADOS DA AMOSTRA (INPUT DESCONTO)", pageWidth / 2f, yStart, paints.titlePaint)
         yStart += 40f
         canvas.drawText("Umidade: ${inputDiscount.humidity}%", 50f, yStart, paints.cellPaint)
         yStart += 20f
         canvas.drawText("Impurezas: ${inputDiscount.foreignMattersAndImpurities}%", 50f, yStart, paints.cellPaint)
+        yStart += 20f
+        canvas.drawText("Preço/Saca: ${inputDiscount.lotPrice / (inputDiscount.lotWeight / 60f)} R$", 50f, yStart, paints.cellPaint)
 
-        return page
-    }
-
-    private fun createClassificationPage(document: PdfDocument, pageWidth: Int, pageHeight: Int, classification: ClassificationSoja): PdfDocument.Page {
-        val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, 4).create()
-        val page = document.startPage(pageInfo)
-        val canvas: Canvas = page.canvas
-        val paints = setupPaints()
-
-        var yStart = 60f
-        canvas.drawText("DADOS DA CLASSIFICAÇÃO", pageWidth / 2f, yStart, paints.titlePaint)
-        yStart += 36f
-
-        val text = classification.toString()
-        drawMultilineText(canvas, text, 50f, yStart, paints.cellPaint, pageWidth - 100)
 
         return page
     }
@@ -185,30 +288,11 @@ class PDFExporterSoja @Inject constructor(
         canvas.drawText("AMOSTRA (CLASSIFICAÇÃO)", pageWidth / 2f, yStart, paints.titlePaint)
         yStart += 36f
 
-        val text = sampleClassification.toString()
+        // Removido o toString() e usamos uma lista estruturada para evitar texto quebrado
+        val text = "Peso da Amostra: ${sampleClassification.sampleWeight}g\n" +
+                "Peso do Lote: ${sampleClassification.lotWeight}kg\n" +
+                "Umidade: ${sampleClassification.humidity}%"
         drawMultilineText(canvas, text, 50f, yStart, paints.cellPaint, pageWidth - 100)
-
-        return page
-    }
-
-    private fun createDefectLimitsPage(document: PdfDocument, pageWidth: Int, pageHeight: Int, limits: LimitSoja): PdfDocument.Page {
-        val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, 3).create()
-        val page = document.startPage(pageInfo)
-        val canvas: Canvas = page.canvas
-        val paints = setupPaints()
-
-        var yStart = 60f
-        canvas.drawText("LIMITES DE DEFEITOS (SOJA)", pageWidth / 2f, yStart, paints.titlePaint)
-        yStart += 36f
-        canvas.drawText("Impurezas (máx): ${limits.impuritiesUpLim}%", 50f, yStart, paints.cellPaint)
-        yStart += 20f
-        canvas.drawText("Partidos (máx): ${limits.brokenCrackedDamagedUpLim}%", 50f, yStart, paints.cellPaint)
-        yStart += 20f
-        canvas.drawText("Ardidos (máx): ${limits.burntUpLim}%", 50f, yStart, paints.cellPaint)
-        yStart += 20f
-        canvas.drawText("Mofados (máx): ${limits.moldyUpLim}%", 50f, yStart, paints.cellPaint)
-        yStart += 20f
-        canvas.drawText("Carunchado (máx): ${limits.spoiledTotalUpLim}%", 50f, yStart, paints.cellPaint)
 
         return page
     }
@@ -224,6 +308,7 @@ class PDFExporterSoja @Inject constructor(
         val words = text.split("\\s+".toRegex())
         var y = startY
         var line = StringBuilder()
+        // ... (o restante da função permanece o mesmo) ...
         for (w in words) {
             val candidate = if (line.isEmpty()) w else line.toString() + " " + w
             if (paint.measureText(candidate) > maxWidth) {

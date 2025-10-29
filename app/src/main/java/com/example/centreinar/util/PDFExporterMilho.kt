@@ -23,6 +23,8 @@ import javax.inject.Singleton
 class PDFExporterMilho @Inject constructor(
     @ApplicationContext private val appContext: Context
 ) {
+    // Reutilizando a estrutura de Paints do Soja
+    data class Paints(val titlePaint: Paint, val headerPaint: Paint, val cellPaint: Paint, val borderPaint: Paint)
 
     fun exportDiscountToPdf(
         context: Context,
@@ -41,12 +43,48 @@ class PDFExporterMilho @Inject constructor(
         document.finishPage(page2)
 
         defectLimits?.let { limits ->
-            val page3 = createDefectLimitsPage(document, pageWidth, pageHeight, limits)
-            document.finishPage(page3)
+            val limitPage = createDefectLimitsPage(document, pageWidth, pageHeight, limits)
+            document.finishPage(limitPage)
         }
 
         saveAndShareDocument(context, document)
     }
+
+    // --- FUNÇÃO AUXILIAR PARA DESENHAR TABELA (Implementada aqui para Milho) ---
+    private fun drawClassificationTable(
+        canvas: Canvas,
+        yStart: Float,
+        pageWidth: Int,
+        headers: List<String>,
+        data: List<List<String>>,
+        paints: Paints
+    ): Float {
+        val margin = 50f
+        val columnWidth = (pageWidth - 2 * margin) / headers.size.toFloat()
+        val rowHeight = 30f
+        var y = yStart
+        var x = margin
+
+        // Desenhar Cabeçalhos
+        canvas.drawRect(x, y, x + columnWidth * headers.size, y + rowHeight, paints.borderPaint)
+        for ((index, header) in headers.withIndex()) {
+            val cellX = x + index * columnWidth
+            canvas.drawText(header, cellX + 5f, y + rowHeight / 2f + 5f, paints.headerPaint)
+        }
+        y += rowHeight
+
+        // Desenhar Dados
+        for (row in data) {
+            canvas.drawRect(x, y, x + columnWidth * headers.size, y + rowHeight, paints.borderPaint)
+            for ((index, cell) in row.withIndex()) {
+                val cellX = x + index * columnWidth
+                canvas.drawText(cell, cellX + 5f, y + rowHeight / 2f + 5f, paints.cellPaint)
+            }
+            y += rowHeight
+        }
+        return y
+    }
+
 
     private fun createDiscountPage(document: PdfDocument, pageWidth: Int, pageHeight: Int, discount: DiscountMilho): PdfDocument.Page {
         val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, 1).create()
@@ -55,10 +93,11 @@ class PDFExporterMilho @Inject constructor(
         val paints = setupPaints()
 
         var yStart = 60f
-        // título centralizado
         canvas.drawText("RESULTADO DOS DESCONTOS (MILHO)", pageWidth / 2f, yStart, paints.titlePaint)
         yStart += 40f
-        canvas.drawText("Desconto total: ${discount.finalDiscount}", 50f, yStart, paints.cellPaint)
+        canvas.drawText("Desconto total (Peso): ${"%.2f".format(discount.finalDiscount)} kg", 50f, yStart, paints.cellPaint)
+        yStart += 20f
+        canvas.drawText("Quebra Umidade: ${"%.2f".format(discount.humidityLoss)} kg", 50f, yStart, paints.cellPaint)
 
         return page
     }
@@ -70,7 +109,7 @@ class PDFExporterMilho @Inject constructor(
         val paints = setupPaints()
 
         var yStart = 60f
-        canvas.drawText("DADOS DA AMOSTRA (MILHO)", pageWidth / 2f, yStart, paints.titlePaint)
+        canvas.drawText("DADOS DA AMOSTRA (INPUT DESCONTO)", pageWidth / 2f, yStart, paints.titlePaint)
         yStart += 40f
         canvas.drawText("Umidade: ${inputDiscount.humidity}%", 50f, yStart, paints.cellPaint)
         yStart += 20f
@@ -86,17 +125,29 @@ class PDFExporterMilho @Inject constructor(
         val paints = setupPaints()
 
         var yStart = 60f
-        canvas.drawText("LIMITES DE DEFEITOS (MILHO)", pageWidth / 2f, yStart, paints.titlePaint)
-        yStart += 36f
-        canvas.drawText("Impurezas (máx): ${limits.impuritiesUpLim}%", 50f, yStart, paints.cellPaint)
-        yStart += 20f
-        canvas.drawText("Partidos (máx): ${limits.brokenUpLim}%", 50f, yStart, paints.cellPaint)
-        yStart += 20f
-        canvas.drawText("Ardidos (máx): ${limits.ardidoUpLim}%", 50f, yStart, paints.cellPaint)
-        yStart += 20f
-        canvas.drawText("Mofados (máx): ${limits.mofadoUpLim}%", 50f, yStart, paints.cellPaint)
-        yStart += 20f
-        canvas.drawText("Carunchado (máx): ${limits.carunchadoUpLim}%", 50f, yStart, paints.cellPaint)
+        canvas.drawText("LIMITES DE TOLERÂNCIA (MILHO)", pageWidth / 2f, yStart, paints.titlePaint)
+        yStart += 40f
+
+        // Dados para a tabela de limites
+        val data = listOf(
+            listOf("Defeito", "Limite Máx. (%)"),
+            listOf("Matérias Estranhas", "%.2f".format(limits.impuritiesUpLim)),
+            listOf("Quebrados", "%.2f".format(limits.brokenUpLim)),
+            listOf("Ardidos", "%.2f".format(limits.ardidoUpLim)),
+            listOf("Mofados", "%.2f".format(limits.mofadoUpLim)), // Mofados é o Total de Avariados
+            listOf("Carunchados", "%.2f".format(limits.carunchadoUpLim)),
+            listOf("Umidade", "%.2f".format(limits.moistureUpLim)),
+        )
+
+        // Desenha a tabela de limites
+        drawClassificationTable(
+            canvas = canvas,
+            yStart = yStart,
+            pageWidth = pageWidth,
+            headers = listOf("PARÂMETRO", "MÁX. (%)"),
+            data = data,
+            paints = paints
+        )
 
         return page
     }
@@ -127,7 +178,6 @@ class PDFExporterMilho @Inject constructor(
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
 
-            // Start chooser safely (se estiver chamando do non-activity context, pode precisar definir FLAG_ACTIVITY_NEW_TASK)
             val chooser = Intent.createChooser(intent, "Compartilhar PDF via")
             if (context !is android.app.Activity) chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             context.startActivity(chooser)
@@ -140,6 +190,4 @@ class PDFExporterMilho @Inject constructor(
             } catch (_: Exception) { /* ignore */ }
         }
     }
-
-    data class Paints(val titlePaint: Paint, val headerPaint: Paint, val cellPaint: Paint, val borderPaint: Paint)
 }

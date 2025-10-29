@@ -300,7 +300,7 @@ fun CentreinarApp() {
         }
     }
 }
-
+//oi
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SimpleAppBar() {

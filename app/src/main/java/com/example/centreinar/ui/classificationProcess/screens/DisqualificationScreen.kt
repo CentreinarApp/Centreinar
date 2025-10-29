@@ -119,6 +119,7 @@ public fun DisqualificationScreen(
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
+                //oi
                 Text("Confirmar")
             }
         }

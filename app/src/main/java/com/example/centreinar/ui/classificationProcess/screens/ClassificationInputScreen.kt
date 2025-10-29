@@ -574,7 +574,7 @@ private fun NumberInputField(
     )
 }
 
-// --- Funções auxiliares de conversão ---
+// --- Funções auxiliares de conversão ---oi
 private fun String.toFloatOrZero(): Float {
     return this.toBigDecimalOrNull()
         ?.setScale(2, RoundingMode.HALF_UP)
