@@ -55,26 +55,21 @@ public fun DisqualificationScreen(
 
     /**
      * Função local para atualizar um par específico na lista com segurança.
-     * Usa parâmetros nulos para saber qual campo (Nome ou Quantidade) foi modificado.
      */
     fun updateSeedDetail(index: Int, newName: String? = null, newQuantity: String? = null) {
         // Ignora se o índice não for válido
         if (index < 0 || index >= toxicSeedDetails.size) return
 
-        // 1. Cria uma cópia mutável da lista atual.
         val currentList = toxicSeedDetails.toMutableList()
         val currentPair = currentList[index]
 
-        // 2. Define o novo par combinando os valores atuais com os novos (se existirem).
         val updatedPair = ToxicSeedDetail(
             newName ?: currentPair.first,
             newQuantity ?: currentPair.second
         )
 
-        // 3. Atualiza o item na lista copiada.
         currentList[index] = updatedPair
 
-        // 4. Atribui a nova lista (imutável) ao estado, disparando a recomposição segura.
         toxicSeedDetails = currentList.toList()
     }
 
@@ -104,9 +99,11 @@ public fun DisqualificationScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(32.dp),
+            // Usa SpaceBetween para fixar o botão no final
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-            Column(modifier = Modifier.verticalScroll(rememberScrollState())) { // Conteúdo superior com scroll
+            // Coluna de conteúdo com scroll que ocupa todo o espaço restante
+            Column(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())) {
                 Text(
                     "O lote apresenta:",
                     style = MaterialTheme.typography.headlineSmall,
@@ -137,10 +134,9 @@ public fun DisqualificationScreen(
                         checked = toxicGrains,
                         onCheckedChange = {
                             toxicGrains = it
-                            // Reseta os campos ao desmarcar
                             if (!it) {
                                 toxicTypesQuantity = "0"
-                                toxicSeedDetails = emptyList() // Limpa a lista dinâmica
+                                toxicSeedDetails = emptyList()
                             }
                         }
                     )
@@ -160,7 +156,6 @@ public fun DisqualificationScreen(
                     NumberInputField(
                         value = toxicTypesQuantity,
                         onValueChange = {
-                            // Garante que o valor não seja negativo
                             if ((it.toIntOrNull() ?: 0) >= 0) {
                                 toxicTypesQuantity = it
                             }
@@ -176,7 +171,6 @@ public fun DisqualificationScreen(
                         Spacer(modifier = Modifier.height(8.dp))
 
                         repeat(typesQuantity) { index ->
-                            // Acessa o par com segurança, usando o valor padrão se o índice não existir
                             val currentDetail = toxicSeedDetails.getOrElse(index) { ToxicSeedDetail("", "0") }
 
                             Column(modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
@@ -184,7 +178,7 @@ public fun DisqualificationScreen(
 
                                 // Campo 1: Nome da Semente
                                 OutlinedTextField(
-                                    value = currentDetail.first, // Nome
+                                    value = currentDetail.first,
                                     onValueChange = { newName ->
                                         updateSeedDetail(index, newName = newName)
                                     },
@@ -195,7 +189,7 @@ public fun DisqualificationScreen(
 
                                 // Campo 2: Unidades da Semente
                                 NumberInputField(
-                                    value = currentDetail.second, // Unidades
+                                    value = currentDetail.second,
                                     onValueChange = { newQuantity ->
                                         updateSeedDetail(index, newQuantity = newQuantity)
                                     },
@@ -205,9 +199,11 @@ public fun DisqualificationScreen(
                         }
                     }
                 }
-            } // Fim da coluna com scroll
+                // Garante que o scroll vá até o fim sem o botão cobrir os últimos campos
+                Spacer(modifier = Modifier.height(16.dp))
+            }
 
-            // O botão é fixado na parte inferior
+            // O botão é fixado na parte inferior graças ao Arrangement.SpaceBetween
             Button(
                 onClick = {
                     val badConservationInt = if (badConservation) 1 else 0
@@ -215,15 +211,12 @@ public fun DisqualificationScreen(
                     val insectsInt = if (insects) 1 else 0
                     val toxicGrainInt = if (toxicGrains) 1 else 0
 
-                    // Se toxicGrains for true, toxicSeedDetails terá os dados (Nome e Quantidade de cada tipo)
-
                     viewModel.setDisqualification(
                         badConservationInt,
                         strangeSmellInt,
                         insectsInt,
                         toxicGrainInt
                     )
-                    // TODO: Salvar toxicSeedDetails no ViewModel
 
                     navController.navigate("classification")
                 },
@@ -245,7 +238,6 @@ private fun NumberInputField(
     OutlinedTextField(
         value = value,
         onValueChange = {
-            // Permite apenas números inteiros e impede números negativos
             if (it.isEmpty() || (it.matches(Regex("^(\\d*)$")) && (it.toIntOrNull() ?: 0) >= 0)) {
                 onValueChange(it)
             }

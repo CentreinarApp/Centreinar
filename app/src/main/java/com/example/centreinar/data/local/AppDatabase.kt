@@ -52,7 +52,7 @@ import com.example.centreinar.SampleSoja
         DisqualificationMilho::class,
         DisqualificationSoja::class
     ],
-    version = 6,
+    version = 5,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

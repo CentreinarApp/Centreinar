@@ -43,16 +43,16 @@ fun ClassificationResult(
     var colorClassificationResult by remember { mutableStateOf<ColorClassificationSoja?>(null) }
     var observation by remember { mutableStateOf<String?>(null) }
 
-    if (viewModel.doesDefineColorClass == true) {
-        LaunchedEffect(Unit) {
-            colorClassificationResult = viewModel.getClassColor()
-            observation = viewModel.getObservations(colorClassificationResult)
-        }
-    }
-
+    // NOVO: Lógica de Carregamento Centralizada e Sincronizada
+    // Carrega o limite e a cor APENAS DEPOIS que a classificação principal estiver pronta.
     LaunchedEffect(classification) {
         if (classification != null) {
             viewModel.loadLastUsedLimit()
+
+            if (viewModel.doesDefineColorClass == true) {
+                colorClassificationResult = viewModel.getClassColor()
+                observation = viewModel.getObservations(colorClassificationResult)
+            }
         }
     }
 
@@ -98,6 +98,7 @@ fun ClassificationResult(
                     classification != null -> {
                         val finalTypeLabel = viewModel.getFinalTypeLabel(classification!!.finalType)
 
+                        // 1. TABELA DE RESULTADOS SIMPLIFICADA (Mostra Classe Amarela/Misturada)
                         if (viewModel.doesDefineColorClass == true && colorClassificationResult != null) {
                             SimplifiedResultsTable(
                                 finalTypeLabel,
@@ -125,6 +126,7 @@ fun ClassificationResult(
                                 .padding(vertical = 8.dp)
                         )
 
+                        // 2. CARD DE RESULTADO DETALHADO DA CLASSE DE COR (Mostra detalhes do cálculo)
                         if (viewModel.doesDefineColorClass == true && colorClassificationResult != null) {
                             ClassColorResult(colorClassificationResult!!, modifier = Modifier.fillMaxWidth())
                         }
@@ -192,11 +194,10 @@ fun ClassificationResult(
                             UsedLimitTable(lastUsedLimit!!, modifier = Modifier.fillMaxWidth())
                         } else {
                             Text("Carregando limites...")
-                            LaunchedEffect(Unit) { viewModel.loadLastUsedLimit() }
+                            // Não precisa de LaunchedEffect(Unit) aqui, pois já monitoramos em ClassificationResult
                         }
                     }
                 },
-                //oi
                 confirmButton = {
                     TextButton(onClick = { showLimitsDialog = false }) { Text("Fechar") }
                 }
