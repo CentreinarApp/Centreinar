@@ -574,7 +574,7 @@ fun DefectsTab1(
             Spacer(modifier = Modifier.height(24.dp))
 
             // --- DEFEITOS DANIFICADOS (MOVIDOS PARA CÁ) ---
-            Text("", style = MaterialTheme.typography.titleMedium)
+            Text("Danificados", style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(8.dp))
 
             NumberInputField(
@@ -675,7 +675,7 @@ fun DefectsTab2(
                 Switch(checked = doesDefineColorClass, onCheckedChange = onDoesDefineColorClassChange)
                 Spacer(modifier = Modifier.width(8.dp))
                 // Renomeado para refletir a classe
-                Text("Definir Classe de Cor?")
+                Text("Definir Classe ?")
             }
         }
 
@@ -696,7 +696,7 @@ fun DefectsTab2(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Text("Determinação de Classe de Cor", style = MaterialTheme.typography.titleSmall)
+            Text("", style = MaterialTheme.typography.titleSmall)
 
             NumberInputField(
                 value = yellowGrainsWeight,
