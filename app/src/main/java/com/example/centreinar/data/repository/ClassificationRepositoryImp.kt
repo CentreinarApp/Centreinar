@@ -42,9 +42,11 @@ class ClassificationRepositoryImpl @Inject constructor(
         val percentageSour = tools.calculateDefectPercentage(sample.sour, safeCleanWeight)
         val percentageBurntOrSour = percentageBurnt + percentageSour
 
-        // --- Soma dos avariados (SEM duplicar 'damaged') ---
+        // --- Soma dos avariados  ---
         val sumDefectWeights =
-            sample.moldy +
+            sample.brokenCrackedDamaged +
+                    sample.damaged +
+                    sample.moldy +
                     sample.fermented +
                     sample.sour +
                     sample.burnt +
