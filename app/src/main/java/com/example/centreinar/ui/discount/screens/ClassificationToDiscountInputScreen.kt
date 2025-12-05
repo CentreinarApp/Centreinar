@@ -1,23 +1,10 @@
 package com.example.centreinar.ui.discount.screens
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Switch
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -36,84 +23,96 @@ fun ClassificationToDiscountInputScreen(
     var priceBySack by remember { mutableStateOf("") }
     var daysOfStorage by remember { mutableStateOf("0") }
     var deductionValue by remember { mutableStateOf("0") }
-    var doesTechnicalLoss by  remember { mutableStateOf(false) }
+    var doesTechnicalLoss by remember { mutableStateOf(false) }
     var doesDeduction by remember { mutableStateOf(false) }
-
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
-    val priceBySackFocus = remember { FocusRequester() }
-    val daysOfStorageFocus = remember { FocusRequester() }
-    val deductionValueFocus = remember { FocusRequester() }
+    val priceFocus = remember { FocusRequester() }
+    val daysFocus = remember { FocusRequester() }
+    val deductionFocus = remember { FocusRequester() }
 
+    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-    ) {
         Text(
             "Insira os dados",
             style = MaterialTheme.typography.headlineSmall,
-            color = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier.padding(16.dp)
+            color = MaterialTheme.colorScheme.onBackground
         )
-        Spacer(modifier = Modifier.height(5.dp))
+
+        Spacer(Modifier.height(10.dp))
 
         NumberInputField(
             value = priceBySack,
-            onValueChange = {priceBySack = it} ,
+            onValueChange = { priceBySack = it },
             label = "Preço por Saca (60kg)",
-            focusRequester = priceBySackFocus,
-            nextFocus = null,
+            focusRequester = priceFocus
         )
-        Spacer(modifier = Modifier.height(5.dp))
 
+        Spacer(Modifier.height(10.dp))
+
+        Text("Desconto por Perda Técnica?")
         Switch(
             checked = doesTechnicalLoss,
             onCheckedChange = { doesTechnicalLoss = it }
         )
 
-        if(doesTechnicalLoss){
+        if (doesTechnicalLoss) {
             NumberInputField(
                 value = daysOfStorage,
-                onValueChange = {daysOfStorage = it} ,
+                onValueChange = { daysOfStorage = it },
                 label = "Dias de armazenamento",
-                focusRequester = daysOfStorageFocus,
-                nextFocus = null
+                focusRequester = daysFocus
             )
         }
 
+        Spacer(Modifier.height(10.dp))
+
+        Text("Aplicar Deságio?")
         Switch(
             checked = doesDeduction,
-            onCheckedChange = { doesDeduction = it },
+            onCheckedChange = { doesDeduction = it }
         )
 
-        if(doesDeduction){
+        if (doesDeduction) {
             NumberInputField(
                 value = deductionValue,
-                onValueChange = {deductionValue = it},
-                label = "Valor de Deságio",
-                focusRequester = deductionValueFocus,
-                nextFocus = null
+                onValueChange = { deductionValue = it },
+                label = "Valor de Deságio (R$)",
+                focusRequester = deductionFocus
             )
         }
 
+        Spacer(Modifier.height(20.dp))
+
         Button(
+            modifier = Modifier.fillMaxWidth(),
             onClick = {
-                viewModel.getDiscountForClassification(priceBySack = priceBySack.toFloat(), daysOfStorage = daysOfStorage.toInt(), deductionValue = deductionValue.toFloat())
+                val price = priceBySack.toFloatOrNull() ?: 0f
+                val days = daysOfStorage.toIntOrNull() ?: 0
+                val deduction = deductionValue.toFloatOrNull() ?: 0f
+
                 try {
-                    viewModel.getDiscountForClassification(priceBySack = priceBySack.toFloat(), daysOfStorage = daysOfStorage.toInt(), deductionValue = deductionValue.toFloat())
-                } catch (e: NumberFormatException) {
-                    errorMessage = "Valores numéricos inválidos detectados"
+                    viewModel.getDiscountForClassification(
+                        priceBySack = price,
+                        daysOfStorage = days,
+                        deductionValue = deduction
+                    )
+                    navController.navigate("discountResultsScreen")
+                } catch (e: Exception) {
+                    errorMessage = "Erro ao calcular o desconto"
                 }
-                navController.navigate("discountResultsScreen")
-            },
-            modifier = Modifier.fillMaxWidth()
+            }
         ) {
             Text("Calcular Desconto")
         }
-    }
 
+        errorMessage?.let {
+            Spacer(Modifier.height(8.dp))
+            Text(it, color = MaterialTheme.colorScheme.error)
+        }
+    }
 }
+
 @Composable
 private fun NumberInputField(
     value: String,
@@ -139,8 +138,7 @@ private fun NumberInputField(
             onNext = { nextFocus?.requestFocus() },
             onDone = { onDone?.invoke() }
         ),
-        singleLine = true,
         enabled = enabled,
-        readOnly = !enabled
+        singleLine = true
     )
 }

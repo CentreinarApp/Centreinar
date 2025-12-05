@@ -8,8 +8,11 @@ import com.example.centreinar.SampleSoja
 import com.example.centreinar.domain.model.LimitCategory
 
 interface ClassificationRepository {
+
     suspend fun classifySample(sample: SampleSoja, limitSource: Int): Long
+
     suspend fun getSample(id: Int): SampleSoja?
+
     suspend fun setSample(
         grain: String,
         group: Int,
@@ -26,8 +29,11 @@ interface ClassificationRepository {
         germinated: Float,
         immature: Float
     ): SampleSoja
+
     suspend fun setSample(sample: SampleSoja): Long
+
     suspend fun getClassification(id: Int): ClassificationSoja?
+
     suspend fun getLimitsForGrain(
         grain: String,
         group: Int,

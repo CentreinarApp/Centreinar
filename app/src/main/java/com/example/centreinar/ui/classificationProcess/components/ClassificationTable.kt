@@ -2,14 +2,9 @@ package com.example.centreinar.ui.classificationProcess.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.Divider
 import androidx.compose.material3.MaterialTheme
@@ -20,11 +15,31 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.centreinar.ClassificationSoja
+
+// Estrutura de Limites
+data class LimitSoja(
+    val id: Int = 0,
+    val impuritiesUpLim: Float = 1.0f,
+    val burntUpLim: Float = 0.8f,
+    val sourUpLim: Float = 1.0f,
+    val moldyUpLim: Float = 2.0f,
+    val spoiledUpLim: Float = 8.0f,
+    val greenishUpLim: Float = 8.0f,
+    val brokenCrackedDamagedUpLim: Float = 30.0f
+)
+
+// Quadruple auxiliar
+private data class Quadruple<out A, out B, out C, out D>(
+    val first: A, val second: B, val third: C, val fourth: D
+)
 
 @Composable
 fun ClassificationTable(
     classification: ClassificationSoja,
+    typeTranslator: (Int) -> String,
+    limits: LimitSoja,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -33,33 +48,47 @@ fun ClassificationTable(
             .fillMaxWidth(),
         shape = MaterialTheme.shapes.medium
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+
+        // 🔥 SCROLL ADICIONADO AQUI!
+        Column(
+            modifier = Modifier
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState()) // <<<< AQUI
+        ) {
+
             TableHeader("RESULTADO DA CLASSIFICAÇÃO")
 
-            // Main table with 3 columns
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .border(1.dp, MaterialTheme.colorScheme.outline)
             ) {
-                // Table Headers
+                // Cabeçalho das colunas
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(MaterialTheme.colorScheme.primaryContainer)
-                        .padding(vertical = 12.dp, horizontal = 16.dp),
+                        .padding(vertical = 8.dp, horizontal = 8.dp),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
                         "DEFEITO",
-                        style = MaterialTheme.typography.labelLarge,
+                        fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onPrimaryContainer,
                         modifier = Modifier.weight(2f)
                     )
                     Text(
+                        "LIMITE (%)",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.weight(1f),
+                        textAlign = TextAlign.End
+                    )
+                    Text(
                         "%",
-                        style = MaterialTheme.typography.labelLarge,
+                        fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onPrimaryContainer,
                         modifier = Modifier.weight(1f),
@@ -67,41 +96,47 @@ fun ClassificationTable(
                     )
                     Text(
                         "TIPO",
-                        style = MaterialTheme.typography.labelLarge,
+                        fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onPrimaryContainer,
                         modifier = Modifier.weight(1f),
                         textAlign = TextAlign.End
                     )
                 }
-                // Table Rows
+
+                // Linhas da tabela
                 listOf(
-                    Triple("Matéria Estranha e Impurezas", classification.foreignMattersPercentage, typeNumberToString(classification.foreignMatters)),
-                    Triple("Queimados", classification.burntPercentage, typeNumberToString(classification.burnt)),
-                    Triple("Ardidos e Queimados", classification.burntOrSourPercentage, typeNumberToString(classification.burntOrSour)),
-                    Triple("Mofados", classification.moldyPercentage, typeNumberToString(classification.moldy)),
-                    Triple("Fermentados",classification.fermentedPercentage,"-"),
-                    Triple("Germinados",classification.germinatedPercentage,"-"),
-                    Triple("Imaturos",classification.immaturePercentage,"-"),
-                    Triple("Chochos",classification.shriveledPercentage,"-"),
-                    Triple("Fermentados",classification.fermentedPercentage,"-"),
-                    Triple("Total de Avariados", classification.spoiledPercentage, typeNumberToString(classification.spoiled)),
-                    Triple("Esverdeados", classification.greenishPercentage, typeNumberToString(classification.greenish)),
-                    Triple("Partidos, Quebrados e Amassados", classification.brokenCrackedDamagedPercentage, typeNumberToString(classification.brokenCrackedDamaged))
-                ).forEachIndexed { index, (label, percentage, quantity) ->
+                    Quadruple("Ardidos", limits.sourUpLim, classification.sourPercentage, classification.sour),
+
+                    Quadruple("Matéria Estranha e Impurezas", limits.impuritiesUpLim, classification.foreignMattersPercentage, classification.foreignMatters),
+                    Quadruple("Queimados", limits.burntUpLim, classification.burntPercentage, classification.burnt),
+                    Quadruple("Ardidos e Queimados (Soma)", limits.burntUpLim + limits.sourUpLim, classification.burntOrSourPercentage, classification.burntOrSour),
+                    Quadruple("Mofados", limits.moldyUpLim, classification.moldyPercentage, classification.moldy),
+                    Quadruple("Total de Avariados", limits.spoiledUpLim, classification.spoiledPercentage, classification.spoiled),
+                    Quadruple("Esverdeados", limits.greenishUpLim, classification.greenishPercentage, classification.greenish),
+                    Quadruple("Partidos/Quebrados/Amassados", limits.brokenCrackedDamagedUpLim, classification.brokenCrackedDamagedPercentage, classification.brokenCrackedDamaged),
+
+                    Quadruple("Fermentados", 0f, classification.fermentedPercentage, classification.fermented),
+                    Quadruple("Germinados", 0f, classification.germinatedPercentage, classification.germinated),
+                    Quadruple("Imaturos", 0f, classification.immaturePercentage, classification.immature),
+                    Quadruple("Chochos", 0f, classification.shriveledPercentage, classification.shriveled),
+
+                    Quadruple("Fermentados", 0f, classification.fermentedPercentage, classification.fermented),
+                ).forEachIndexed { index, (label, limit, percentage, typeCode) ->
                     TableRow(
                         label = label,
+                        limit = limit,
                         percentage = percentage,
-                        quantity = quantity,
-                        isLast = index == 6
+                        quantity = typeTranslator(typeCode),
+                        isLast = index == 13
                     )
                 }
             }
 
-            // Final Type
             Spacer(Modifier.height(16.dp))
+
             FinalTypeRow(
-                value = typeNumberToString(classification.finalType)
+                value = typeTranslator(classification.finalType)
             )
         }
     }
@@ -110,6 +145,7 @@ fun ClassificationTable(
 @Composable
 private fun TableRow(
     label: String,
+    limit: Float,
     percentage: Float,
     quantity: String,
     isLast: Boolean = false
@@ -117,30 +153,34 @@ private fun TableRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 12.dp, horizontal = 16.dp),
+            .padding(vertical = 8.dp, horizontal = 8.dp),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Text(
             text = label,
-            style = MaterialTheme.typography.bodyLarge,
-            modifier = Modifier.weight(2f),
-            color = MaterialTheme.colorScheme.onSurface
+            fontSize = 13.sp,
+            modifier = Modifier.weight(2f)
+        )
+
+        Text(
+            text = if (limit > 0f) "%.2f%%".format(limit) else "-",
+            fontSize = 13.sp,
+            modifier = Modifier.weight(1f),
+            textAlign = TextAlign.End
         )
 
         Text(
             text = "%.2f%%".format(percentage),
-            style = MaterialTheme.typography.bodyLarge,
+            fontSize = 13.sp,
             modifier = Modifier.weight(1f),
-            textAlign = TextAlign.End,
-            color = MaterialTheme.colorScheme.onSurface
+            textAlign = TextAlign.End
         )
 
         Text(
-            text = quantity.toString(),
-            style = MaterialTheme.typography.bodyLarge,
+            text = quantity,
+            fontSize = 13.sp,
             modifier = Modifier.weight(1f),
-            textAlign = TextAlign.End,
-            color = MaterialTheme.colorScheme.onSurface
+            textAlign = TextAlign.End
         )
     }
 
@@ -158,17 +198,18 @@ private fun FinalTypeRow(value: String) {
         modifier = Modifier
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.secondaryContainer)
-            .padding(16.dp),
+            .padding(12.dp),
         horizontalArrangement = Arrangement.Center
     ) {
         Text(
             text = "Tipo Final: $value",
-            style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
+            fontSize = 18.sp,
             color = MaterialTheme.colorScheme.onSecondaryContainer
         )
     }
 }
+
 @Composable
 private fun TableHeader(title: String) {
     Box(
@@ -179,7 +220,7 @@ private fun TableHeader(title: String) {
     ) {
         Text(
             text = title,
-            style = MaterialTheme.typography.titleLarge,
+            fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.primary
         )
@@ -188,13 +229,4 @@ private fun TableHeader(title: String) {
         modifier = Modifier.padding(vertical = 8.dp),
         color = MaterialTheme.colorScheme.outline
     )
-}
-fun typeNumberToString(typeNum:Int):String{
-    if(typeNum == 0){
-        return "Desclassificado"
-    }
-    if(typeNum == 7){
-        return "Fora de Tipo"
-    }
-    return typeNum.toString()
 }

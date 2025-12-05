@@ -12,6 +12,20 @@ import androidx.room.PrimaryKey
 data class ClassificationSoja(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
+    @ColumnInfo(name = "fermented")
+    val fermented: Int = 0,
+
+    @ColumnInfo(name = "germinated")
+    val germinated: Int = 0,
+
+    @ColumnInfo(name = "immature")
+    val immature: Int = 0,
+
+    @ColumnInfo(name = "shriveled")
+    val shriveled: Int = 0,
+
+    @ColumnInfo(name = "sour")
+    val sour: Int = 0,
 
     @ColumnInfo(name = "grain")
     val grain: String = "",

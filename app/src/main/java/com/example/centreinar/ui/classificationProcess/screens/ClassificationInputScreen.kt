@@ -56,7 +56,10 @@ fun ClassificationInputScreen( // Função Principal
     var foreignMatters by remember { mutableStateOf("") }
     var humidity by remember { mutableStateOf("") }
 
-    // CAMPOS DEFEITOS FINAIS
+    // INPUT CONDICIONAL: Peso da Amostra Limpa (usado APENAS se definir classe de cor)
+    var cleanSampleWeightInput by remember { mutableStateOf("") }
+
+    // CAMPOS DEFEITOS GERAIS
     var brokenCrackedDamaged by remember { mutableStateOf("") }
     var greenish by remember { mutableStateOf("") }
 
@@ -68,7 +71,7 @@ fun ClassificationInputScreen( // Função Principal
     var immature by remember { mutableStateOf("") }
     var shriveled by remember { mutableStateOf("") }
 
-    // CAMPOS DEFEITOS MOVIDOS PARA TAB 1
+    // CAMPOS DEFEITOS DE SOMA
     var damaged by remember { mutableStateOf("") } // Total de Danificados (Soma final Soja)
     var piercingInput by remember { mutableStateOf("") }
     var damagedInput by remember { mutableStateOf("") } // Demais danificados (Soja)
@@ -78,42 +81,61 @@ fun ClassificationInputScreen( // Função Principal
     var carunchado by remember { mutableStateOf("") } // Milho
 
     // CAMPOS CLASSE DE COR
-    var yellowGrainsWeight by remember { mutableStateOf("") }
     var otherColorsGrainsWeight by remember { mutableStateOf("") }
 
     var colorClassResult by remember { mutableStateOf<String?>(null) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
-    // CÁLCULO DA AMOSTRA LIMPA (NOVO: Valor Flutuante Garantido)
-    val cleanSampleWeightFloat: Float by remember(sampleWeight, foreignMatters) {
+    // CÁLCULO DA AMOSTRA LIMPA (FLUXO NORMAL - AUTOMÁTICO NA TAB 0)
+    val calculatedCleanSampleWeightFloat: Float by remember(sampleWeight, foreignMatters) {
         val sWeight = sampleWeight.toFloatOrZero()
         val fm = foreignMatters.toFloatOrZero()
         mutableStateOf(sWeight - fm)
     }
 
-    // CÁLCULO DA AMOSTRA LIMPA (Para Exibição - String formatada)
-    val cleanSampleWeightDisplay: String = remember(cleanSampleWeightFloat) {
-        if (cleanSampleWeightFloat > 0) "%.2f".format(cleanSampleWeightFloat) else "0.00"
+    // CÁLCULO DA AMOSTRA LIMPA (Para Exibição TAB 0 - String formatada)
+    val calculatedCleanSampleWeightDisplay: String = remember(calculatedCleanSampleWeightFloat) {
+        if (calculatedCleanSampleWeightFloat > 0) "%.2f".format(calculatedCleanSampleWeightFloat) else "0.00"
     }
 
+    // VARIÁVEL BASE PARA CÁLCULOS (USA INPUT MANUAL SE DEFINIR CLASSE DE COR)
+    val baseCleanWeightForColor: Float = remember(doesDefineColorClass, cleanSampleWeightInput, calculatedCleanSampleWeightFloat) {
+        if (isSoja && doesDefineColorClass) {
+            // Se o switch estiver ligado, usa o valor que o usuário inseriu na Tab 2
+            cleanSampleWeightInput.toFloatOrZero()
+        } else {
+            // Caso contrário, usa o valor calculado da Tab 0
+            calculatedCleanSampleWeightFloat
+        }
+    }
 
-    // Requesters de Foco (Ajustados)
+    // NOVO CÁLCULO: Peso de Grãos Amarelos
+    val yellowGrainsDisplay: String by remember(baseCleanWeightForColor, otherColorsGrainsWeight) {
+        val cleanWeight = baseCleanWeightForColor
+        val otherColors = otherColorsGrainsWeight.toFloatOrZero()
+        val yellowGrains = cleanWeight - otherColors
+        mutableStateOf(if (yellowGrains > 0) "%.2f".format(yellowGrains) else "0.00")
+    }
+    val yellowGrainsFloat: Float = yellowGrainsDisplay.toFloatOrZero()
+
+
+    // Requesters de Foco (DECLARADOS NA FUNÇÃO PRINCIPAL)
     val lotWeightFocus = remember { FocusRequester() }
     val sampleWeightFocus = remember { FocusRequester() }
     val moistureFocus = remember { FocusRequester() }
     val impuritiesFocus = remember { FocusRequester() }
-
+    val cleanSampleWeightInputFocus = remember { FocusRequester() } // Focus para o input condicional
     val brokenFocus = remember { FocusRequester() }
     val greenishFocus = remember { FocusRequester() }
     val sourFocus = remember { FocusRequester() }
     val burntFocus = remember { FocusRequester() }
     val moldyFocus = remember { FocusRequester() }
     val carunchadoFocus = remember { FocusRequester() }
-    val gessadoFocus = remember { FocusRequester() }
-    val insectFocus = remember { FocusRequester() } // Agora na Tab 1
-    val damagedFocus = remember { FocusRequester() } // Agora na Tab 1
-    val yellowGrainsFocus = remember { FocusRequester() }
+    val insectFocus = remember { FocusRequester() }
+    val damagedFocus = remember { FocusRequester() }
     val otherColorsFocus = remember { FocusRequester() }
+    val gessadoFocus = remember { FocusRequester() } // <--- DECLARADO AQUI (Correto)
+
 
     val tabTitles = listOf("Informação Básica", "Avariados", "Defeitos Finais")
     var selectedTab by remember { mutableStateOf(0) }
@@ -123,14 +145,14 @@ fun ClassificationInputScreen( // Função Principal
         when (selectedTab) {
             0 -> lotWeightFocus.requestFocus()
             1 -> sourFocus.requestFocus()
-            2 -> brokenFocus.requestFocus() // Tab 2 agora começa em brokenCrackedDamaged
+            2 -> brokenFocus.requestFocus()
         }
     }
 
     // Cálculo e Definição da Classe de Cor
-    LaunchedEffect(doesDefineColorClass, cleanSampleWeightFloat, yellowGrainsWeight, otherColorsGrainsWeight) {
+    LaunchedEffect(doesDefineColorClass, baseCleanWeightForColor, otherColorsGrainsWeight) {
         if (doesDefineColorClass && isSoja) {
-            val totalSample = cleanSampleWeightFloat
+            val totalSample = baseCleanWeightForColor
             val otherColors = otherColorsGrainsWeight.toFloatOrZero()
 
             if (totalSample > 0.01f && otherColors >= 0.0f) {
@@ -142,7 +164,7 @@ fun ClassificationInputScreen( // Função Principal
                     "Classe Misturada"
                 }
             } else if (doesDefineColorClass && isSoja) {
-                colorClassResult = "Classe Amarela"
+                colorClassResult = null
             }
         } else {
             colorClassResult = null
@@ -191,7 +213,7 @@ fun ClassificationInputScreen( // Função Principal
                     onMoistureChange = { humidity = it },
                     impurities = foreignMatters,
                     onImpuritiesChange = { foreignMatters = it },
-                    cleanSampleWeight = cleanSampleWeightDisplay, // USANDO DISPLAY STRING
+                    cleanSampleWeight = calculatedCleanSampleWeightDisplay, // <-- DISPLAY AUTOMÁTICO
                     lotWeightFocus = lotWeightFocus,
                     sampleWeightFocus = sampleWeightFocus,
                     moistureFocus = moistureFocus,
@@ -225,9 +247,9 @@ fun ClassificationInputScreen( // Função Principal
                     fermentedFocus = remember { FocusRequester() },
                     germinatedFocus = remember { FocusRequester() },
                     immatureFocus = remember { FocusRequester() },
-                    gessadoFocus = gessadoFocus,
+                    gessadoFocus = gessadoFocus, // <--- PASSANDO O FOCUS REQUESTER
                     carunchadoFocus = carunchadoFocus,
-                    // Novos parâmetros de Soja para Tab 1
+                    // Parâmetros de Soja para Tab 1
                     piercingInput = piercingInput,
                     onPiercingInputChange = {
                         piercingInput = it
@@ -257,15 +279,24 @@ fun ClassificationInputScreen( // Função Principal
                     brokenCrackedDamagedFocus = brokenFocus,
                     greenishFocus = greenishFocus,
 
-                    // Classe de Cor
+                    // Classe de Cor (AJUSTADO)
                     doesDefineColorClass = doesDefineColorClass,
-                    onDoesDefineColorClassChange = { doesDefineColorClass = it },
-                    cleanSampleWeight = cleanSampleWeightDisplay, // USANDO DISPLAY STRING
-                    yellowGrainsWeight = yellowGrainsWeight,
-                    onYellowGrainsWeightChange = { yellowGrainsWeight = it },
+                    onDoesDefineColorClassChange = {
+                        doesDefineColorClass = it
+                        // Ao desligar o switch, limpa o input manual (mantém-se vazio ao ligar)
+                        if (!it) {
+                            cleanSampleWeightInput = ""
+                        }
+                    },
+
+                    // PARÂMETROS PARA INPUT MANUAL:
+                    cleanSampleWeightInput = cleanSampleWeightInput,
+                    onCleanSampleWeightChange = { cleanSampleWeightInput = it },
+                    cleanSampleWeightInputFocus = cleanSampleWeightInputFocus,
+
+                    yellowGrainsDisplay = yellowGrainsDisplay,
                     otherColorsGrainsWeight = otherColorsGrainsWeight,
                     onOtherColorsGrainsWeightChange = { otherColorsGrainsWeight = it },
-                    yellowGrainsFocus = yellowGrainsFocus,
                     otherColorsFocus = otherColorsFocus,
                 )
             }
@@ -295,22 +326,28 @@ fun ClassificationInputScreen( // Função Principal
             } else {
                 Button(
                     onClick = {
-                        // CHAVE DA CORREÇÃO: Usa o Float calculado, que é robusto e não depende de conversão de String na hora.
                         focusManager.clearFocus()
 
                         val group = currentGroup ?: 1
 
-                        if (cleanSampleWeightFloat <= 0f) { // <<< VALIDAÇÃO REFORÇADA AQUI
-                            errorMessage = "O peso da amostra limpa não pode ser zero. Verifique o Peso da Amostra e as Impurezas."
+                        // Validação: Usa o peso da Amostra Limpa que está sendo usado como BASE
+                        if (baseCleanWeightForColor <= 0f) {
+                            errorMessage = "O Peso da Amostra Limpa não pode ser zero ou negativo. Por favor, verifique a Amostra Limpa ou insira o valor correto na seção Classe de Cor."
                             return@Button
                         }
 
                         // Validação Adicional para Classe de Cor
                         if (doesDefineColorClass && isSoja) {
-                            val totalColorWeight = yellowGrainsWeight.toFloatOrZero() + otherColorsGrainsWeight.toFloatOrZero()
-                            val cleanWeight = cleanSampleWeightFloat
-                            if (totalColorWeight > cleanWeight * 1.05f) { // Permite uma pequena margem de erro
-                                errorMessage = "A soma dos pesos de cor (${"%.2f".format(totalColorWeight)}g) excede o Peso da Amostra Limpa (${cleanSampleWeightDisplay}g)."
+                            val cleanWeight = baseCleanWeightForColor
+                            val otherColors = otherColorsGrainsWeight.toFloatOrZero()
+
+                            if (otherColors > cleanWeight) {
+                                errorMessage = "O Peso de Grãos de Outras Cores (${"%.2f".format(otherColors)}g) não pode ser maior que o Peso da Amostra Limpa (Base) (${"%.2f".format(cleanWeight)}g)."
+                                return@Button
+                            }
+
+                            if (yellowGrainsFloat < 0f) {
+                                errorMessage = "O Peso de Grãos Amarelos calculado (${yellowGrainsDisplay}g) não pode ser negativo. Verifique se o Peso de Outras Cores excede a Amostra Limpa (Base)."
                                 return@Button
                             }
                         }
@@ -378,7 +415,7 @@ fun ClassificationInputScreen( // Função Principal
 }
 
 // -------------------------------------------------------------------------------------------------
-// --- TAB 0: INFORMAÇÃO BÁSICA (MANTIDA) ---
+// --- TAB 0: INFORMAÇÃO BÁSICA ---
 // -------------------------------------------------------------------------------------------------
 
 @Composable
@@ -391,7 +428,7 @@ fun BasicInfoTabClassification(
     onMoistureChange: (String) -> Unit,
     impurities: String,
     onImpuritiesChange: (String) -> Unit,
-    cleanSampleWeight: String, // String de exibição
+    cleanSampleWeight: String, // String de exibição (Calculado)
     lotWeightFocus: FocusRequester,
     sampleWeightFocus: FocusRequester,
     moistureFocus: FocusRequester,
@@ -434,7 +471,7 @@ fun BasicInfoTabClassification(
         )
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Exibição do Peso da Amostra Limpa
+        // Exibição do Peso da Amostra Limpa (READ-ONLY)
         Column(modifier = Modifier.fillMaxWidth()) {
             Text(
                 "Peso da Amostra Limpa (Peso da amostra de Trabalho - Impurezas):",
@@ -450,7 +487,7 @@ fun BasicInfoTabClassification(
 }
 
 // -------------------------------------------------------------------------------------------------
-// --- TAB 1: AVARIADOS (Defeitos de Soja MOVIDOS para cá) ---
+// --- TAB 1: AVARIADOS ---
 // -------------------------------------------------------------------------------------------------
 
 @Composable
@@ -483,7 +520,7 @@ fun DefectsTab1(
     immatureFocus: FocusRequester,
     gessadoFocus: FocusRequester,
     carunchadoFocus: FocusRequester,
-    // Novos parâmetros de Soja
+    // Novos parâmetros de Soja para Tab 1
     piercingInput: String,
     onPiercingInputChange: (String) -> Unit,
     damagedInput: String,
@@ -558,7 +595,7 @@ fun DefectsTab1(
             onValueChange = onImmatureChange,
             label = "Imaturos (g)",
             focusRequester = immatureFocus,
-            // Próximo foco: se for milho, vai para gessado (último). Se for soja, vai para chochos/shriveled.
+            // Próximo foco: se for milho, vai para gessado. Se for soja, vai para chochos/shriveled.
             nextFocus = if (isMilho) gessadoFocus else shriveledFocus
         )
         Spacer(modifier = Modifier.height(16.dp))
@@ -621,7 +658,7 @@ fun DefectsTab1(
 }
 
 // -------------------------------------------------------------------------------------------------
-// --- TAB 2: DEFEITOS FINAIS (Limpa) ---
+// --- TAB 2: DEFEITOS FINAIS ---
 // -------------------------------------------------------------------------------------------------
 
 @Composable
@@ -636,14 +673,19 @@ fun DefectsTab2(
     // Classe de Cor
     doesDefineColorClass: Boolean,
     onDoesDefineColorClassChange: (Boolean) -> Unit,
-    cleanSampleWeight: String, // String de exibição
-    yellowGrainsWeight: String,
-    onYellowGrainsWeightChange: (String) -> Unit,
+
+    // INPUT MANUAL CONDICIONAL
+    cleanSampleWeightInput: String,
+    onCleanSampleWeightChange: (String) -> Unit,
+    cleanSampleWeightInputFocus: FocusRequester,
+
+    yellowGrainsDisplay: String, // CALCULADO
     otherColorsGrainsWeight: String,
     onOtherColorsGrainsWeightChange: (String) -> Unit,
-    yellowGrainsFocus: FocusRequester,
     otherColorsFocus: FocusRequester,
 ) {
+    val focusManager = LocalFocusManager.current
+
     Column(modifier = Modifier.padding(16.dp)) {
 
         // --- 1. DEFEITOS FINAIS (Partidos e Esverdeados) ---
@@ -664,7 +706,7 @@ fun DefectsTab2(
             onValueChange = onGreenishChange,
             label = "Esverdeados (g)",
             focusRequester = greenishFocus,
-            nextFocus = if (isSoja) null else null // Vai para Classe de Cor se for Soja
+            nextFocus = if (isSoja) cleanSampleWeightInputFocus else null // Próximo foco para o campo de input condicional
         )
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -674,8 +716,7 @@ fun DefectsTab2(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Switch(checked = doesDefineColorClass, onCheckedChange = onDoesDefineColorClassChange)
                 Spacer(modifier = Modifier.width(8.dp))
-                // Renomeado para refletir a classe
-                Text("Definir Classe ?")
+                Text("Definir Classe?")
             }
         }
 
@@ -683,37 +724,42 @@ fun DefectsTab2(
         if (doesDefineColorClass && isSoja) {
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Peso da Amostra de Grãos Sadios (read-only)
+            // Peso da Amostra Limpa (INPUT MANUAL - CAMPO VAZIO POR PADRÃO)
+            NumberInputField(
+                value = cleanSampleWeightInput,
+                onValueChange = onCleanSampleWeightChange,
+                label = "Peso da Amostra Limpa (Base para Cor) (g)",
+                focusRequester = cleanSampleWeightInputFocus,
+                nextFocus = otherColorsFocus,
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text("Insira o peso dos grãos que NÃO são Amarelos (Outras Cores).", style = MaterialTheme.typography.titleSmall)
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // CAMPO: Grãos de Outras Cores (INPUT)
+            NumberInputField(
+                value = otherColorsGrainsWeight,
+                onValueChange = onOtherColorsGrainsWeightChange,
+                label = "Peso de grãos de outras cores (g)",
+                focusRequester = otherColorsFocus,
+                nextFocus = null, // Último campo da tela
+                onDone = { focusManager.clearFocus() }
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // CAMPO: Grãos Amarelos (CALCULADO e READ-ONLY)
             OutlinedTextField(
-                value = cleanSampleWeight, // String de exibição
-                onValueChange = {}, // Read-only
-                label = { Text("Peso da Amostra de Grãos Sadios (g)") },
+                value = yellowGrainsDisplay, // CALCULADO
+                onValueChange = {},
+                label = { Text("Peso de grãos amarelos (g) (Calculado)") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 readOnly = true,
                 enabled = false
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Text("", style = MaterialTheme.typography.titleSmall)
-
-            NumberInputField(
-                value = yellowGrainsWeight,
-                onValueChange = onYellowGrainsWeightChange,
-                label = "Peso de grãos amarelos (g)",
-                focusRequester = yellowGrainsFocus,
-                nextFocus = otherColorsFocus
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-
-            NumberInputField(
-                value = otherColorsGrainsWeight,
-                onValueChange = onOtherColorsGrainsWeightChange,
-                label = "Peso de grãos de outras cores (g)",
-                focusRequester = otherColorsFocus,
-                nextFocus = null // Último campo da tela
-            )
         } else if (!isSoja) {
             Text("Nenhum critério adicional nesta aba para Milho.", style = MaterialTheme.typography.bodyMedium)
         }
@@ -721,7 +767,7 @@ fun DefectsTab2(
 }
 
 // -------------------------------------------------------------------------------------------------
-// --- FUNÇÕES AUXILIARES (MANTIDAS) ---
+// --- FUNÇÕES AUXILIARES ---
 // -------------------------------------------------------------------------------------------------
 
 @Composable
@@ -735,6 +781,7 @@ private fun NumberInputField(
     enabled: Boolean = true
 ) {
     val keyboardController = LocalSoftwareKeyboardController.current
+    val focusManager = LocalFocusManager.current
 
     OutlinedTextField(
         value = value,
@@ -756,6 +803,7 @@ private fun NumberInputField(
             onDone = {
                 onDone?.invoke()
                 keyboardController?.hide()
+                focusManager.clearFocus()
             }
         ),
         singleLine = true,

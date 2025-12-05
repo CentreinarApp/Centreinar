@@ -1,30 +1,16 @@
 package com.example.centreinar.ui.classificationProcess.screens
 
-import android.util.Log
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
-import com.example.centreinar.ColorClassificationSoja
-import com.example.centreinar.ui.classificationProcess.components.ClassColorResult
 import com.example.centreinar.ui.classificationProcess.components.ClassificationTable
-import com.example.centreinar.ui.classificationProcess.components.ObservationCard
-import com.example.centreinar.ui.classificationProcess.components.SimplifiedResultsTable
-import com.example.centreinar.ui.classificationProcess.components.UsedLimitTable
+import com.example.centreinar.ui.classificationProcess.components.LimitSoja
 import com.example.centreinar.ui.classificationProcess.viewmodel.ClassificationViewModel
 
 @Composable
@@ -32,176 +18,68 @@ fun ClassificationResult(
     navController: NavController,
     viewModel: ClassificationViewModel = hiltViewModel()
 ) {
-    val classification by viewModel.classification.collectAsState()
-    val isLoading by viewModel.isLoading.collectAsState()
-    val error by viewModel.error.collectAsState()
-    var showLimitsDialog by remember { mutableStateOf(false) }
+    // Definindo o objeto mock/padrão para garantir que os limites nunca sejam nulos no UI.
+    val mockLimits = LimitSoja()
 
-    val lastUsedLimit by viewModel.lastUsedLimit.collectAsStateWithLifecycle()
-    val context = LocalContext.current
+    // 1. Leitura da Classificação
+    val classification by viewModel.classification.collectAsState(initial = null)
 
-    var colorClassificationResult by remember { mutableStateOf<ColorClassificationSoja?>(null) }
-    var observation by remember { mutableStateOf<String?>(null) }
+    // 2. Carregando Limites. (Lendo o StateFlow como LimitSoja? para evitar inferência como Any?)
+    // O 'collectAsState' já faz o 'remember' e o 'State' por nós.
+    val lastUsedLimitState by viewModel.lastUsedLimit.collectAsState(initial = mockLimits)
 
-    // NOVO: Lógica de Carregamento Centralizada e Sincronizada
-    // Carrega o limite e a cor APENAS DEPOIS que a classificação principal estiver pronta.
-    LaunchedEffect(classification) {
-        if (classification != null) {
-            viewModel.loadLastUsedLimit()
+    // O valor seguro é o que foi lido, com fallback para o mock se for null.
+    // 🚨 AQUI, FORÇAMOS O CASTING PARA GARANTIR O TIPO CORRETO PARA A FUNÇÃO.
+    val safeLimits = (lastUsedLimitState ?: mockLimits) as LimitSoja
 
-            if (viewModel.doesDefineColorClass == true) {
-                colorClassificationResult = viewModel.getClassColor()
-                observation = viewModel.getObservations(colorClassificationResult)
-            }
-        }
-    }
 
-    // Root column
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        // Área rolável principal: usamos weight(1f) + verticalScroll
-        Box(
-            modifier = Modifier
-                .weight(1f)
-                .verticalScroll(rememberScrollState())
-                .fillMaxWidth()
-        ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                when {
-                    isLoading -> {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(32.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            CircularProgressIndicator()
-                        }
-                    }
+        Text(
+            "Resultado da Classificação",
+            style = MaterialTheme.typography.headlineSmall,
+            color = MaterialTheme.colorScheme.onBackground
+        )
 
-                    error != null -> {
-                        Text(
-                            text = error!!,
-                            color = MaterialTheme.colorScheme.error,
-                            modifier = Modifier
-                                .padding(top = 16.dp)
-                                .fillMaxWidth()
-                        )
-                    }
+        Spacer(Modifier.height(16.dp))
 
-                    classification != null -> {
-                        val finalTypeLabel = viewModel.getFinalTypeLabel(classification!!.finalType)
+        // 3. Verificando o carregamento dos dados principais (classification)
+        if (classification == null) {
+            Text(
+                "Nenhuma classificação disponível.",
+                color = MaterialTheme.colorScheme.error
+            )
 
-                        // 1. TABELA DE RESULTADOS SIMPLIFICADA (Mostra Classe Amarela/Misturada)
-                        if (viewModel.doesDefineColorClass == true && colorClassificationResult != null) {
-                            SimplifiedResultsTable(
-                                finalTypeLabel,
-                                colorClassificationResult!!.framingClass,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        } else {
-                            SimplifiedResultsTable(
-                                finalTypeLabel,
-                                "Não Definida",
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
+            Spacer(Modifier.height(16.dp))
 
-                        Spacer(Modifier.height(16.dp))
-                        ClassificationTable(classification!!, modifier = Modifier.fillMaxWidth())
-                        Spacer(Modifier.height(10.dp))
-
-                        Text(
-                            text = "Ver limites utilizados",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier
-                                .clickable { showLimitsDialog = true }
-                                .padding(vertical = 8.dp)
-                        )
-
-                        // 2. CARD DE RESULTADO DETALHADO DA CLASSE DE COR (Mostra detalhes do cálculo)
-                        if (viewModel.doesDefineColorClass == true && colorClassificationResult != null) {
-                            ClassColorResult(colorClassificationResult!!, modifier = Modifier.fillMaxWidth())
-                        }
-
-                        observation?.let {
-                            ObservationCard(it, modifier = Modifier.fillMaxWidth())
-                        }
-
-                        Log.d("Observations", "onScreen: $observation")
-
-                        Spacer(Modifier.height(16.dp))
-
-                        Button(
-                            onClick = {
-                                navController.navigate("home")
-                                viewModel.clearStates()
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text("Nova Análise")
-                        }
-
-                        Spacer(Modifier.height(16.dp))
-
-                        Button(
-                            onClick = {
-                                navController.navigate("classificationToDiscount")
-                                viewModel.clearStates()
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text("Calcular Desconto")
-                        }
-
-                        Spacer(Modifier.height(8.dp))
-
-                        Button(
-                            onClick = {
-                                lastUsedLimit?.let {
-                                    viewModel.exportClassification(context, classification!!, it)
-                                }
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text("Exportar PDF")
-                        }
-                    }
-                }
+            Button(onClick = { navController.popBackStack() }) {
+                Text("Voltar")
             }
+            return
         }
 
-        // Diálogo de limites: limitamos a altura do conteúdo rolável dentro do diálogo
-        if (showLimitsDialog) {
-            AlertDialog(
-                onDismissRequest = { showLimitsDialog = false },
-                title = { Text("Limites de Classificação", style = MaterialTheme.typography.titleLarge) },
-                text = {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .heightIn(max = 400.dp)
-                            .verticalScroll(rememberScrollState())
-                    ) {
-                        if (lastUsedLimit != null) {
-                            UsedLimitTable(lastUsedLimit!!, modifier = Modifier.fillMaxWidth())
-                        } else {
-                            Text("Carregando limites...")
-                            // Não precisa de LaunchedEffect(Unit) aqui, pois já monitoramos em ClassificationResult
-                        }
-                    }
-                },
-                confirmButton = {
-                    TextButton(onClick = { showLimitsDialog = false }) { Text("Fechar") }
-                }
-            )
+        // safeClass é não-nulo a partir daqui
+        val safeClass = classification!!
+
+        // 4. CHAMADA DA NOVA TABELA
+        ClassificationTable(
+            classification = safeClass,
+            typeTranslator = viewModel::getFinalTypeLabel,
+            limits = safeLimits, // <--- Agora o compilador aceita o tipo LimitSoja
+            modifier = Modifier.fillMaxWidth()
+        )
+        // Fim da Tabela
+
+        Spacer(Modifier.height(20.dp))
+
+        Button(
+            modifier = Modifier.fillMaxWidth(),
+            onClick = { navController.popBackStack() }
+        ) {
+            Text("Voltar")
         }
     }
 }

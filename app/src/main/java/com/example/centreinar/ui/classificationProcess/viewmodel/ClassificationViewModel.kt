@@ -100,7 +100,6 @@ class ClassificationViewModel @Inject constructor(
                 val resultClassification = repository.getClassification(resultId.toInt())
 
                 // 🚨 ATUALIZAÇÃO DA DESCLASSIFICAÇÃO
-                // Atualiza o registro de desclassificação que foi inserido previamente com ID=null/0
                 if (resultClassification != null) {
                     repository.updateDisqualification(resultId.toInt(), resultClassification.finalType)
                 }
@@ -268,7 +267,7 @@ class ClassificationViewModel @Inject constructor(
         }
     }
 
-    // --- NOVO MÉTODO PÚBLICO: Mapeia o código numérico para o rótulo de texto (Correção de Rótulos) ---
+    // --- MÉTODO PÚBLICO CORRIGIDO: Mapeia o código numérico para o rótulo de texto ---
     fun getFinalTypeLabel(finalType: Int): String {
         val group = selectedGroup
         val grain = selectedGrain
@@ -276,7 +275,7 @@ class ClassificationViewModel @Inject constructor(
         // 0 é o código de Desclassificação (Universal)
         if (finalType == 0) return "Desclassificada"
 
-        // 7 é o código que você usa para 'Fora de Tipo' (ou código > 2 no Grupo 1)
+        // 7 é o código padronizado para FORA DE TIPO
         if (finalType == 7) return "Fora de Tipo"
 
         // Lógica de mapeamento para SOJA
@@ -285,12 +284,12 @@ class ClassificationViewModel @Inject constructor(
                 1 -> when (finalType) {
                     1 -> "Tipo 1"
                     2 -> "Tipo 2"
-                    else -> "Fora de Tipo" // Qualquer outro código > 2
+                    else -> "Fora de Tipo (Erro de Código)"
                 }
                 2 -> when (finalType) {
-                    // CORREÇÃO: Grupo 2 só tem Padrão Básico
+                    // Grupo 2 usa Padrão Básico para Tipos 1, 2, 3
                     1, 2, 3 -> "Padrão Básico"
-                    else -> "Fora de Tipo"
+                    else -> "Fora de Tipo (Erro de Código)"
                 }
                 else -> "Erro de Grupo"
             }
@@ -302,8 +301,7 @@ class ClassificationViewModel @Inject constructor(
                 1 -> "Tipo 1"
                 2 -> "Tipo 2"
                 3 -> "Tipo 3"
-                // No Milho, o Fora de Tipo é o Tipo 4, que na sua lógica de limite é o código 4.
-                4 -> "Fora de Tipo"
+                4 -> "Fora de Tipo" // Mantido por retrocompatibilidade, mas o novo fluxo usa 7
                 else -> "Erro de Tipo"
             }
         }

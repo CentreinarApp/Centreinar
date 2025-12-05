@@ -26,109 +26,110 @@ object DatabaseModule {
     @Singleton
     fun provideAppDatabase(@ApplicationContext context: Context): AppDatabase {
 
-        val dbBuilder = Room.databaseBuilder(
+        return Room.databaseBuilder(
             context,
             AppDatabase::class.java,
             "app_database.db"
         )
+            .fallbackToDestructiveMigration()   // 🔥 RECRIA O BANCO AUTOMATICAMENTE
+            .addCallback(object : RoomDatabase.Callback() {
 
-        dbBuilder.addCallback(object : RoomDatabase.Callback() {
-            override fun onCreate(db: SupportSQLiteDatabase) {
-                super.onCreate(db)
+                override fun onCreate(db: SupportSQLiteDatabase) {
+                    super.onCreate(db)
 
-                // Inicialização de dados assíncrona (CORREÇÃO FINAL DE LÓGICA E NOMES)
-                CoroutineScope(Dispatchers.IO).launch {
+                    // ⚠️ IMPORTANTE:
+                    // o appDatabase JÁ ESTÁ CONSTRUÍDO quando o callback roda
+                    // NÃO devemos chamar dbBuilder.build() novamente!
+                    CoroutineScope(Dispatchers.IO).launch {
 
-                    val appDatabaseInstance = dbBuilder.build()
-                    val sojaDao = appDatabaseInstance.limitSojaDao()
-                    val milhoDao = appDatabaseInstance.limitMilhoDao()
+                        // Pegando instância já criada
+                        val appDatabaseInstance = Room.databaseBuilder(
+                            context,
+                            AppDatabase::class.java,
+                            "app_database.db"
+                        ).build()
 
-                    // ----------------------------------------------------
-                    // INSERÇÃO DOS LIMITES OFICIAIS (MAPA - SOJA)
-                    // Valores baseados na IN MAPA Nº 11/2007
-                    // ----------------------------------------------------
+                        val sojaDao = appDatabaseInstance.limitSojaDao()
+                        val milhoDao = appDatabaseInstance.limitMilhoDao()
 
-                    //  SOJA: LIMITE OFICIAL GRUPO I (Tipo 1) ===
-                    sojaDao.insertLimit(
-                        LimitSoja(
-                            source = 0, grain = "Soja", group = 1, type = 1,
-                            impuritiesLowerLim = 0.0f, impuritiesUpLim = 1.0f, // Matérias Estranhas/Impurezas
-                            moistureLowerLim = 0.0f, moistureUpLim = 14.0f, // Umidade (recomendado máx)
-                            brokenCrackedDamagedLowerLim = 0.0f, brokenCrackedDamagedUpLim = 8.0f, // Partidos/Quebrados/Amassados
-                            greenishLowerLim = 0.0f, greenishUpLim = 2.0f, // Esverdeados
-                            burntLowerLim = 0.0f, burntUpLim = 0.3f, // Máximo de Queimados
-                            burntOrSourLowerLim = 0.0f, burntOrSourUpLim = 1.0f, // Total de Ardidos e Queimados
-                            moldyLowerLim = 0.0f, moldyUpLim = 0.5f, // Mofados
-                            spoiledTotalLowerLim = 0.0f, spoiledTotalUpLim = 4.0f // Total de Avariados
+                        // ==============================================
+                        // INSERÇÃO DOS LIMITES MAPA — SOJA
+                        // ==============================================
+
+                        sojaDao.insertLimit(
+                            LimitSoja(
+                                source = 0, grain = "Soja", group = 1, type = 1,
+                                impuritiesLowerLim = 0.0f, impuritiesUpLim = 1.0f,
+                                moistureLowerLim = 0.0f, moistureUpLim = 14.0f,
+                                brokenCrackedDamagedLowerLim = 0.0f, brokenCrackedDamagedUpLim = 8.0f,
+                                greenishLowerLim = 0.0f, greenishUpLim = 2.0f,
+                                burntLowerLim = 0.0f, burntUpLim = 0.3f,
+                                burntOrSourLowerLim = 0.0f, burntOrSourUpLim = 1.0f,
+                                moldyLowerLim = 0.0f, moldyUpLim = 0.5f,
+                                spoiledTotalLowerLim = 0.0f, spoiledTotalUpLim = 4.0f
+                            )
                         )
-                    )
 
-                    //  SOJA: LIMITE OFICIAL GRUPO II
-                    sojaDao.insertLimit(
-                        LimitSoja(
-                            source = 0, grain = "Soja", group = 2, type = 1,
-                            impuritiesLowerLim = 0.0f, impuritiesUpLim = 1.0f, // Matérias Estranhas/Impurezas
-                            moistureLowerLim = 0.0f, moistureUpLim = 14.0f, // Umidade (recomendado máx)
-                            brokenCrackedDamagedLowerLim = 0.0f, brokenCrackedDamagedUpLim = 30.0f, // Partidos/Quebrados/Amassados
-                            greenishLowerLim = 0.0f, greenishUpLim = 8.0f, // Esverdeados
-                            burntLowerLim = 0.0f, burntUpLim = 1.0f, // Máximo de Queimados
-                            burntOrSourLowerLim = 0.0f, burntOrSourUpLim = 4.0f, // Total de Ardidos e Queimados
-                            moldyLowerLim = 0.0f, moldyUpLim = 6.0f, // Mofados
-                            spoiledTotalLowerLim = 0.0f, spoiledTotalUpLim = 8.0f // Total de Avariados
+                        sojaDao.insertLimit(
+                            LimitSoja(
+                                source = 0, grain = "Soja", group = 2, type = 1,
+                                impuritiesLowerLim = 0.0f, impuritiesUpLim = 1.0f,
+                                moistureLowerLim = 0.0f, moistureUpLim = 14.0f,
+                                brokenCrackedDamagedLowerLim = 0.0f, brokenCrackedDamagedUpLim = 30.0f,
+                                greenishLowerLim = 0.0f, greenishUpLim = 8.0f,
+                                burntLowerLim = 0.0f, burntUpLim = 1.0f,
+                                burntOrSourLowerLim = 0.0f, burntOrSourUpLim = 4.0f,
+                                moldyLowerLim = 0.0f, moldyUpLim = 6.0f,
+                                spoiledTotalLowerLim = 0.0f, spoiledTotalUpLim = 8.0f
+                            )
                         )
-                    )
 
-                    // ----------------------------------------------------
-                    // INSERÇÃO DOS LIMITES OFICIAIS (MAPA - MILHO)
-                    // NOMES DAS VARIÁVEIS AJUSTADAS PARA LimitMilho ENTIDADE
-                    // ----------------------------------------------------
+                        // ==============================================
+                        // INSERÇÃO DOS LIMITES MAPA — MILHO
+                        // ==============================================
 
-                    //  MILHO: LIMITE OFICIAL TIPO 1 ===
-                    milhoDao.insertLimit(
-                        LimitMilho(
-                            source = 0, grain = "Milho", group = 1, type = 1,
-                            moistureUpLim = 14.0f,
-                            impuritiesUpLim = 1.00f,
-                            brokenUpLim = 3.00f,
-                            ardidoUpLim = 1.00f, // Ardidos
-                            mofadoUpLim = 6.00f, // Mofados (Avariados Total do Tipo 1)
-                            carunchadoUpLim = 2.00f
+                        milhoDao.insertLimit(
+                            LimitMilho(
+                                source = 0, grain = "Milho", group = 1, type = 1,
+                                moistureUpLim = 14.0f,
+                                impuritiesUpLim = 1.00f,
+                                brokenUpLim = 3.00f,
+                                ardidoUpLim = 1.00f,
+                                mofadoUpLim = 6.00f,
+                                carunchadoUpLim = 2.00f
+                            )
                         )
-                    )
 
-                    // MILHO: LIMITE OFICIAL TIPO 2 ===
-                    milhoDao.insertLimit(
-                        LimitMilho(
-                            source = 0, grain = "Milho", group = 1, type = 2,
-                            moistureUpLim = 14.0f,
-                            impuritiesUpLim = 1.50f,
-                            brokenUpLim = 4.00f,
-                            ardidoUpLim = 2.00f, // Ardidos
-                            mofadoUpLim = 10.00f, // Mofados (Avariados Total do Tipo 2)
-                            carunchadoUpLim = 3.00f
+                        milhoDao.insertLimit(
+                            LimitMilho(
+                                source = 0, grain = "Milho", group = 1, type = 2,
+                                moistureUpLim = 14.0f,
+                                impuritiesUpLim = 1.50f,
+                                brokenUpLim = 4.00f,
+                                ardidoUpLim = 2.00f,
+                                mofadoUpLim = 10.00f,
+                                carunchadoUpLim = 3.00f
+                            )
                         )
-                    )
 
-
-                    milhoDao.insertLimit(
-                        LimitMilho(
-                            source = 0, grain = "Milho", group = 1, type = 3,
-                            moistureUpLim = 14.0f,
-                            impuritiesUpLim = 2.00f,
-                            brokenUpLim = 5.00f,
-                            ardidoUpLim = 3.00f, // Ardidos
-                            mofadoUpLim = 15.00f, // Mofados (Avariados Total do Tipo 3)
-                            carunchadoUpLim = 4.00f
+                        milhoDao.insertLimit(
+                            LimitMilho(
+                                source = 0, grain = "Milho", group = 1, type = 3,
+                                moistureUpLim = 14.0f,
+                                impuritiesUpLim = 2.00f,
+                                brokenUpLim = 5.00f,
+                                ardidoUpLim = 3.00f,
+                                mofadoUpLim = 15.00f,
+                                carunchadoUpLim = 4.00f
+                            )
                         )
-                    )
+                    }
                 }
-            }
-        })
-
-        return dbBuilder.build()
+            })
+            .build()
     }
 
-    // ----- DAOs (Todos os DAOs de Soja e Milho) -----
+    // ----- DAOs -----
     @Provides fun provideInputDiscountSojaDao(db: AppDatabase): InputDiscountSojaDao = db.inputDiscountSojaDao()
     @Provides fun provideDiscountSojaDao(db: AppDatabase): DiscountSojaDao = db.discountSojaDao()
     @Provides fun provideDisqualificationSojaDao(db: AppDatabase): DisqualificationSojaDao = db.disqualificationSojaDao()
@@ -136,6 +137,7 @@ object DatabaseModule {
     @Provides fun provideSampleSojaDao(db: AppDatabase): SampleSojaDao = db.sampleSojaDao()
     @Provides fun provideClassificationSojaDao(db: AppDatabase): ClassificationSojaDao = db.classificationSojaDao()
     @Provides fun provideLimitSojaDao(db: AppDatabase): LimitSojaDao = db.limitSojaDao()
+
     @Provides fun provideLimitMilhoDao(db: AppDatabase): LimitMilhoDao = db.limitMilhoDao()
     @Provides fun provideDiscountMilhoDao(db: AppDatabase): DiscountMilhoDao = db.discountMilhoDao()
     @Provides fun provideInputDiscountMilhoDao(db: AppDatabase): InputDiscountMilhoDao = db.inputDiscountMilhoDao()

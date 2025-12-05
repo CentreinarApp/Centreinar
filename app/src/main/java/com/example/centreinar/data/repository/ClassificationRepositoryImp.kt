@@ -26,68 +26,90 @@ class ClassificationRepositoryImpl @Inject constructor(
         val limitMap = getLimitsForGrain(sample.grain, sample.group, limitSource)
         val sampleId = setSample(sample)
 
-        // percentuais principais
-        val percentageImpurities = tools.calculateDefectPercentage(sample.foreignMattersAndImpurities, sample.sampleWeight)
-        val cleanWeight = tools.calculateDefectPercentage(100f - percentageImpurities, sample.sampleWeight)
-        // Nota: A lógica de cleanWeight é simplificada para evitar divisão por zero no Utilities
+        // --- PESO LIMPO (g) e proteção contra zero/negativo ---
+        val cleanWeightGrams = sample.sampleWeight - sample.foreignMattersAndImpurities
+        val safeCleanWeight = if (cleanWeightGrams > 0f) cleanWeightGrams else sample.sampleWeight
 
-        val percentageBroken = tools.calculateDefectPercentage(sample.brokenCrackedDamaged, cleanWeight)
-        val percentageGreenish = tools.calculateDefectPercentage(sample.greenish, cleanWeight)
-        val percentageMoldy = tools.calculateDefectPercentage(sample.moldy, cleanWeight)
-        val percentageBurnt = tools.calculateDefectPercentage(sample.burnt, cleanWeight)
-        val percentageSour = tools.calculateDefectPercentage(sample.sour, cleanWeight)
+        // --- Impurezas sobre amostra bruta ---
+        val percentageImpurities =
+            tools.calculateDefectPercentage(sample.foreignMattersAndImpurities, sample.sampleWeight)
+
+        // --- Defeitos sobre peso limpo ---
+        val percentageBroken = tools.calculateDefectPercentage(sample.brokenCrackedDamaged, safeCleanWeight)
+        val percentageGreenish = tools.calculateDefectPercentage(sample.greenish, safeCleanWeight)
+        val percentageMoldy = tools.calculateDefectPercentage(sample.moldy, safeCleanWeight)
+        val percentageBurnt = tools.calculateDefectPercentage(sample.burnt, safeCleanWeight)
+        val percentageSour = tools.calculateDefectPercentage(sample.sour, safeCleanWeight)
         val percentageBurntOrSour = percentageBurnt + percentageSour
-        val percentageSpoiled = tools.calculateDefectPercentage(
-            sample.moldy + sample.fermented + sample.sour + sample.burnt + sample.germinated + sample.immature + sample.shriveled + sample.damaged,
-            cleanWeight
-        )
 
-        // outros defeitos
-        val percentageDamaged = tools.calculateDefectPercentage(sample.damaged, cleanWeight)
-        val percentageFermented = tools.calculateDefectPercentage(sample.fermented, cleanWeight)
-        val percentageGerminated = tools.calculateDefectPercentage(sample.germinated, cleanWeight)
-        val percentageImmature = tools.calculateDefectPercentage(sample.immature, cleanWeight)
-        val percentageShriveled = tools.calculateDefectPercentage(sample.shriveled, cleanWeight)
+        // --- Soma dos avariados (SEM duplicar 'damaged') ---
+        val sumDefectWeights =
+            sample.moldy +
+                    sample.fermented +
+                    sample.sour +
+                    sample.burnt +
+                    sample.germinated +
+                    sample.immature +
+                    sample.shriveled
 
-        // categorias
+        val percentageSpoiled = tools.calculateDefectPercentage(sumDefectWeights, safeCleanWeight)
+
+        // --- Outros defeitos individuais ---
+        val percentageDamaged = tools.calculateDefectPercentage(sample.damaged, safeCleanWeight)
+        val percentageFermented = tools.calculateDefectPercentage(sample.fermented, safeCleanWeight)
+        val percentageGerminated = tools.calculateDefectPercentage(sample.germinated, safeCleanWeight)
+        val percentageImmature = tools.calculateDefectPercentage(sample.immature, safeCleanWeight)
+        val percentageShriveled = tools.calculateDefectPercentage(sample.shriveled, safeCleanWeight)
+
+        // --- Determina categorias por limites ---
         val impuritiesType = tools.findCategoryForValue(
             limitMap["impurities"]?.map { it.lowerL to it.upperL } ?: emptyList(),
             percentageImpurities
         )
+
         val brokenType = tools.findCategoryForValue(
             limitMap["broken"]?.map { it.lowerL to it.upperL } ?: emptyList(),
             percentageBroken
         )
+
         val greenishType = tools.findCategoryForValue(
             limitMap["greenish"]?.map { it.lowerL to it.upperL } ?: emptyList(),
             percentageGreenish
         )
+
         val moldyType = tools.findCategoryForValue(
             limitMap["moldy"]?.map { it.lowerL to it.upperL } ?: emptyList(),
             percentageMoldy
         )
+
         val burntType = tools.findCategoryForValue(
             limitMap["burnt"]?.map { it.lowerL to it.upperL } ?: emptyList(),
             percentageBurnt
         )
+
         val burntOrSourType = tools.findCategoryForValue(
             limitMap["burntOrSour"]?.map { it.lowerL to it.upperL } ?: emptyList(),
             percentageBurntOrSour
         )
+
         val spoiledType = tools.findCategoryForValue(
             limitMap["spoiled"]?.map { it.lowerL to it.upperL } ?: emptyList(),
             percentageSpoiled
         )
 
+        // --- Final type = pior tipo (maior código) ---
         var finalType = listOf(
             brokenType, greenishType, moldyType, burntType, burntOrSourType, spoiledType, impuritiesType
         ).maxOrNull() ?: 0
 
+        // --- Regra de desclassificação por defeitos graves ---
+        val graveDefectsSum = percentageBurntOrSour + percentageMoldy
         var isDisqualify = false
-        if (sample.group == 1 && percentageBurntOrSour + percentageMoldy > 12) isDisqualify = true
-        if (sample.group == 2 && percentageBurntOrSour + percentageMoldy > 40) isDisqualify = true
+        if (sample.group == 1 && graveDefectsSum > 12f) isDisqualify = true
+        if (sample.group == 2 && graveDefectsSum > 40f) isDisqualify = true
         if (isDisqualify) finalType = 0
 
+        // --- Monta e salva a classificação ---
         val classification = ClassificationSoja(
             grain = sample.grain,
             group = sample.group,
@@ -136,6 +158,7 @@ class ClassificationRepositoryImpl @Inject constructor(
     }
 
     override suspend fun setSample(sample: SampleSoja): Long = sampleDao.insert(sample)
+
     override suspend fun getClassification(id: Int): ClassificationSoja? = classificationDao.getById(id)
 
     override suspend fun getLimitsForGrain(grain: String, group: Int, limitSource: Int): Map<String, List<LimitCategory>> {
@@ -164,14 +187,13 @@ class ClassificationRepositoryImpl @Inject constructor(
         return colorClassification
     }
 
-    // 🚨 CORREÇÃO CRÍTICA DO CRASH: Aceita Int? (anulável) para o ID
     override suspend fun setDisqualification(
         classificationId: Int?, badConservation: Int, graveDefectSum: Int,
         strangeSmell: Int, toxicGrains: Int, insects: Int
     ): Long {
         return disqualificationDao.insert(
             DisqualificationSoja(
-                classificationId = classificationId, // Usa o ID anulável, aceitando NULL
+                classificationId = classificationId,
                 badConservation = badConservation,
                 graveDefectSum = graveDefectSum,
                 strangeSmell = strangeSmell,
@@ -203,7 +225,9 @@ class ClassificationRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getLastLimitSource(): Int = limitDao.getLastSource()
+
     override suspend fun getLastColorClass(): ColorClassificationSoja? = colorClassificationDao.getLastColorClass()
+
     override suspend fun getDisqualificationByClassificationId(idClassification: Int): DisqualificationSoja? =
         disqualificationDao.getByClassificationId(classificationId = idClassification)
 
@@ -250,7 +274,6 @@ class ClassificationRepositoryImpl @Inject constructor(
 
     override suspend fun getLimit(grain: String, group: Int, tipo: Int, source: Int): LimitSoja? {
         return try {
-            // limitDao.getLimitsByType retorna LimitSoja?
             limitDao.getLimitsByType(grain, group, tipo, source)
         } catch (e: Exception) {
             null
