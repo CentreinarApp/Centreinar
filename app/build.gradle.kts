@@ -36,6 +36,13 @@ android {
     kotlinOptions {
         jvmTarget = "11"
     }
+
+    // *** CONFIGURAÇÃO KSP OBRIGATÓRIA PARA PROCESSADORES DE ANOTAÇÃO ***
+    ksp {
+        arg("room.schemaLocation", "$projectDir/schemas")
+    }
+    // ******************************************************************
+
     buildFeatures {
         viewBinding = true
     }
@@ -49,6 +56,10 @@ dependencies {
     // Compose
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))
+
+    // *** ADICIONE ESTA LINHA PARA RESOLVER verticalScroll ***
+    implementation(libs.androidx.compose.foundation)
+
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
@@ -60,7 +71,8 @@ dependencies {
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     implementation(libs.androidx.storage)
-    implementation(libs.androidx.runtime.livedata) // Add room-ktx for coroutines!
+    implementation(libs.androidx.runtime.livedata)
+    //implementation(libs.androidx.material3.desktop) // Add room-ktx for coroutines!
     ksp(libs.androidx.room.compiler) // Using KSP as the annotation processor
 
     // Hilt
