@@ -13,6 +13,7 @@ interface ClassificationRepository {
 
     suspend fun getSample(id: Int): SampleSoja?
 
+    // ✅ ATUALIZADO: Incluído cleanWeight conforme solicitado pelo orientador
     suspend fun setSample(
         grain: String,
         group: Int,
@@ -27,7 +28,10 @@ interface ClassificationRepository {
         moldy: Float,
         fermented: Float,
         germinated: Float,
-        immature: Float
+        immature: Float,
+        shriveled: Float, // Adicionado para manter consistência
+        damaged: Float,   // Adicionado para manter consistência
+        cleanWeight: Float // 🚨 NOVO: Entrada manual ou calculada do peso limpo
     ): SampleSoja
 
     suspend fun setSample(sample: SampleSoja): Long
@@ -47,6 +51,7 @@ interface ClassificationRepository {
         otherColors: Float
     ): ColorClassificationSoja
 
+    // ✅ ATUALIZADO: classificationId agora é Int? (Anulável) para evitar crashes
     suspend fun setDisqualification(
         classificationId: Int?,
         badConservation: Int,
@@ -76,5 +81,7 @@ interface ClassificationRepository {
     suspend fun updateDisqualification(classificationId: Int, finalType: Int)
     suspend fun getLimitOfType1Official(group: Int, grain: String): Map<String, Float>
     suspend fun getLimit(grain: String, group: Int, tipo: Int, source: Int): LimitSoja?
+
+    // ✅ AJUSTE: Garantir que o parâmetro opcional seja aceito
     suspend fun getObservations(idClassification: Int, colorClass: ColorClassificationSoja? = null): String
 }

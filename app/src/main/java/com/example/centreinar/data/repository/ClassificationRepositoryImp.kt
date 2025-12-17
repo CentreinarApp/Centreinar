@@ -27,7 +27,9 @@ class ClassificationRepositoryImpl @Inject constructor(
         val sampleId = setSample(sample)
 
         // --- PESO LIMPO (g) e proteção contra zero/negativo ---
-        val cleanWeightGrams = sample.sampleWeight - sample.foreignMattersAndImpurities
+        val cleanWeightGrams = if (sample.cleanWeight > 0f) sample.cleanWeight
+        else sample.sampleWeight - sample.foreignMattersAndImpurities
+
         val safeCleanWeight = if (cleanWeightGrams > 0f) cleanWeightGrams else sample.sampleWeight
 
         // --- Impurezas sobre amostra bruta ---
@@ -42,17 +44,10 @@ class ClassificationRepositoryImpl @Inject constructor(
         val percentageSour = tools.calculateDefectPercentage(sample.sour, safeCleanWeight)
         val percentageBurntOrSour = percentageBurnt + percentageSour
 
-        // --- Soma dos avariados  ---
+        // --- Soma dos avariados (Soma manual dos pesos) ---
         val sumDefectWeights =
-            sample.brokenCrackedDamaged +
-                    sample.damaged +
-                    sample.moldy +
-                    sample.fermented +
-                    sample.sour +
-                    sample.burnt +
-                    sample.germinated +
-                    sample.immature +
-                    sample.shriveled
+            sample.moldy + sample.fermented + sample.sour + sample.burnt +
+                    sample.germinated + sample.immature + sample.shriveled + sample.damaged
 
         val percentageSpoiled = tools.calculateDefectPercentage(sumDefectWeights, safeCleanWeight)
 
@@ -99,10 +94,10 @@ class ClassificationRepositoryImpl @Inject constructor(
             percentageSpoiled
         )
 
-        // --- Final type = pior tipo (maior código) ---
+        // --- Final type = pior tipo (CORRIGIDO: Apenas critérios oficiais definem tipo) ---
         var finalType = listOf(
             brokenType, greenishType, moldyType, burntType, burntOrSourType, spoiledType, impuritiesType
-        ).maxOrNull() ?: 0
+        ).maxOrNull() ?: 1
 
         // --- Regra de desclassificação por defeitos graves ---
         val graveDefectsSum = percentageBurntOrSour + percentageMoldy
@@ -111,7 +106,7 @@ class ClassificationRepositoryImpl @Inject constructor(
         if (sample.group == 2 && graveDefectsSum > 40f) isDisqualify = true
         if (isDisqualify) finalType = 0
 
-        // --- Monta e salva a classificação ---
+        // --- Monta e salva a classificação (CORRIGIDO: Secundários com 0 para exibir "-") ---
         val classification = ClassificationSoja(
             grain = sample.grain,
             group = sample.group,
@@ -136,6 +131,12 @@ class ClassificationRepositoryImpl @Inject constructor(
             burnt = burntType,
             burntOrSour = burntOrSourType,
             spoiled = spoiledType,
+            // 🚨 Defeitos que NÃO classificam isoladamente recebem 0 para o traço "-"
+            fermented = 0,
+            germinated = 0,
+            immature = 0,
+            shriveled = 0,
+            sour = 0,
             finalType = finalType,
         )
 
@@ -148,14 +149,15 @@ class ClassificationRepositoryImpl @Inject constructor(
         grain: String, group: Int, sampleWeight: Float, lotWeight: Float,
         foreignMattersAndImpurities: Float, humidity: Float,
         greenish: Float, brokenCrackedDamaged: Float, burnt: Float,
-        sour: Float, moldy: Float, fermented: Float, germinated: Float, immature: Float
+        sour: Float, moldy: Float, fermented: Float, germinated: Float,
+        immature: Float, shriveled: Float, damaged: Float, cleanWeight: Float
     ): SampleSoja {
         return SampleSoja(
-            grain = grain, group = group, sampleWeight = sampleWeight, lotWeight = lotWeight,
-            foreignMattersAndImpurities = foreignMattersAndImpurities, humidity = humidity,
-            greenish = greenish, brokenCrackedDamaged = brokenCrackedDamaged,
-            burnt = burnt, sour = sour, moldy = moldy, fermented = fermented,
-            germinated = germinated, immature = immature
+            grain = grain, group = group, lotWeight = lotWeight, sampleWeight = sampleWeight,
+            cleanWeight = cleanWeight, foreignMattersAndImpurities = foreignMattersAndImpurities,
+            humidity = humidity, greenish = greenish, brokenCrackedDamaged = brokenCrackedDamaged,
+            damaged = damaged, burnt = burnt, sour = sour, moldy = moldy, fermented = fermented,
+            germinated = germinated, immature = immature, shriveled = shriveled
         )
     }
 
@@ -241,7 +243,6 @@ class ClassificationRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getLimitOfType1Official(group: Int, grain: String): Map<String, Float> {
-
         val limit: LimitSoja? = try {
             limitDao.getLimitsByType(grain, group, 1, 0)
         } catch (e: Exception) {
@@ -269,7 +270,6 @@ class ClassificationRepositoryImpl @Inject constructor(
                 "spoiledTotalUpLim" to limit.spoiledTotalUpLim
             )
         } else {
-            Log.w("Repo", "Limites oficiais (Source 0) não encontrados para Grão: $grain, Grupo: $group. Retornando mapa vazio.")
             emptyMap()
         }
     }
