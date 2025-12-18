@@ -18,7 +18,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.centreinar.ClassificationSoja
 
-// Estrutura de Limites
+// Estrutura de Limites (Mantenha como está)
 data class LimitSoja(
     val id: Int = 0,
     val impuritiesUpLim: Float = 1.0f,
@@ -30,7 +30,6 @@ data class LimitSoja(
     val brokenCrackedDamagedUpLim: Float = 30.0f
 )
 
-// Quadruple auxiliar
 private data class Quadruple<out A, out B, out C, out D>(
     val first: A, val second: B, val third: C, val fourth: D
 )
@@ -48,14 +47,11 @@ fun ClassificationTable(
             .fillMaxWidth(),
         shape = MaterialTheme.shapes.medium
     ) {
-
-        // 🔥 SCROLL ADICIONADO AQUI!
         Column(
             modifier = Modifier
                 .padding(16.dp)
-                .verticalScroll(rememberScrollState()) // <<<< AQUI
+                .verticalScroll(rememberScrollState())
         ) {
-
             TableHeader("RESULTADO DA CLASSIFICAÇÃO")
 
             Column(
@@ -63,7 +59,7 @@ fun ClassificationTable(
                     .fillMaxWidth()
                     .border(1.dp, MaterialTheme.colorScheme.outline)
             ) {
-                // Cabeçalho das colunas
+                // Cabeçalho (Mantenha igual)
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -71,64 +67,40 @@ fun ClassificationTable(
                         .padding(vertical = 8.dp, horizontal = 8.dp),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text(
-                        "DEFEITO",
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                        modifier = Modifier.weight(2f)
-                    )
-                    Text(
-                        "LIMITE (%)",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                        modifier = Modifier.weight(1f),
-                        textAlign = TextAlign.End
-                    )
-                    Text(
-                        "%",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                        modifier = Modifier.weight(1f),
-                        textAlign = TextAlign.End
-                    )
-                    Text(
-                        "TIPO",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                        modifier = Modifier.weight(1f),
-                        textAlign = TextAlign.End
-                    )
+                    Text("DEFEITO", fontSize = 13.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(2f))
+                    Text("LIMITE (%)", fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f), textAlign = TextAlign.End)
+                    Text("%", fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f), textAlign = TextAlign.End)
+                    Text("TIPO", fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f), textAlign = TextAlign.End)
                 }
 
-                // Linhas da tabela
-                listOf(
-                    Quadruple("Ardidos", limits.sourUpLim, classification.sourPercentage, classification.sour),
-
-                    Quadruple("Matéria Estranha e Impurezas", limits.impuritiesUpLim, classification.foreignMattersPercentage, classification.foreignMatters),
-                    Quadruple("Queimados", limits.burntUpLim, classification.burntPercentage, classification.burnt),
-                    Quadruple("Ardidos e Queimados (Soma)", limits.burntUpLim + limits.sourUpLim, classification.burntOrSourPercentage, classification.burntOrSour),
-                    Quadruple("Mofados", limits.moldyUpLim, classification.moldyPercentage, classification.moldy),
-                    Quadruple("Total de Avariados", limits.spoiledUpLim, classification.spoiledPercentage, classification.spoiled),
+                // --- LISTA DE DEFEITOS ATUALIZADA ---
+                val rows = listOf(
+                    Quadruple("Matéria Estranha/Imp", limits.impuritiesUpLim, classification.foreignMattersPercentage, classification.foreignMatters),
+                    Quadruple("Partidos/Quebrados", limits.brokenCrackedDamagedUpLim, classification.brokenCrackedDamagedPercentage, classification.brokenCrackedDamaged),
                     Quadruple("Esverdeados", limits.greenishUpLim, classification.greenishPercentage, classification.greenish),
-                    Quadruple("Partidos/Quebrados/Amassados", limits.brokenCrackedDamagedUpLim, classification.brokenCrackedDamagedPercentage, classification.brokenCrackedDamaged),
+                    Quadruple("Mofados", limits.moldyUpLim, classification.moldyPercentage, classification.moldy),
+                    Quadruple("Queimados", limits.burntUpLim, classification.burntPercentage, classification.burnt),
+                    Quadruple("Queimados/Ardidos (Soma)", limits.burntUpLim + limits.sourUpLim, classification.burntOrSourPercentage, classification.burntOrSour),
+                    Quadruple("Total de Avariados", limits.spoiledUpLim, classification.spoiledPercentage, classification.spoiled),
 
-                    Quadruple("Fermentados", 0f, classification.fermentedPercentage, classification.fermented),
-                    Quadruple("Germinados", 0f, classification.germinatedPercentage, classification.germinated),
-                    Quadruple("Imaturos", 0f, classification.immaturePercentage, classification.immature),
-                    Quadruple("Chochos", 0f, classification.shriveledPercentage, classification.shriveled),
+                    // Defeitos que NÃO classificam (Onde deve aparecer o "-")
+                    // Note que passamos 0f no limite para a função TableRow saber que deve por "-"
+                    Quadruple("Ardidos", 0f, classification.sourPercentage, 0),
+                    Quadruple("Fermentados", 0f, classification.fermentedPercentage, 0),
+                    Quadruple("Germinados", 0f, classification.germinatedPercentage, 0),
+                    Quadruple("Imaturos", 0f, classification.immaturePercentage, 0),
+                    Quadruple("Chochos", 0f, classification.shriveledPercentage, 0),
+                    Quadruple("Danificados", 0f, classification.damagedPercentage, 0)
+                )
 
-                    Quadruple("Fermentados", 0f, classification.fermentedPercentage, classification.fermented),
-                ).forEachIndexed { index, (label, limit, percentage, typeCode) ->
+                rows.forEachIndexed { index, (label, limit, percentage, typeCode) ->
                     TableRow(
                         label = label,
                         limit = limit,
                         percentage = percentage,
-                        quantity = typeTranslator(typeCode),
-                        isLast = index == 13
+                        // Se o typeCode for 0, forçamos o "-", senão usamos o tradutor
+                        quantity = if (typeCode == 0) "-" else typeTranslator(typeCode),
+                        isLast = index == rows.size - 1
                     )
                 }
             }
@@ -156,12 +128,9 @@ private fun TableRow(
             .padding(vertical = 8.dp, horizontal = 8.dp),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Text(
-            text = label,
-            fontSize = 13.sp,
-            modifier = Modifier.weight(2f)
-        )
+        Text(text = label, fontSize = 13.sp, modifier = Modifier.weight(2f))
 
+        // Se o limite for 0, mostra traço
         Text(
             text = if (limit > 0f) "%.2f%%".format(limit) else "-",
             fontSize = 13.sp,
@@ -185,13 +154,11 @@ private fun TableRow(
     }
 
     if (!isLast) {
-        Divider(
-            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f),
-            thickness = 1.dp
-        )
+        Divider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f), thickness = 1.dp)
     }
 }
 
+// Mantenha o restante (FinalTypeRow e TableHeader) igual ao seu original
 @Composable
 private fun FinalTypeRow(value: String) {
     Row(
@@ -213,20 +180,10 @@ private fun FinalTypeRow(value: String) {
 @Composable
 private fun TableHeader(title: String) {
     Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp),
+        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
         contentAlignment = Alignment.Center
     ) {
-        Text(
-            text = title,
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.primary
-        )
+        Text(text = title, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
     }
-    Divider(
-        modifier = Modifier.padding(vertical = 8.dp),
-        color = MaterialTheme.colorScheme.outline
-    )
+    Divider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.outline)
 }
