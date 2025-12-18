@@ -131,7 +131,7 @@ class ClassificationRepositoryImpl @Inject constructor(
             burnt = burntType,
             burntOrSour = burntOrSourType,
             spoiled = spoiledType,
-            // 🚨 Defeitos que NÃO classificam isoladamente recebem 0 para o traço "-"
+            //  Defeitos que NÃO classificam isoladamente recebem 0 para o traço "-"
             fermented = 0,
             germinated = 0,
             immature = 0,

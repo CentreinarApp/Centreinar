@@ -52,7 +52,7 @@ hilt-navigation-compose = { module = "androidx.hilt:hilt-navigation-compose", ve
 hilt-android-testing = { module = "com.google.dagger:hilt-android-testing", version.ref = "hiltVersion" }
 hilt-android-compiler = { module = "com.google.dagger:hilt-android-compiler", version.ref = "hiltVersion" }
 
-# *** AQUI ESTÁ A DEFINIÇÃO QUE FALTAVA ***
+
 androidx-compose-foundation = { group = "androidx.compose.foundation", name = "foundation" }
 # *****************************************
 

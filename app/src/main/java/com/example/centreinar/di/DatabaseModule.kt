@@ -31,13 +31,11 @@ object DatabaseModule {
             AppDatabase::class.java,
             "app_database.db"
         )
-            .fallbackToDestructiveMigration()   // 🔥 RECRIA O BANCO AUTOMATICAMENTE
+            .fallbackToDestructiveMigration()   //  RECRIA O BANCO AUTOMATICAMENTE
             .addCallback(object : RoomDatabase.Callback() {
 
                 override fun onCreate(db: SupportSQLiteDatabase) {
                     super.onCreate(db)
-
-                    // ⚠️ IMPORTANTE:
                     // o appDatabase JÁ ESTÁ CONSTRUÍDO quando o callback roda
                     // NÃO devemos chamar dbBuilder.build() novamente!
                     CoroutineScope(Dispatchers.IO).launch {

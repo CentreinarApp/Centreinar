@@ -37,7 +37,7 @@ android {
         jvmTarget = "11"
     }
 
-    // *** CONFIGURAÇÃO KSP OBRIGATÓRIA PARA PROCESSADORES DE ANOTAÇÃO ***
+
     ksp {
         arg("room.schemaLocation", "$projectDir/schemas")
     }

@@ -21,15 +21,13 @@ fun ClassificationResult(
     // Definindo o objeto mock/padrão para garantir que os limites nunca sejam nulos no UI.
     val mockLimits = LimitSoja()
 
-    // 1. Leitura da Classificação
+    //  Leitura da Classificação
     val classification by viewModel.classification.collectAsState(initial = null)
 
-    // 2. Carregando Limites. (Lendo o StateFlow como LimitSoja? para evitar inferência como Any?)
+    //  Carregando Limites
     // O 'collectAsState' já faz o 'remember' e o 'State' por nós.
     val lastUsedLimitState by viewModel.lastUsedLimit.collectAsState(initial = mockLimits)
 
-    // O valor seguro é o que foi lido, com fallback para o mock se for null.
-    // 🚨 AQUI, FORÇAMOS O CASTING PARA GARANTIR O TIPO CORRETO PARA A FUNÇÃO.
     val safeLimits = (lastUsedLimitState ?: mockLimits) as LimitSoja
 
 
@@ -46,7 +44,7 @@ fun ClassificationResult(
 
         Spacer(Modifier.height(16.dp))
 
-        // 3. Verificando o carregamento dos dados principais (classification)
+
         if (classification == null) {
             Text(
                 "Nenhuma classificação disponível.",
@@ -64,11 +62,11 @@ fun ClassificationResult(
         // safeClass é não-nulo a partir daqui
         val safeClass = classification!!
 
-        // 4. CHAMADA DA NOVA TABELA
+
         ClassificationTable(
             classification = safeClass,
             typeTranslator = viewModel::getFinalTypeLabel,
-            limits = safeLimits, // <--- Agora o compilador aceita o tipo LimitSoja
+            limits = safeLimits,
             modifier = Modifier.fillMaxWidth()
         )
         // Fim da Tabela
