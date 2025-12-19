@@ -99,7 +99,6 @@ fun DiscountInputScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .verticalScroll(scrollState) // Adicionado verticalScroll
     ) {
         TabRow(selectedTabIndex = selectedTab) {
             tabTitles.forEachIndexed { index, title ->
