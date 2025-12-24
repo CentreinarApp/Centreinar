@@ -109,68 +109,73 @@ fun DiscountInputScreen(
                 )
             }
         }
-        Text(
-            "Insira os dados",
-            style = MaterialTheme.typography.headlineSmall,
-            color = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier.padding(16.dp)
-        )
-
-        Spacer(modifier = Modifier.height(5.dp))
-
-        //Lot weight
-        when(selectedTab){
-
-            0 -> BasicInfoTab(
-                lotWeight = lotWeight,
-                onLotWeightChange = { lotWeight = it },
-                moisture = moisture,
-                onMoistureChange = { moisture = it },
-                impurities = impurities,
-                onImpuritiesChange = { impurities = it },
-                priceBySack = priceBySack,
-                onPriceBySackChange = {priceBySack = it},
-                lotWeightFocus = lotWeightFocus,
-                moistureFocus = moistureFocus,
-                impuritiesFocus = impuritiesFocus,
-                priceBySackFocus = priceBySackFocus
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
+        ) {
+            Text(
+                "Insira os dados",
+                style = MaterialTheme.typography.headlineSmall,
+                color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.padding(16.dp)
             )
 
-            1 ->GraveDefectsTab(
-                burnt = burnt,
-                onBurntChange = { burnt = it },
-                burntOrSour = burntOrSour,
-                onBurntOrSourChange = {burntOrSour = it},
-                moldy = moldy,
-                onMoldyChange = { moldy = it },
-                spoiled = spoiled,
-                onSpoiledChange = {spoiled = it},
-                burntFocus = burntFocus,
-                burntOrSourFocus = burntOrSourFocus,
-                moldyFocus = moldyFocus,
-                spoiledFocus = spoiledFocus
-            )
+            Spacer(modifier = Modifier.height(5.dp))
 
-            2 -> FinalDefectsTab(
-                greenish = greenish,
-                onGreenishChange = { greenish = it },
-                brokenCrackedDamaged = brokenCrackedDamaged,
-                onBrokenCrackedDamagedChange = { brokenCrackedDamaged = it },
-                greenishFocus = greenishFocus,
-                brokenCrackedDamagedFocus = brokenFocus,
-                daysOfStorage = daysOfStorage,
-                onDaysOfStorageChange = {daysOfStorage = it},
-                deductionValue = deductionValue,
-                onDeductionValueChange = {deductionValue = it},
-                doesDeduction = doesDeduction,
-                onDoesDeductionChange = {doesDeduction = it},
-                doesTechnicalLoss = doesTechnicalLoss,
-                onDoesTechnicalLossChange = {doesTechnicalLoss = it},
-                daysOfStorageFocus = daysOfStorageFocus,
-                deductionValueFocus = deductionValueFocus
-            )
+            //Lot weight
+            when (selectedTab) {
+
+                0 -> BasicInfoTab(
+                    lotWeight = lotWeight,
+                    onLotWeightChange = { lotWeight = it },
+                    moisture = moisture,
+                    onMoistureChange = { moisture = it },
+                    impurities = impurities,
+                    onImpuritiesChange = { impurities = it },
+                    priceBySack = priceBySack,
+                    onPriceBySackChange = { priceBySack = it },
+                    lotWeightFocus = lotWeightFocus,
+                    moistureFocus = moistureFocus,
+                    impuritiesFocus = impuritiesFocus,
+                    priceBySackFocus = priceBySackFocus
+                )
+
+                1 -> GraveDefectsTab(
+                    burnt = burnt,
+                    onBurntChange = { burnt = it },
+                    burntOrSour = burntOrSour,
+                    onBurntOrSourChange = { burntOrSour = it },
+                    moldy = moldy,
+                    onMoldyChange = { moldy = it },
+                    spoiled = spoiled,
+                    onSpoiledChange = { spoiled = it },
+                    burntFocus = burntFocus,
+                    burntOrSourFocus = burntOrSourFocus,
+                    moldyFocus = moldyFocus,
+                    spoiledFocus = spoiledFocus
+                )
+
+                2 -> FinalDefectsTab(
+                    greenish = greenish,
+                    onGreenishChange = { greenish = it },
+                    brokenCrackedDamaged = brokenCrackedDamaged,
+                    onBrokenCrackedDamagedChange = { brokenCrackedDamaged = it },
+                    greenishFocus = greenishFocus,
+                    brokenCrackedDamagedFocus = brokenFocus,
+                    daysOfStorage = daysOfStorage,
+                    onDaysOfStorageChange = { daysOfStorage = it },
+                    deductionValue = deductionValue,
+                    onDeductionValueChange = { deductionValue = it },
+                    doesDeduction = doesDeduction,
+                    onDoesDeductionChange = { doesDeduction = it },
+                    doesTechnicalLoss = doesTechnicalLoss,
+                    onDoesTechnicalLossChange = { doesTechnicalLoss = it },
+                    daysOfStorageFocus = daysOfStorageFocus,
+                    deductionValueFocus = deductionValueFocus
+                )
+            }
         }
-
 
 
         Row(
