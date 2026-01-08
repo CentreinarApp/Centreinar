@@ -34,7 +34,10 @@ public fun OfficialOrNotOfficialScreen(
     ) {
         Button(
             onClick = {
+                // Define como oficial
                 viewModel.isOfficial = true
+
+                // Navega para a rota da seleção dos limites
                 navController.navigate("limitInput") },
             modifier = Modifier
                 .fillMaxWidth()
@@ -52,7 +55,10 @@ public fun OfficialOrNotOfficialScreen(
 
         Button(
             onClick = {
+                // Define como não oficial
                 viewModel.isOfficial = false
+
+                // Navega para a rota da seleção dos limites
                 navController.navigate("limitInput")
                       },
             modifier = Modifier

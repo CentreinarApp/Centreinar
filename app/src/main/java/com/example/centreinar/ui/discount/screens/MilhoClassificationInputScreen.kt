@@ -17,13 +17,12 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.centreinar.data.local.entity.SampleMilho
 import com.example.centreinar.ui.classificationProcess.viewmodel.ClassificationViewModel
-import com.example.centreinar.ui.classificationProcess.viewmodel.ClassificationViewModelMilho
 import java.math.RoundingMode
 
 @Composable
 fun MilhoClassificationInputScreen(
     navController: NavController,
-    viewModel: ClassificationViewModelMilho = hiltViewModel()
+    viewModel: ClassificationViewModel = hiltViewModel()
 ) {
     var lotWeight by remember { mutableStateOf("") }
     var sampleWeight by remember { mutableStateOf("") }

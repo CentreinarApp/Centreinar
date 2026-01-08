@@ -1,6 +1,6 @@
 package com.example.centreinar.data.repository
 
-import android.util.Log // Adicionar import de Log
+import android.util.Log
 import com.example.centreinar.ClassificationMilho
 import com.example.centreinar.data.local.dao.ClassificationMilhoDao
 import com.example.centreinar.data.local.dao.LimitMilhoDao
@@ -8,7 +8,6 @@ import com.example.centreinar.data.local.dao.SampleMilhoDao
 import com.example.centreinar.data.local.entity.LimitMilho
 import com.example.centreinar.data.local.entity.SampleMilho
 import com.example.centreinar.util.Utilities
-import com.example.centreinar.data.repository.ClassificationRepositoryMilho
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -19,25 +18,29 @@ class ClassificationRepositoryMilhoImpl @Inject constructor(
     private val sampleDao: SampleMilhoDao,
     private val tools: Utilities
 ) : ClassificationRepositoryMilho {
-    /**
-     * Classifica uma amostra de milho com base nos limites e defeitos calculados.
-     * Agora com verificação segura para evitar crash quando limites não existem.
-     */
-    override suspend fun classifySample(sample: SampleMilho, limitSource: Int): Long {
-        val limitsList = limitDao.getLimitsBySource(sample.grain, sample.group, limitSource)
 
-        // 🚨 VERIFICAÇÃO CRÍTICA DE SEGURANÇA
+    override suspend fun classifySample(sample: SampleMilho, limitSource: Int): Long {
+        val limitsList = limitDao.getLimitsBySource(
+            grain = sample.grain,
+            limitSource = limitSource,
+            group = sample.group
+        )
+
         if (limitsList.isNullOrEmpty()) {
             Log.e(
                 "ClassificationRepoMilho",
                 "Nenhum limite encontrado para Milho: grain=${sample.grain}, group=${sample.group}, source=$limitSource"
             )
+            // Se falhar, tenta buscar o oficial (Source 0) como fallback para não crashar
+            if (limitSource != 0) {
+                return classifySample(sample, 0)
+            }
             throw IllegalStateException(
                 "Não foram encontrados limites de classificação para o grão ${sample.grain} (grupo ${sample.group})."
             )
         }
 
-        val limit = limitsList.first()
+        val limit = limitsList.first() // Pega o primeiro (geralmente Tipo 1 ou o mais restritivo)
 
         val cleanWeight = if (sample.cleanWeight > 0f) sample.cleanWeight else sample.sampleWeight
 
@@ -56,6 +59,7 @@ class ClassificationRepositoryMilhoImpl @Inject constructor(
             limits = limitsList
         )
 
+        // Verificação simples baseada nos limites carregados
         val anyExceeds = (
                 percentageImpurities > limit.impuritiesUpLim ||
                         percentageBroken > limit.brokenUpLim ||
@@ -64,6 +68,7 @@ class ClassificationRepositoryMilhoImpl @Inject constructor(
                         percentageCarunchado > limit.carunchadoUpLim
                 )
 
+        // Se passar do limite, zera o tipo (desclassificado) ou mantém o calculado
         val computedFinalType = if (anyExceeds) 0 else finalType
 
         val classification = ClassificationMilho(
@@ -123,12 +128,10 @@ class ClassificationRepositoryMilhoImpl @Inject constructor(
 
     override suspend fun setSample(sample: SampleMilho): Long = sampleDao.insert(sample)
 
-    // 🔹 Retorna a classificação existente
     override suspend fun getClassification(id: Int): ClassificationMilho? {
         return classificationDao.getById(id)
     }
 
-    // 🔹 Busca o último source de limite (0 = oficial, 1 = personalizado, etc.)
     override suspend fun getLastLimitSource(): Int {
         return try {
             limitDao.getLastSource()
@@ -137,22 +140,28 @@ class ClassificationRepositoryMilhoImpl @Inject constructor(
         }
     }
 
-    // 🔹 Busca um limite específico
     override suspend fun getLimit(
         grain: String,
         group: Int,
         tipo: Int,
         source: Int
     ): LimitMilho? {
-        return limitDao.getLimitsBySource(grain, group, source).firstOrNull()
+        // Usando getLimitsByType para garantir que pegamos o Tipo correto (ex: Tipo 1)
+        // E passando os parâmetros na ordem correta que o DAO espera.
+        val limits = limitDao.getLimitsByType(grain, group, tipo, source)
+        return limits.firstOrNull()
     }
 
-    // 🔹 Busca limites oficiais (source = 0)
     override suspend fun getLimitOfType1Official(
         group: Int,
         grain: String
     ): Map<String, Float> {
-        val limit: LimitMilho? = limitDao.getLimitsBySource(grain, group, 0).firstOrNull()
+        val limit: LimitMilho? = limitDao.getLimitsByType(
+            grain = grain,
+            group = group,
+            tipo = 1, // Força Tipo 1
+            limitSource = 0 // Força Oficial
+        ).firstOrNull()
 
         return if (limit != null) {
             mapOf(
@@ -166,7 +175,7 @@ class ClassificationRepositoryMilhoImpl @Inject constructor(
         } else {
             Log.w(
                 "RepoMilho",
-                "Limites oficiais Milho (Source 0) não encontrados para Grão: $grain, Grupo: $group. Retornando mapa vazio."
+                "Limites oficiais Milho (Source 0) não encontrados para Grão: $grain, Grupo: $group."
             )
             emptyMap()
         }

@@ -32,18 +32,23 @@ fun LimitInputScreen(
     val currentGrain = viewModel.selectedGrain
     val currentGroup = viewModel.selectedGroup
 
-    var impurities by remember { mutableStateOf("") }
-    var moisture by remember { mutableStateOf("") }
-    var brokenCrackedDamaged by remember { mutableStateOf("") }
-    var greenish by remember { mutableStateOf("") }
-    var burnt by remember { mutableStateOf("") }
-    var burntOrSour by remember { mutableStateOf("") }
-    var moldy by remember { mutableStateOf("") }
-    var spoiled by remember { mutableStateOf("") }
+    // Identifica se é Soja para mostrar/ocultar campos específicos
+    val isSoja = currentGrain == "Soja"
+
+    var impurities by remember(currentGrain, currentGroup) { mutableStateOf("") }
+    var moisture by remember(currentGrain, currentGroup) { mutableStateOf("") }
+    var brokenCrackedDamaged by remember(currentGrain, currentGroup) { mutableStateOf("") }
+    var greenish by remember(currentGrain, currentGroup) { mutableStateOf("") }
+    var burnt by remember(currentGrain, currentGroup) { mutableStateOf("") }
+    var burntOrSour by remember(currentGrain, currentGroup) { mutableStateOf("") }
+    var moldy by remember(currentGrain, currentGroup) { mutableStateOf("") }
+    var spoiled by remember(currentGrain, currentGroup) { mutableStateOf("") } // Avariados Total
+
     var errorMessage by remember { mutableStateOf<String?>(null) }
-    var defaultsSet by remember { mutableStateOf(false) }
+    var defaultsSet by remember(currentGrain, currentGroup) { mutableStateOf(false) }
     val isEditable = viewModel.isOfficial != true
 
+    // Focus Requesters
     val impuritiesFocus = remember { FocusRequester() }
     val moistureFocus = remember { FocusRequester() }
     val brokenFocus = remember { FocusRequester() }
@@ -56,26 +61,37 @@ fun LimitInputScreen(
     val keyboardController = LocalSoftwareKeyboardController.current
     val scrollState = rememberScrollState()
 
+    // Carrega os limites ao entrar na tela
     LaunchedEffect(currentGrain, currentGroup) {
-        if (currentGrain != null && currentGroup != null) {
+        if (currentGrain != null) {
             Log.d("LimiteDebug", "Carregando limites para: $currentGrain, Grupo $currentGroup")
             viewModel.loadDefaultLimits()
-            impuritiesFocus.requestFocus()
-        } else {
-            Log.d("LimiteDebug", "Grão/Grupo não definidos ainda")
         }
     }
 
+    // Preenche os campos quando os limites padrão chegam do Banco de Dados
     LaunchedEffect(defaultLimits) {
         if (defaultLimits != null && !defaultsSet) {
             impurities = defaultLimits?.get("impuritiesUpLim")?.toString() ?: ""
             moisture = defaultLimits?.get("moistureUpLim")?.toString() ?: ""
             brokenCrackedDamaged = defaultLimits?.get("brokenUpLim")?.toString() ?: ""
-            greenish = defaultLimits?.get("greenishUpLim")?.toString() ?: ""
-            burnt = defaultLimits?.get("burntUpLim")?.toString() ?: ""
-            burntOrSour = defaultLimits?.get("burntOrSourUpLim")?.toString() ?: ""
+
+            // Campos comuns
             moldy = defaultLimits?.get("moldyUpLim")?.toString() ?: ""
             spoiled = defaultLimits?.get("spoiledTotalUpLim")?.toString() ?: ""
+
+            // Campos específicos ou mapeados diferente
+            burnt = defaultLimits?.get("burntUpLim")?.toString() ?: ""
+
+            if (isSoja) {
+                greenish = defaultLimits?.get("greenishUpLim")?.toString() ?: ""
+                burntOrSour = defaultLimits?.get("burntOrSourUpLim")?.toString() ?: ""
+            } else {
+                // Para Milho, se não houver mapeamento direto, deixar vazio ou 0
+                greenish = "0"
+                burntOrSour = defaultLimits?.get("ardidosUpLim")?.toString() ?: "" // Exemplo: mapear ardidos aqui se necessário
+            }
+
             defaultsSet = true
         }
     }
@@ -84,11 +100,13 @@ fun LimitInputScreen(
         Box(modifier = Modifier.weight(1f).verticalScroll(scrollState)) {
             Column {
                 Text(
-                    if (isEditable) "Insira os limites de tolerância" else "Limites de tolerância",
+                    if (isEditable) "Insira os limites de tolerância ($currentGrain)" else "Limites de tolerância ($currentGrain)",
                     style = MaterialTheme.typography.headlineSmall,
                     color = MaterialTheme.colorScheme.onBackground
                 )
                 Spacer(modifier = Modifier.height(24.dp))
+
+                // --- CAMPOS COMUNS (SOJA E MILHO) ---
 
                 NumberInputField(
                     label = "Matéria estranha e Impurezas (%)",
@@ -105,23 +123,27 @@ fun LimitInputScreen(
                     value = moisture,
                     onValueChange = { moisture = it },
                     focusRequester = moistureFocus,
-                    nextFocus = burntFocus,
+                    nextFocus = if(isSoja) burntFocus else burntOrSourFocus,
                     enabled = isEditable
                 )
                 Spacer(Modifier.height(16.dp))
 
-                NumberInputField(
-                    label = "Queimados (%)",
-                    value = burnt,
-                    onValueChange = { burnt = it },
-                    focusRequester = burntFocus,
-                    nextFocus = burntOrSourFocus,
-                    enabled = isEditable
-                )
-                Spacer(Modifier.height(16.dp))
+                // --- CAMPOS ESPECÍFICOS DE SOJA ---
+                if (isSoja) {
+                    NumberInputField(
+                        label = "Queimados (%)",
+                        value = burnt,
+                        onValueChange = { burnt = it },
+                        focusRequester = burntFocus,
+                        nextFocus = burntOrSourFocus,
+                        enabled = isEditable
+                    )
+                    Spacer(Modifier.height(16.dp))
+                }
 
+                // Para Milho, usamos este campo como "Ardidos" ou mantemos a lógica de Ardidos/Queimados
                 NumberInputField(
-                    label = "Ardidos e Queimados (%)",
+                    label = if(isSoja) "Ardidos e Queimados (%)" else "Ardidos (%)",
                     value = burntOrSour,
                     onValueChange = { burntOrSour = it },
                     focusRequester = burntOrSourFocus,
@@ -145,20 +167,23 @@ fun LimitInputScreen(
                     value = spoiled,
                     onValueChange = { spoiled = it },
                     focusRequester = spoiledFocus,
-                    nextFocus = greenishFocus,
+                    nextFocus = if (isSoja) greenishFocus else brokenFocus,
                     enabled = isEditable
                 )
                 Spacer(Modifier.height(16.dp))
 
-                NumberInputField(
-                    label = "Esverdeados (%)",
-                    value = greenish,
-                    onValueChange = { greenish = it },
-                    focusRequester = greenishFocus,
-                    nextFocus = brokenFocus,
-                    enabled = isEditable
-                )
-                Spacer(Modifier.height(16.dp))
+                // "Esverdeados" geralmente só se aplica a Soja
+                if (isSoja) {
+                    NumberInputField(
+                        label = "Esverdeados (%)",
+                        value = greenish,
+                        onValueChange = { greenish = it },
+                        focusRequester = greenishFocus,
+                        nextFocus = brokenFocus,
+                        enabled = isEditable
+                    )
+                    Spacer(Modifier.height(16.dp))
+                }
 
                 NumberInputField(
                     label = "Partidos, Quebrados e Amassados (%)",
@@ -180,19 +205,27 @@ fun LimitInputScreen(
 
         Button(
             onClick = {
-                val allFields = listOf(impurities, brokenCrackedDamaged, greenish, burnt, burntOrSour, moldy, spoiled)
-                if (allFields.any { it.isEmpty() || it == "." }) {
-                    errorMessage = "Por favor, preencha todos os campos."
+                // Validação dinâmica: Só valida "Esverdeados" e "Queimados" se for Soja
+                val fieldsToCheck = mutableListOf(impurities, moisture, brokenCrackedDamaged, burntOrSour, moldy, spoiled)
+                if (isSoja) {
+                    fieldsToCheck.add(greenish)
+                    fieldsToCheck.add(burnt)
+                }
+
+                if (fieldsToCheck.any { it.isEmpty() || it == "." }) {
+                    errorMessage = "Por favor, preencha todos os campos obrigatórios."
                     return@Button
                 }
+
                 if (isEditable) {
                     try {
                         viewModel.setLimit(
                             impurities = impurities.toFloatOrDefault(),
                             moisture = moisture.toFloatOrDefault(),
                             brokenCrackedDamaged = brokenCrackedDamaged.toFloatOrDefault(),
-                            greenish = greenish.toFloatOrDefault(),
-                            burnt = burnt.toFloatOrDefault(),
+                            // Se não for Soja, passa 0 para os campos ocultos
+                            greenish = if (isSoja) greenish.toFloatOrDefault() else 0f,
+                            burnt = if (isSoja) burnt.toFloatOrDefault() else 0f,
                             burntOrSour = burntOrSour.toFloatOrDefault(),
                             moldy = moldy.toFloatOrDefault(),
                             spoiled = spoiled.toFloatOrDefault()
@@ -201,6 +234,9 @@ fun LimitInputScreen(
                         errorMessage = "Valores numéricos inválidos."
                     }
                 }
+
+                // Navegação pode ser diferente dependendo do grão se necessário,
+                // mas se ambos vão para 'disqualification', mantém assim.
                 navController.navigate("disqualification")
             },
             modifier = Modifier.fillMaxWidth()
@@ -223,7 +259,6 @@ private fun NumberInputField(
     OutlinedTextField(
         value = value,
         onValueChange = {
-            // Permite apenas dígitos e ponto
             if (it.isEmpty() || it.matches(Regex("^(\\d*\\.?\\d*)$"))) {
                 onValueChange(it)
             }
@@ -243,6 +278,5 @@ private fun NumberInputField(
         readOnly = !enabled
     )
 }
-//oi
 
-private fun String.toFloatOrDefault(): Float = this.toFloatOrNull()?.takeIf { it > 0f } ?: 100f
+private fun String.toFloatOrDefault(): Float = this.toFloatOrNull()?.takeIf { it >= 0f } ?: 0f

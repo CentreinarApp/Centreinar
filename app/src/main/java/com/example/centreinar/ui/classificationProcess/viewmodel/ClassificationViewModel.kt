@@ -7,11 +7,18 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.saveable
+import com.example.centreinar.ClassificationMilho
 import com.example.centreinar.ClassificationSoja
 import com.example.centreinar.ColorClassificationSoja
 import com.example.centreinar.LimitSoja
 import com.example.centreinar.SampleSoja
+import com.example.centreinar.data.local.entity.DiscountMilho
+import com.example.centreinar.data.local.entity.InputDiscountMilho
+import com.example.centreinar.data.local.entity.LimitMilho
+import com.example.centreinar.data.local.entity.SampleMilho
 import com.example.centreinar.data.repository.ClassificationRepository
+import com.example.centreinar.data.repository.ClassificationRepositoryMilhoImpl
+import com.example.centreinar.util.PDFExporterMilho
 import com.example.centreinar.util.PDFExporterSoja
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -21,16 +28,22 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-
 @HiltViewModel
 class ClassificationViewModel @Inject constructor(
-    private val repository: ClassificationRepository,
-    private val pdfExporter: PDFExporterSoja,
+    // Dependências SOJA
+    private val repositorySoja: ClassificationRepository,
+    private val pdfExporterSoja: PDFExporterSoja,
+
+    // Dependências MILHO
+    private val repositoryMilho: ClassificationRepositoryMilhoImpl,
+    private val pdfExporterMilho: PDFExporterMilho,
+
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
-    private val _classification = MutableStateFlow<ClassificationSoja?>(null)
-    val classification: StateFlow<ClassificationSoja?> = _classification.asStateFlow()
+    // =========================================================================
+    // ESTADOS GERAIS (Compartilhados)
+    // =========================================================================
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
@@ -38,46 +51,63 @@ class ClassificationViewModel @Inject constructor(
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
+    // --- ESTADOS SALVÁVEIS (SavedStateHandle) ---
+    var selectedGrain by savedStateHandle.saveable { mutableStateOf<String?>(null) }
+    var selectedGroup by savedStateHandle.saveable { mutableStateOf<Int?>(null) }
+    var isOfficial by savedStateHandle.saveable { mutableStateOf<Boolean?>(null) }
+    var observation by savedStateHandle.saveable { mutableStateOf<String?>(null) }
+
+    // Específico Soja (mas mantido no SavedStateHandle geral)
+    var doesDefineColorClass by savedStateHandle.saveable { mutableStateOf<Boolean?>(null) }
+
+    // =========================================================================
+    // ESTADOS SOJA
+    // =========================================================================
+
+    private val _classificationSoja = MutableStateFlow<ClassificationSoja?>(null)
+    // Mantido o nome 'classification' para compatibilidade com sua UI de Soja atual
+    val classification: StateFlow<ClassificationSoja?> = _classificationSoja.asStateFlow()
+
     private val _defaultLimits = MutableStateFlow<Map<String, Float>?>(null)
     val defaultLimits: StateFlow<Map<String, Float>?> = _defaultLimits.asStateFlow()
 
     private val _lastUsedLimit = MutableStateFlow<LimitSoja?>(null)
     val lastUsedLimit: StateFlow<LimitSoja?> = _lastUsedLimit.asStateFlow()
 
-    // --- ESTADO SALVÁVEL ---
-    var selectedGrain by savedStateHandle.saveable {
-        mutableStateOf<String?>(null)
-    }
+    // =========================================================================
+    // ESTADOS MILHO
+    // =========================================================================
 
-    var selectedGroup by savedStateHandle.saveable {
-        mutableStateOf<Int?>(null)
-    }
+    private val _classificationMilho = MutableStateFlow<ClassificationMilho?>(null)
+    val classificationMilho: StateFlow<ClassificationMilho?> = _classificationMilho.asStateFlow()
 
-    var isOfficial by savedStateHandle.saveable {
-        mutableStateOf<Boolean?>(null)
-    }
 
-    var observation by savedStateHandle.saveable {
-        mutableStateOf<String?>(null)
-    }
-    var doesDefineColorClass by savedStateHandle.saveable {
-        mutableStateOf<Boolean?>(null)
-    }
-    // ------------------------------------------
+    // =========================================================================
+    // GESTÃO DE ESTADO
+    // =========================================================================
 
     fun clearStates() {
-        _classification.value = null
-        _isLoading.value = false
-        _error.value = null
+        // Limpa Soja
+        _classificationSoja.value = null
         _defaultLimits.value = null
         _lastUsedLimit.value = null
 
+        // Limpa Milho
+        _classificationMilho.value = null
+
+        // Limpa Gerais
+        _isLoading.value = false
+        _error.value = null
         selectedGrain = null
         selectedGroup = null
         isOfficial = null
         observation = null
         doesDefineColorClass = null
     }
+
+    // =========================================================================
+    // LÓGICA SOJA
+    // =========================================================================
 
     fun classifySample(sample: SampleSoja) {
         val grain = selectedGrain ?: run { _error.value = "Grão não selecionado"; return }
@@ -91,23 +121,22 @@ class ClassificationViewModel @Inject constructor(
                 sample.group = group
 
                 var source = 0
-
                 if (isOfficial == false) {
-                    source = repository.getLastLimitSource()
+                    source = repositorySoja.getLastLimitSource()
                 }
 
-                val resultId = repository.classifySample(sample, source)
-                val resultClassification = repository.getClassification(resultId.toInt())
+                val resultId = repositorySoja.classifySample(sample, source)
+                val resultClassification = repositorySoja.getClassification(resultId.toInt())
 
-                // 🚨 ATUALIZAÇÃO DA DESCLASSIFICAÇÃO
+                // ATUALIZAÇÃO DA DESCLASSIFICAÇÃO
                 if (resultClassification != null) {
-                    repository.updateDisqualification(resultId.toInt(), resultClassification.finalType)
+                    repositorySoja.updateDisqualification(resultId.toInt(), resultClassification.finalType)
                 }
 
-                _classification.value = resultClassification
+                _classificationSoja.value = resultClassification
             } catch (e: Exception) {
-                _error.value = e.message ?: "Unknown error"
-                Log.e("SampleInput", "Classification failed", e)
+                _error.value = e.message ?: "Erro desconhecido"
+                Log.e("SampleInputSoja", "Falha na classificação", e)
             } finally {
                 _isLoading.value = false
             }
@@ -115,43 +144,20 @@ class ClassificationViewModel @Inject constructor(
     }
 
     fun setLimit(
-        impurities: Float,
-        moisture: Float,
-        brokenCrackedDamaged: Float,
-        greenish: Float,
-        burnt: Float,
-        burntOrSour: Float,
-        moldy: Float,
-        spoiled: Float
+        impurities: Float, moisture: Float, brokenCrackedDamaged: Float,
+        greenish: Float, burnt: Float, burntOrSour: Float, moldy: Float, spoiled: Float
     ) {
-
-        val grain = selectedGrain?.toString() ?: run {
-            Log.e("LimiteDebug", "ERRO: selectedGrain é nulo ao tentar salvar. Cancelando setLimit.")
-            return
-        }
-        val group = selectedGroup ?: run {
-            Log.e("LimiteDebug", "ERRO: selectedGroup é nulo ao tentar salvar. Cancelando setLimit.")
-            return
-        }
+        val grain = selectedGrain?.toString() ?: return
+        val group = selectedGroup ?: return
 
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 _isLoading.value = true
                 _error.value = null
-                repository.setLimit(
-                    grain,
-                    group,
-                    1,
-                    impurities,
-                    moisture,
-                    brokenCrackedDamaged,
-                    greenish,
-                    burnt,
-                    burntOrSour,
-                    moldy,
-                    spoiled
+                repositorySoja.setLimit(
+                    grain, group, 1, impurities, moisture, brokenCrackedDamaged,
+                    greenish, burnt, burntOrSour, moldy, spoiled
                 )
-
             } catch (e: Exception) {
                 _error.value = e.message ?: "Unknown error"
                 Log.e("SampleInput", "Classification failed", e)
@@ -161,15 +167,18 @@ class ClassificationViewModel @Inject constructor(
         }
     }
 
-    // 🚨 CORREÇÃO CRÍTICA DO CRASH: Passa null para o classificationId na inserção inicial
+    // Garante que a UI recarregue
+    fun resetLimits() {
+        _defaultLimits.value = null
+    }
+
     fun setDisqualification(badConservation: Int, strangeSmell: Int, insects: Int, toxicGrains: Int) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                // classificationId é passado como null para evitar o erro de Chave Estrangeira
-                repository.setDisqualification(
-                    classificationId = null, // <-- CORREÇÃO
+                repositorySoja.setDisqualification(
+                    classificationId = null,
                     badConservation = badConservation,
-                    graveDefectSum = 0, // Inserido como 0 (será atualizado em classifySample)
+                    graveDefectSum = 0,
                     strangeSmell = strangeSmell,
                     toxicGrains = toxicGrains,
                     insects = insects
@@ -186,29 +195,20 @@ class ClassificationViewModel @Inject constructor(
     suspend fun getClassColor(): ColorClassificationSoja? {
         return try {
             _isLoading.value = true
-            repository.getLastColorClass()
+            repositorySoja.getLastColorClass()
         } catch (e: Exception) {
             _error.value = e.message ?: "Falha ao buscar a classe de cor"
-            Log.e("ClassColor", "Class Color failed", e)
             null
         } finally {
             _isLoading.value = false
         }
     }
 
-
     fun setClassColor(totalWeight: Float, otherColorsWeight: Float) {
         viewModelScope.launch(Dispatchers.IO) {
-            val grain = selectedGrain ?: run {
-                _error.value = "Grain not selected"
-                return@launch
-            }
-            val classificationId = classification.value?.id ?: run {
-                _error.value = "Classification not complete"
-                return@launch
-            }
-
-            repository.setClass(grain, classificationId, totalWeight, otherColorsWeight)
+            val grain = selectedGrain ?: return@launch
+            val classificationId = classification.value?.id ?: return@launch
+            repositorySoja.setClass(grain, classificationId, totalWeight, otherColorsWeight)
         }
     }
 
@@ -222,59 +222,191 @@ class ClassificationViewModel @Inject constructor(
             return
         }
 
+        // Zera os limites carregados previamente...
+        _defaultLimits.value = null
+
         viewModelScope.launch(Dispatchers.IO) {
             Log.d("LimiteDebug", "Buscando limites para: Grão=$grain, Grupo=$group")
             try {
-                _defaultLimits.value = repository.getLimitOfType1Official(
-                    grain = grain,
-                    group = group
-                )
-                Log.d("LimiteDebug", "Busca concluída. Itens carregados: ${_defaultLimits.value?.size}")
+                // Lógica para SOJA...
+                if (grain == "Soja") {
+                    // Lógica existente para SOJA (já retorna um Map)
+                    _defaultLimits.value = repositorySoja.getLimitOfType1Official(
+                        grain = grain,
+                        group = group
+                    )
+                } else {
+                    // Lógica para MILHO...
+
+                    val limitMilho = repositoryMilho.getLimit(grain, group, 1, 0) // 0 = Oficial
+
+                    if (limitMilho != null) {
+                        // Mapeia as propriedades do objeto LimitMilho para as chaves que a UI espera
+                        _defaultLimits.value = mapOf(
+                            "impuritiesUpLim" to limitMilho.impuritiesUpLim,
+                            "moistureUpLim" to limitMilho.moistureUpLim, // Milho usa umidade
+                            "brokenUpLim" to limitMilho.brokenUpLim,
+                            "ardidosUpLim" to limitMilho.ardidoUpLim,   // Chave específica para Milho
+                            "mofadosUpLim" to limitMilho.mofadoUpLim,    // Chave específica para Milho
+                            "carunchadoUpLim" to limitMilho.carunchadoUpLim,
+                            "moldyUpLim" to limitMilho.mofadoUpLim
+                        )
+                        Log.d("LimiteDebug", "Limites de Milho carregados e mapeados.")
+                    } else {
+                        Log.w("LimiteDebug", "Nenhum limite oficial encontrado para Milho.")
+                    }
+                }
 
             } catch (e: Exception) {
                 _error.value = e.message ?: "Unknown error"
-                Log.e("ClassColor", "Falha ao carregar limites", e)
+                Log.e("LimitDebug", "Falha ao carregar limites", e)
             }
         }
     }
 
     fun loadLastUsedLimit() {
-        val grain = selectedGrain?.toString() ?: run { return }
-        val group = selectedGroup ?: run { return }
+        val grain = selectedGrain?.toString() ?: return
+        val group = selectedGroup ?: return
 
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 if (isOfficial == true) {
-                    _lastUsedLimit.value = repository.getLimit(grain, group, 1, 0)
+                    _lastUsedLimit.value = repositorySoja.getLimit(grain, group, 1, 0)
                 } else {
-                    val source = repository.getLastLimitSource()
-                    _lastUsedLimit.value = repository.getLimit(grain, group, 1, source)
+                    val source = repositorySoja.getLastLimitSource()
+                    _lastUsedLimit.value = repositorySoja.getLimit(grain, group, 1, source)
                 }
-
             } catch (e: Exception) {
-                _error.value = e.message ?: "Unknown error"
-                Log.e("UsedLimit", "Limit hasn't been loaded", e)
+                _error.value = e.message ?: "Erro desconhecido"
             }
         }
     }
 
     suspend fun getObservations(colorClass: ColorClassificationSoja?): String {
-        val classification = _classification.value ?: return "Erro na Classificação"
+        val classification = _classificationSoja.value ?: return "Erro na Classificação"
         return if (doesDefineColorClass == true) {
-            repository.getObservations(classification.id, colorClass)
+            repositorySoja.getObservations(classification.id, colorClass)
         } else {
-            repository.getObservations(idClassification = classification.id)
+            repositorySoja.getObservations(idClassification = classification.id)
         }
     }
 
-    // --- MÉTODO PÚBLICO CORRIGIDO: Mapeia o código numérico para o rótulo de texto ---
+    fun exportClassification(context: Context, classification: ClassificationSoja, limit: LimitSoja) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val sample = repositorySoja.getSample(classification.sampleId)
+                val colorClassification = repositorySoja.getLastColorClass()
+                val observation = repositorySoja.getObservations(classification.id, colorClassification)
+
+                if (sample == null) {
+                    _error.value = "Dados de amostra não encontrados"
+                    return@launch
+                }
+
+                pdfExporterSoja.exportClassificationToPdf(
+                    context, classification, sample, colorClassification, observation, limit
+                )
+            } catch (e: Exception) {
+                _error.value = "Export failed: ${e.message}"
+            }
+        }
+    }
+
+    // =========================================================================
+    // LÓGICA MILHO
+    // =========================================================================
+
+    /**
+     * Classifica a amostra de MILHO.
+     */
+    fun classifySample(sample: SampleMilho) {
+        viewModelScope.launch(Dispatchers.IO) {
+            _isLoading.value = true
+            _error.value = null
+            try {
+                val limitSource = if (isOfficial == false) repositoryMilho.getLastLimitSource() else 0
+
+                val id = repositoryMilho.classifySample(sample, limitSource)
+                val classification = repositoryMilho.getClassification(id.toInt())
+
+                _classificationMilho.value = classification
+                Log.i("ClassificationMilho", "Classificação concluída com sucesso para o milho.")
+
+            } catch (e: IllegalStateException) {
+                _error.value = e.message
+                Log.e("ClassificationMilho", "Erro de lógica: ${e.message}", e)
+            } catch (e: Exception) {
+                _error.value = e.message ?: "Erro inesperado durante a classificação"
+                Log.e("ClassificationMilho", "Erro ao classificar", e)
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun exportClassificationToPdf(
+        context: Context,
+        classification: ClassificationMilho,
+        sample: SampleMilho,
+        limit: LimitMilho
+    ) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                // Criação das entidades de desconto para o PDF do Milho
+                val inputDiscount = InputDiscountMilho(
+                    classificationId = classification.id,
+                    grain = sample.grain,
+                    group = sample.group,
+                    limitSource = 0,
+                    daysOfStorage = 0,
+                    lotWeight = sample.lotWeight,
+                    lotPrice = 0f,
+                    impurities = sample.impurities,
+                    humidity = 0f,
+                    broken = sample.broken,
+                    ardidos = sample.ardido,
+                    mofados = sample.mofado,
+                    carunchado = sample.carunchado,
+                    deductionValue = 0f
+                )
+
+                val discount = DiscountMilho(
+                    id = 0,
+                    inputDiscountId = inputDiscount.id,
+                    impuritiesLoss = classification.impuritiesPercentage,
+                    humidityLoss = 0f,
+                    technicalLoss = 0f,
+                    brokenLoss = classification.brokenPercentage,
+                    ardidoLoss = classification.ardidoPercentage,
+                    mofadoLoss = classification.mofadoPercentage,
+                    carunchadoLoss = classification.carunchadoPercentage,
+                    fermentedLoss = classification.fermentedPercentage,
+                    germinatedLoss = classification.germinatedPercentage,
+                    gessadoLoss = classification.gessadoPercentage,
+                    finalDiscount = 0f,
+                    finalWeight = 0f
+                )
+
+                pdfExporterMilho.exportDiscountToPdf(context, discount, inputDiscount, limit)
+                Log.i("ClassificationMilho", "PDF exportado com sucesso para o milho.")
+
+            } catch (e: Exception) {
+                _error.value = e.message ?: "Erro ao exportar PDF"
+                Log.e("ClassificationMilho", "Erro ao exportar PDF", e)
+            }
+        }
+    }
+
+    // =========================================================================
+    // UTILITÁRIOS GERAIS
+    // =========================================================================
+
     fun getFinalTypeLabel(finalType: Int): String {
         val group = selectedGroup
         val grain = selectedGrain
 
         // 0 é o código de Desclassificação (Universal)
         if (finalType == 0) return "Desclassificada"
-
         // 7 é o código padronizado para FORA DE TIPO
         if (finalType == 7) return "Fora de Tipo"
 
@@ -284,12 +416,11 @@ class ClassificationViewModel @Inject constructor(
                 1 -> when (finalType) {
                     1 -> "Tipo 1"
                     2 -> "Tipo 2"
-                    else -> "Fora de Tipo (Erro de Código)"
+                    else -> "Fora de Tipo"
                 }
                 2 -> when (finalType) {
-                    // Grupo 2 usa Padrão Básico para Tipos 1, 2, 3
                     1, 2, 3 -> "Padrão Básico"
-                    else -> "Fora de Tipo (Erro de Código)"
+                    else -> "Fora de Tipo"
                 }
                 else -> "Erro de Grupo"
             }
@@ -301,45 +432,11 @@ class ClassificationViewModel @Inject constructor(
                 1 -> "Tipo 1"
                 2 -> "Tipo 2"
                 3 -> "Tipo 3"
-                4 -> "Fora de Tipo" // Mantido por retrocompatibilidade, mas o novo fluxo usa 7
+                4 -> "Fora de Tipo"
                 else -> "Erro de Tipo"
             }
         }
 
         return "Erro de Classificação"
-    }
-    // ---------------------------------------------------------------------------------------------
-
-
-    fun exportClassification(context: Context, classification: ClassificationSoja, limit: LimitSoja) {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                // Fetch data sequentially - each call will wait for completion
-                val sample = repository.getSample(classification.sampleId)
-                val colorClassification = repository.getLastColorClass()
-                val observation = repository.getObservations(classification.id, colorClassification)
-
-
-                // Check if we have all required data
-                if (sample == null) {
-                    _error.value = "Sample data not found"
-                    Log.e("Export", "Sample not found for ID: ${classification.sampleId}")
-                    return@launch
-                }
-
-
-                pdfExporter.exportClassificationToPdf(
-                    context,
-                    classification,
-                    sample,
-                    colorClassification,
-                    observation,
-                    limit
-                )
-            } catch (e: Exception) {
-                _error.value = "Export failed: ${e.message ?: "Unknown error"}"
-                Log.e("Export", "Export failed", e)
-            }
-        }
     }
 }

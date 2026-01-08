@@ -34,7 +34,13 @@ public fun GroupSelectionScreen(
     ) {
         Button(
             onClick = {
+                // Limpa os limites
+                viewModel.resetLimits()
+
+                // Seleciona o grupo
                 viewModel.selectedGroup = 1
+
+                // Navega para a rota da seleção da referência de limite
                 navController.navigate("officialOrNot") },
             modifier = Modifier
                 .fillMaxWidth()
@@ -52,7 +58,13 @@ public fun GroupSelectionScreen(
 
         Button(
             onClick = {
+                // Limpa os limites
+                viewModel.resetLimits()
+
+                // Seleciona o grupo
                 viewModel.selectedGroup = 2
+
+                // Navega para a rota da seleção da referência de limite
                 navController.navigate("officialOrNot")
             },
             modifier = Modifier

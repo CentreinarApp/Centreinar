@@ -30,7 +30,9 @@ class DiscountRepositoryMilhoImpl @Inject constructor(
         doesClassificationLoss: Boolean,
         doesDeduction: Boolean
     ): Long {
+        // Busca o mapa de limites para o cálculo interno
         val limit = getLimitsByType(grain, group, tipo, sample.limitSource)
+
         return calculateDiscount(
             grain, group, tipo, sample,
             limit,
@@ -55,12 +57,20 @@ class DiscountRepositoryMilhoImpl @Inject constructor(
         val storageDays = sample.daysOfStorage
         val deductionValue = sample.deductionValue
 
-        // perdas por defeitos (Declaradas como 'var' - CORRIGIDO ERRO VAL)
-        var impuritiesLoss = tools.calculateDifference(sample.impurities, limit["impurities"]!!)
-        var brokenLoss = tools.calculateDifference(sample.broken, limit["broken"]!!)
-        var ardidoLoss = tools.calculateDifference(sample.ardidos, limit["ardido"]!!)
-        var mofadoLoss = tools.calculateDifference(sample.mofados, limit["mofado"]!!)
-        var carunchadoLoss = tools.calculateDifference(sample.carunchado, limit["carunchado"]!!)
+        // Proteção contra mapas vazios (caso o limite não seja encontrado)
+        val impuritiesLimit = limit["impurities"] ?: 1.0f
+        val brokenLimit = limit["broken"] ?: 3.0f
+        val ardidoLimit = limit["ardido"] ?: 1.0f
+        val mofadoLimit = limit["mofado"] ?: 6.0f
+        val carunchadoLimit = limit["carunchado"] ?: 2.0f
+        val moistureLimit = limit["moisture"] ?: 14.0f
+
+        // perdas por defeitos
+        var impuritiesLoss = tools.calculateDifference(sample.impurities, impuritiesLimit)
+        var brokenLoss = tools.calculateDifference(sample.broken, brokenLimit)
+        var ardidoLoss = tools.calculateDifference(sample.ardidos, ardidoLimit)
+        var mofadoLoss = tools.calculateDifference(sample.mofados, mofadoLimit)
+        var carunchadoLoss = tools.calculateDifference(sample.carunchado, carunchadoLimit)
 
         var classificationDiscount = 0f
         if (doesClassificationLoss) {
@@ -68,8 +78,8 @@ class DiscountRepositoryMilhoImpl @Inject constructor(
             classificationDiscount = (totalDefectLossPercent / 100) * lotWeight
         }
 
-        // Perda de Umidade e Quebra Técnica (Correção Lógica de Desconto)
-        val humidityLossPercent = tools.calculateDifference(sample.humidity, limit["moisture"]!!)
+        // Perda de Umidade e Quebra Técnica
+        val humidityLossPercent = tools.calculateDifference(sample.humidity, moistureLimit)
         val impuritiesLossKg = (impuritiesLoss / 100) * lotWeight
         val humidityLossKg = (humidityLossPercent / 100) * (lotWeight - impuritiesLossKg)
 
@@ -88,7 +98,7 @@ class DiscountRepositoryMilhoImpl @Inject constructor(
 
         val finalWeight = lotWeight - finalLoss
 
-        // preços
+        // Calculos de preço
         val impuritiesLossPrice = lotPrice * impuritiesLoss / 100
         val brokenLossPrice = lotPrice * brokenLoss / 100
         val ardidoLossPrice = lotPrice * ardidoLoss / 100
@@ -108,9 +118,7 @@ class DiscountRepositoryMilhoImpl @Inject constructor(
             finalDiscountPrice = finalDiscountPrice - classificationDiscountPrice + deductionPrice
         }
 
-        val finalWeightPrice = lotPrice - finalDiscountPrice
-
-        // converter perdas percentuais para peso (kg)
+        // Converter perdas percentuais para peso (kg) para salvar no banco
         impuritiesLoss = impuritiesLoss * lotWeight / 100
         brokenLoss = brokenLoss * lotWeight / 100
         ardidoLoss = ardidoLoss * lotWeight / 100
@@ -155,14 +163,14 @@ class DiscountRepositoryMilhoImpl @Inject constructor(
         return discountDao.getDiscountById(id.toInt())
     }
 
-    // FUNÇÃO QUE O COMPILADOR ESTÁ RECLAMANDO (Implementação)
     override suspend fun getLimitsByType(
         grain: String,
         group: Int,
         tipo: Int,
         limitSource: Int
     ): Map<String, Float> {
-        val limit: LimitMilho? = limitDao.getLimitsBySource(grain, group, limitSource).firstOrNull()
+        val limits = limitDao.getLimitsByType(grain, group, tipo, limitSource)
+        val limit = limits.firstOrNull()
 
         return if (limit != null) {
             mapOf(
@@ -206,20 +214,21 @@ class DiscountRepositoryMilhoImpl @Inject constructor(
         return limitDao.insertLimit(limit)
     }
 
+    // Função que a ViewModel usa para carregar os limites
     override suspend fun getLimit(
         grain: String,
         group: Int,
         tipo: Int,
         source: Int
     ): LimitMilho? {
-        return limitDao.getLimitsBySource(grain, group, source).firstOrNull()
+        return limitDao.getLimitsByType(grain, group, tipo, source).firstOrNull()
     }
 
     override suspend fun getLimitOfType1Official(
         group: Int,
         grain: String
     ): Map<String, Float> {
-        val limit: LimitMilho? = limitDao.getLimitsBySource(grain, group, 0).firstOrNull() // source=0
+        val limit = limitDao.getLimitsByType(grain, group, 1, 0).firstOrNull()
 
         return if (limit != null) {
             mapOf(

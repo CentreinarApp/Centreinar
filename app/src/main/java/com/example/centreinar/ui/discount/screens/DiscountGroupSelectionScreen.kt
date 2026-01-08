@@ -34,7 +34,13 @@ fun DiscountGroupSelectionScreen(
     ) {
         Button(
             onClick = {
+                // Limpa os limites
+                viewModel.resetLimits()
+
+                // Seleciona o grupo
                 viewModel.selectedGroup = 1
+
+                // Navega para a rota da seleção da referência de limite
                 navController.navigate("officialOrNotDiscount") },
             modifier = Modifier
                 .fillMaxWidth()
@@ -52,7 +58,13 @@ fun DiscountGroupSelectionScreen(
 
         Button(
             onClick = {
+                // Limpa os limites
+                viewModel.resetLimits()
+
+                // Seleciona o grupo
                 viewModel.selectedGroup = 2
+
+                // Navega para a rota da seleção da referência de limite
                 navController.navigate("officialOrNotDiscount")
             },
             modifier = Modifier

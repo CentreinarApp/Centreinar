@@ -34,7 +34,13 @@ fun GrainSelectionDiscountScreen(
     ) {
         Button(
             onClick = {
+                // Limpa o estado anterior (Remove limites da memória, erros, etc.)
+                viewModel.clearStates()
+
+                // Seleciona o grão da soja
                 viewModel.selectedGrain = "Soja"
+
+                // Navega para a rota da seleção do grupo
                 navController.navigate("groupSelectionDiscount")
             },
             modifier = Modifier
@@ -53,8 +59,15 @@ fun GrainSelectionDiscountScreen(
 
         Button(
             onClick = {
+                // Limpa o estado anterior (Remove limites da memória, erros, etc.)
+                viewModel.clearStates()
+
+                // Seleciona o grão do milho
                 viewModel.selectedGrain = "Milho"
-                navController.navigate("groupSelectionDiscount")
+                viewModel.selectedGroup = 1
+
+                // Navega para a rota da seleção do grupo
+                navController.navigate("officialOrNotDiscount")
             },
             modifier = Modifier
                 .fillMaxWidth()

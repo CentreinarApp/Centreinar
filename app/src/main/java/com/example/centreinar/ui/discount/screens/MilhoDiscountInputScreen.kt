@@ -15,12 +15,12 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.centreinar.data.local.entity.InputDiscountMilho
-import com.example.centreinar.ui.discount.viewmodel.DiscountViewModelMilho
+import com.example.centreinar.ui.discount.viewmodel.DiscountViewModel
 
 @Composable
 fun MilhoDiscountInputScreen(
     navController: NavController,
-    viewModel: DiscountViewModelMilho = hiltViewModel()
+    viewModel: DiscountViewModel = hiltViewModel()
 ) {
     var lotWeight by remember { mutableStateOf("") }
     var priceBySack by remember { mutableStateOf("") }

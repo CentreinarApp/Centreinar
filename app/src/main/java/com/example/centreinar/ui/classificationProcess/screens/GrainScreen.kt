@@ -33,7 +33,13 @@ fun GrainScreen(
     ) {
         Button(
             onClick = {
+                // Limpa o estado anterior (Remove limites da memória, erros, etc.)
+                viewModel.clearStates()
+
+                // Seleciona o grão da soja
                 viewModel.selectedGrain = "Soja"
+
+                // Navega para a rota da seleção do grupo
                 navController.navigate("groupSelection")
             },
             modifier = Modifier
@@ -52,8 +58,15 @@ fun GrainScreen(
 
         Button(
             onClick = {
+                // Limpa o estado anterior (Remove limites da memória, erros, etc.)
+                viewModel.clearStates()
+
+                // Seleciona o grão do milho
                 viewModel.selectedGrain = "Milho"
-                navController.navigate("groupSelection")
+                viewModel.selectedGroup = 1
+
+                // Navega para a rota da seleção da referência de limite
+                navController.navigate("officialOrNot")
             },
             modifier = Modifier
                 .fillMaxWidth()

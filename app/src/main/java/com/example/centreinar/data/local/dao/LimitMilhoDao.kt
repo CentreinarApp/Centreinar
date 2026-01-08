@@ -25,7 +25,7 @@ interface LimitMilhoDao {
 
     // Esta função retorna uma lista. O Repositório usará .firstOrNull() para segurança.
     @Query("SELECT * FROM limits_milho WHERE grain = :grain AND source = :limitSource AND `group` = :group")
-    suspend fun getLimitsBySource(grain: String, group: Int, limitSource: Int): List<LimitMilho>
+    suspend fun getLimitsBySource(grain: String, limitSource: Int, group: Int): List<LimitMilho>
 
     // Adiciono a função getLimitsByType, caso você a use em outra parte (semelhante ao DAO de Soja),
     // mas corrigida para retornar uma lista que pode ser vazia.
