@@ -272,7 +272,7 @@ fun CentreinarApp() {
                 val parentEntry = remember(backStackEntry) {
                     navController.getBackStackEntry("main_flow")
                 }
-                MilhoResultadoScreen(
+                ClassificationInputScreen(
                     navController,
                     hiltViewModel<ClassificationViewModel>(parentEntry)
                 )

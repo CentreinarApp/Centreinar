@@ -74,12 +74,16 @@ class ClassificationViewModel @Inject constructor(
     private val _lastUsedLimit = MutableStateFlow<LimitSoja?>(null)
     val lastUsedLimit: StateFlow<LimitSoja?> = _lastUsedLimit.asStateFlow()
 
+
     // =========================================================================
     // ESTADOS MILHO
     // =========================================================================
 
     private val _classificationMilho = MutableStateFlow<ClassificationMilho?>(null)
     val classificationMilho: StateFlow<ClassificationMilho?> = _classificationMilho.asStateFlow()
+
+    private val _limitMilho = MutableStateFlow<LimitMilho?>(null)
+    val limitMilho: StateFlow<LimitMilho?> = _limitMilho.asStateFlow()
 
 
     // =========================================================================
@@ -249,7 +253,8 @@ class ClassificationViewModel @Inject constructor(
                             "ardidosUpLim" to limitMilho.ardidoUpLim,   // Chave específica para Milho
                             "mofadosUpLim" to limitMilho.mofadoUpLim,    // Chave específica para Milho
                             "carunchadoUpLim" to limitMilho.carunchadoUpLim,
-                            "moldyUpLim" to limitMilho.mofadoUpLim
+                            "moldyUpLim" to limitMilho.mofadoUpLim,
+                            "spoiledTotalUpLim" to limitMilho.spoiledTotalUpLim
                         )
                         Log.d("LimiteDebug", "Limites de Milho carregados e mapeados.")
                     } else {
@@ -325,6 +330,9 @@ class ClassificationViewModel @Inject constructor(
             _error.value = null
             try {
                 val limitSource = if (isOfficial == false) repositoryMilho.getLastLimitSource() else 0
+
+                val limitUsed = repositoryMilho.getLimit(sample.grain, sample.group, 1, limitSource)
+                _limitMilho.value = limitUsed
 
                 val id = repositoryMilho.classifySample(sample, limitSource)
                 val classification = repositoryMilho.getClassification(id.toInt())

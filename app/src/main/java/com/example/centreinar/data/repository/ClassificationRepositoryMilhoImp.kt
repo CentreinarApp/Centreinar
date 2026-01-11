@@ -20,6 +20,7 @@ class ClassificationRepositoryMilhoImpl @Inject constructor(
 ) : ClassificationRepositoryMilho {
 
     override suspend fun classifySample(sample: SampleMilho, limitSource: Int): Long {
+        // Busca os limites no banco (Retorna uma lista com Limite Tipo 1, Tipo 2 e Tipo 3)
         val limitsList = limitDao.getLimitsBySource(
             grain = sample.grain,
             limitSource = limitSource,
@@ -27,64 +28,87 @@ class ClassificationRepositoryMilhoImpl @Inject constructor(
         )
 
         if (limitsList.isNullOrEmpty()) {
-            Log.e(
-                "ClassificationRepoMilho",
-                "Nenhum limite encontrado para Milho: grain=${sample.grain}, group=${sample.group}, source=$limitSource"
-            )
-            // Se falhar, tenta buscar o oficial (Source 0) como fallback para não crashar
-            if (limitSource != 0) {
-                return classifySample(sample, 0)
-            }
-            throw IllegalStateException(
-                "Não foram encontrados limites de classificação para o grão ${sample.grain} (grupo ${sample.group})."
-            )
+            throw IllegalStateException("Limites não encontrados para Milho.")
         }
 
-        val limit = limitsList.first() // Pega o primeiro (geralmente Tipo 1 ou o mais restritivo)
+        // Separa os objetos de limite para facilitar a comparação
+        val l1 = limitsList.find { it.type == 1 }
+        val l2 = limitsList.find { it.type == 2 }
+        val l3 = limitsList.find { it.type == 3 }
 
-        val cleanWeight = if (sample.cleanWeight > 0f) sample.cleanWeight else sample.sampleWeight
+        // Se faltar algum limite na tabela, usamos o que tem ou padrão alto
+        if (l1 == null || l2 == null || l3 == null) {
+            throw IllegalStateException("Tabela de limites incompleta (precisa de Tipo 1, 2 e 3).")
+        }
 
-        val percentageImpurities = tools.calculateDefectPercentage(sample.impurities, cleanWeight)
-        val percentageBroken = tools.calculateDefectPercentage(sample.broken, cleanWeight)
-        val percentageArdido = tools.calculateDefectPercentage(sample.ardido, cleanWeight)
-        val percentageMofado = tools.calculateDefectPercentage(sample.mofado, cleanWeight)
-        val percentageCarunchado = tools.calculateDefectPercentage(sample.carunchado, cleanWeight)
+        // Cálculos de Porcentagem
+        val cleanWeight = if (sample.cleanWeight > 0f) sample.cleanWeight else (sample.sampleWeight - sample.impurities)
 
-        val finalType = tools.defineFinalTypeMilho(
-            impurities = percentageImpurities,
-            broken = percentageBroken,
-            ardido = percentageArdido,
-            mofado = percentageMofado,
-            carunchado = percentageCarunchado,
-            limits = limitsList
-        )
+        val pImpurities = tools.calculateDefectPercentage(sample.impurities, cleanWeight)
+        val pBroken = tools.calculateDefectPercentage(sample.broken, cleanWeight)
+        val pArdido = tools.calculateDefectPercentage(sample.ardido, cleanWeight)
+        val pMofado = tools.calculateDefectPercentage(sample.mofado, cleanWeight)
+        val pCarunchado = tools.calculateDefectPercentage(sample.carunchado, cleanWeight)
 
-        // Verificação simples baseada nos limites carregados
-        val anyExceeds = (
-                percentageImpurities > limit.impuritiesUpLim ||
-                        percentageBroken > limit.brokenUpLim ||
-                        percentageArdido > limit.ardidoUpLim ||
-                        percentageMofado > limit.mofadoUpLim ||
-                        percentageCarunchado > limit.carunchadoUpLim
-                )
+        val pFermented = tools.calculateDefectPercentage(sample.fermented, cleanWeight)
+        val pGerminated = tools.calculateDefectPercentage(sample.germinated, cleanWeight)
+        val pImmature = tools.calculateDefectPercentage(sample.immature, cleanWeight)
+        val pGessado = tools.calculateDefectPercentage(sample.gessado, cleanWeight)
 
-        // Se passar do limite, zera o tipo (desclassificado) ou mantém o calculado
-        val computedFinalType = if (anyExceeds) 0 else finalType
+        // Total Avariados
+        val pSpoiledTotal = pArdido + pMofado + pCarunchado + pFermented + pGerminated + pImmature + pGessado
 
+        // DEFINIÇÃO DOS TIPOS INDIVIDUAIS ---
+        // Função local para determinar o tipo baseado nos 3 limites
+        fun getIndividualType(value: Float, limit1: Float, limit2: Float, limit3: Float): Int {
+            return when {
+                value <= limit1 -> 1
+                value <= limit2 -> 2
+                value <= limit3 -> 3
+                else -> 7 // Fora de Tipo
+            }
+        }
+
+        // Guarda os tipos dos defeitos...
+        val typeImpurities = getIndividualType(pImpurities, l1.impuritiesUpLim, l2.impuritiesUpLim, l3.impuritiesUpLim)
+        val typeBroken = getIndividualType(pBroken, l1.brokenUpLim, l2.brokenUpLim, l3.brokenUpLim)
+        val typeArdido = getIndividualType(pArdido, l1.ardidoUpLim, l2.ardidoUpLim, l3.ardidoUpLim)
+        val typeMofado = getIndividualType(pMofado, l1.mofadoUpLim, l2.mofadoUpLim, l3.mofadoUpLim)
+        val typeCarunchado = getIndividualType(pCarunchado, l1.carunchadoUpLim, l2.carunchadoUpLim, l3.carunchadoUpLim)
+        val typeSpoiledTotal = getIndividualType(pSpoiledTotal, l1.spoiledTotalUpLim, l2.spoiledTotalUpLim, l3.spoiledTotalUpLim)
+
+        // Define o Tipo Final (O maior entre eles)
+        val allTypes = listOf(typeImpurities, typeBroken, typeArdido, typeMofado, typeCarunchado, typeSpoiledTotal)
+        var finalType = allTypes.maxOrNull() ?: 1
+
+        // Salva no Banco
         val classification = ClassificationMilho(
+            sampleId = sample.id,
             grain = sample.grain,
             group = sample.group,
-            sampleId = sample.id,
-            impuritiesPercentage = percentageImpurities,
-            brokenPercentage = percentageBroken,
-            carunchadoPercentage = percentageCarunchado,
-            ardidoPercentage = percentageArdido,
-            mofadoPercentage = percentageMofado,
-            fermentedPercentage = sample.fermented,
-            germinatedPercentage = sample.germinated,
-            immaturePercentage = sample.immature,
-            gessadoPercentage = sample.gessado,
-            finalType = computedFinalType
+
+            // Valores Float
+            moisturePercentage = 0f, // Ver como fica a umidade na tabela (!!!MUDAR!!!)
+            impuritiesPercentage = pImpurities,
+            brokenPercentage = pBroken,
+            ardidoPercentage = pArdido,
+            mofadoPercentage = pMofado,
+            carunchadoPercentage = pCarunchado,
+            fermentedPercentage = pFermented,
+            germinatedPercentage = pGerminated,
+            immaturePercentage = pImmature,
+            gessadoPercentage = pGessado,
+            spoiledTotalPercentage = pSpoiledTotal,
+
+            // --- Salvando os valores dos tipos de defeito ---
+            impuritiesType = typeImpurities,
+            brokenType = typeBroken,
+            ardidoType = typeArdido,
+            mofadoType = typeMofado,
+            carunchadoType = typeCarunchado,
+            spoiledTotalType = typeSpoiledTotal,
+
+            finalType = finalType
         )
 
         return classificationDao.insert(classification)
@@ -146,8 +170,6 @@ class ClassificationRepositoryMilhoImpl @Inject constructor(
         tipo: Int,
         source: Int
     ): LimitMilho? {
-        // Usando getLimitsByType para garantir que pegamos o Tipo correto (ex: Tipo 1)
-        // E passando os parâmetros na ordem correta que o DAO espera.
         val limits = limitDao.getLimitsByType(grain, group, tipo, source)
         return limits.firstOrNull()
     }
@@ -170,7 +192,8 @@ class ClassificationRepositoryMilhoImpl @Inject constructor(
                 "brokenUpLim" to limit.brokenUpLim,
                 "ardidoUpLim" to limit.ardidoUpLim,
                 "mofadoUpLim" to limit.mofadoUpLim,
-                "carunchadoUpLim" to limit.carunchadoUpLim
+                "carunchadoUpLim" to limit.carunchadoUpLim,
+                "spoiledTotalUpLim" to limit.spoiledTotalUpLim
             )
         } else {
             Log.w(

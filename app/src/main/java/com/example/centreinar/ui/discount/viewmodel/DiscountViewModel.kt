@@ -226,7 +226,8 @@ class DiscountViewModel @Inject constructor(
                         broken = brokenCrackedDamaged,
                         ardido = burntOrSour, // Mapeado
                         mofado = moldy,
-                        carunchado = 0f // UI de desconto não mandou carunchado neste método específico, assume 0 ou ajusta
+                        carunchado = 0f, // UI de desconto não mandou carunchado neste método específico, assume 0 ou ajusta
+                        spoiledTotal = spoiled
                     )
                 }
             } catch (e: Exception) {

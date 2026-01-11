@@ -56,7 +56,8 @@ interface DiscountRepositoryMilho {
         broken: Float,
         ardido: Float,
         mofado: Float,
-        carunchado: Float
+        carunchado: Float,
+        spoiledTotal: Float
     ): Long
 
     suspend fun getLimit(

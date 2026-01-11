@@ -263,18 +263,66 @@ fun ClassificationInputScreen( // Função Principal
                     onClick = {
                         focusManager.clearFocus()
                         val group = currentGroup ?: 1
+
+                        // Validação do peso
                         if (baseCleanWeightForColor <= 0f) {
                             errorMessage = "O Peso da Amostra Limpa não pode ser zero ou negativo."
                             return@Button
                         }
+
                         if (isSoja) {
-                            val sample = SampleSoja(grain = "Soja", group = group, lotWeight = lotWeight.toFloatOrZero(), sampleWeight = sampleWeight.toFloatOrZero(), foreignMattersAndImpurities = foreignMatters.toFloatOrZero(), humidity = humidity.toFloatOrZero(), greenish = greenish.toFloatOrZero(), brokenCrackedDamaged = brokenCrackedDamaged.toFloatOrZero(), damaged = damaged.toFloatOrZero(), burnt = burnt.toFloatOrZero(), sour = sour.toFloatOrZero(), moldy = moldy.toFloatOrZero(), fermented = fermented.toFloatOrZero(), germinated = germinated.toFloatOrZero(), immature = immature.toFloatOrZero(), shriveled = shriveled.toFloatOrZero())
+                            // --- LÓGICA SOJA ---
+                            val sample = SampleSoja(
+                                grain = "Soja",
+                                group = group,
+                                lotWeight = lotWeight.toFloatOrZero(),
+                                sampleWeight = sampleWeight.toFloatOrZero(),
+                                foreignMattersAndImpurities = foreignMatters.toFloatOrZero(),
+                                humidity = humidity.toFloatOrZero(),
+                                greenish = greenish.toFloatOrZero(),
+                                brokenCrackedDamaged = brokenCrackedDamaged.toFloatOrZero(),
+                                damaged = damaged.toFloatOrZero(),
+                                burnt = burnt.toFloatOrZero(),
+                                sour = sour.toFloatOrZero(),
+                                moldy = moldy.toFloatOrZero(),
+                                fermented = fermented.toFloatOrZero(),
+                                germinated = germinated.toFloatOrZero(),
+                                immature = immature.toFloatOrZero(),
+                                shriveled = shriveled.toFloatOrZero()
+                            )
                             viewModel.classifySample(sample)
+
+                            // Navega para resultado de SOJA
+                            navController.navigate("classificationResult")
+
                         } else {
-                            val sample = SampleMilho(grain = "Milho", group = group, lotWeight = lotWeight.toFloatOrZero(), sampleWeight = sampleWeight.toFloatOrZero(), impurities = foreignMatters.toFloatOrZero(), broken = brokenCrackedDamaged.toFloatOrZero(), carunchado = carunchado.toFloatOrZero(), ardido = sour.toFloatOrZero(), mofado = moldy.toFloatOrZero(), fermented = fermented.toFloatOrZero(), germinated = germinated.toFloatOrZero(), immature = immature.toFloatOrZero(), gessado = gessado.toFloatOrZero())
-                            Log.d("ClassificationInput", "Milho Classificado.")
+                            // --- LÓGICA MILHO ---
+                            val sample = SampleMilho(
+                                grain = "Milho",
+                                group = group,
+                                lotWeight = lotWeight.toFloatOrZero(),
+                                sampleWeight = sampleWeight.toFloatOrZero(),
+                                humidity = humidity.toFloatOrZero(),
+                                cleanWeight = baseCleanWeightForColor,
+                                impurities = foreignMatters.toFloatOrZero(), // Matéria estranha
+                                broken = brokenCrackedDamaged.toFloatOrZero(), // Quebrados
+                                carunchado = carunchado.toFloatOrZero(),
+                                ardido = sour.toFloatOrZero(), // Ardidos
+                                mofado = moldy.toFloatOrZero(),
+                                fermented = fermented.toFloatOrZero(),
+                                germinated = germinated.toFloatOrZero(),
+                                immature = immature.toFloatOrZero(), // Chochos e Imaturos
+                                gessado = gessado.toFloatOrZero()
+                            )
+
+                            // Chama a função de calcular no ViewModel
+                            viewModel.classifySample(sample)
+
+                            Log.d("ClassificationInput", "Milho Enviado para cálculo.")
+
+                            // Navega para a tela de resultado de MILHO
+                            navController.navigate("milhoResultado")
                         }
-                        navController.navigate("classificationResult")
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {

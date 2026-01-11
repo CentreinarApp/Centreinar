@@ -10,6 +10,7 @@ data class SampleMilho(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     @ColumnInfo(name = "grain") val grain: String = "milho",
     @ColumnInfo(name = "group") val group: Int = 0,
+    @ColumnInfo(name = "humidity") val humidity: Float = 0.0f,
     @ColumnInfo(name = "lotWeight") val lotWeight: Float = 0.0f,
     @ColumnInfo(name = "sampleWeight") val sampleWeight: Float = 0.0f,
     @ColumnInfo(name = "cleanWeight") val cleanWeight: Float = 0.0f,

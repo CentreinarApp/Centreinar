@@ -78,18 +78,56 @@ object DatabaseModule {
                             )
 
                             // === INSERTS MILHO ===
+                            // --- TIPO 1 ---
                             milhoDao.insertLimit(
                                 LimitMilho(
-                                    source = 0, grain = "Milho", group = 1, type = 1,
+                                    source = 0,
+                                    grain = "Milho",
+                                    group = 1,
+                                    type = 1,
                                     moistureUpLim = 14.0f,
                                     impuritiesUpLim = 1.00f,
                                     brokenUpLim = 3.00f,
                                     ardidoUpLim = 1.00f,
-                                    mofadoUpLim = 6.00f,
-                                    carunchadoUpLim = 2.00f
+                                    mofadoUpLim = 1.00f,
+                                    carunchadoUpLim = 2.00f,
+                                    spoiledTotalUpLim = 6.00f    // Total de avariados
                                 )
                             )
-                            // Inserir aqui os outros tipos de milho (!!!Verificar posteriormente!!!)...
+
+                            // --- TIPO 2  ---
+                            milhoDao.insertLimit(
+                                LimitMilho(
+                                    source = 0,
+                                    grain = "Milho",
+                                    group = 1,
+                                    type = 2,
+                                    moistureUpLim = 14.0f,
+                                    impuritiesUpLim = 1.50f,
+                                    brokenUpLim = 4.00f,
+                                    ardidoUpLim = 2.00f,
+                                    mofadoUpLim = 2.00f,
+                                    carunchadoUpLim = 3.00f,
+                                    spoiledTotalUpLim = 10.00f   // Total de avariados
+                                )
+                            )
+
+                            // --- TIPO 3 ---
+                            milhoDao.insertLimit(
+                                LimitMilho(
+                                    source = 0,
+                                    grain = "Milho",
+                                    group = 1,
+                                    type = 3,
+                                    moistureUpLim = 14.0f,
+                                    impuritiesUpLim = 2.00f,
+                                    brokenUpLim = 5.00f,
+                                    ardidoUpLim = 3.00f,
+                                    mofadoUpLim = 3.00f,
+                                    carunchadoUpLim = 4.00f,
+                                    spoiledTotalUpLim = 15.00f   // Total de avariados
+                                )
+                            )
 
                         } catch (e: Exception) {
                             e.printStackTrace()

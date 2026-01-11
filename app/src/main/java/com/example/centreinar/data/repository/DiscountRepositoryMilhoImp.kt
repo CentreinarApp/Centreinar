@@ -179,7 +179,8 @@ class DiscountRepositoryMilhoImpl @Inject constructor(
                 "ardido" to limit.ardidoUpLim,
                 "mofado" to limit.mofadoUpLim,
                 "carunchado" to limit.carunchadoUpLim,
-                "moisture" to limit.moistureUpLim
+                "moisture" to limit.moistureUpLim,
+                "spoiledTotal" to limit.spoiledTotalUpLim
             )
         } else {
             emptyMap()
@@ -195,7 +196,8 @@ class DiscountRepositoryMilhoImpl @Inject constructor(
         broken: Float,
         ardido: Float,
         mofado: Float,
-        carunchado: Float
+        carunchado: Float,
+        spoiledTotal: Float
     ): Long {
         val lastSource = limitDao.getLastSource()
         val source = lastSource + 1
@@ -209,7 +211,8 @@ class DiscountRepositoryMilhoImpl @Inject constructor(
             brokenUpLim = broken,
             ardidoUpLim = ardido,
             mofadoUpLim = mofado,
-            carunchadoUpLim = carunchado
+            carunchadoUpLim = carunchado,
+            spoiledTotalUpLim = spoiledTotal
         )
         return limitDao.insertLimit(limit)
     }
