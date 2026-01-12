@@ -14,11 +14,18 @@ data class InputDiscountMilho(
     @ColumnInfo(name = "daysOfStorage") val daysOfStorage: Int = 0,
     @ColumnInfo(name = "lotWeight") val lotWeight: Float = 0.0f,
     @ColumnInfo(name = "lotPrice") val lotPrice: Float = 0.0f,
+
+    // Defeitos Básicos
     @ColumnInfo(name = "impurities") val impurities: Float = 0.0f,
-    @ColumnInfo(name = "humidity") val humidity: Float = 0.0f,
+    @ColumnInfo(name = "moisture") val moisture: Float = 0.0f,
     @ColumnInfo(name = "broken") val broken: Float = 0.0f,
     @ColumnInfo(name = "ardidos") val ardidos: Float = 0.0f,
     @ColumnInfo(name = "mofados") val mofados: Float = 0.0f,
     @ColumnInfo(name = "carunchado") val carunchado: Float = 0.0f,
+    @ColumnInfo(name = "spoiled") val spoiled: Float = 0.0f,
+    @ColumnInfo(name = "fermented") val fermented: Float = 0.0f,
+    @ColumnInfo(name = "germinated") val germinated: Float = 0.0f,
+    @ColumnInfo(name = "gessado") val gessado: Float = 0.0f,
+
     @ColumnInfo(name = "deductionValue") val deductionValue: Float = 0.0f
 )

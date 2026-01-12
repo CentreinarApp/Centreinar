@@ -111,7 +111,7 @@ class PDFExporterMilho @Inject constructor(
         var yStart = 60f
         canvas.drawText("DADOS DA AMOSTRA (INPUT DESCONTO)", pageWidth / 2f, yStart, paints.titlePaint)
         yStart += 40f
-        canvas.drawText("Umidade: ${inputDiscount.humidity}%", 50f, yStart, paints.cellPaint)
+        canvas.drawText("Umidade: ${inputDiscount.moisture}%", 50f, yStart, paints.cellPaint)
         yStart += 20f
         canvas.drawText("Impurezas: ${inputDiscount.impurities}%", 50f, yStart, paints.cellPaint)
 

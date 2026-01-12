@@ -2,8 +2,16 @@ package com.example.centreinar.ui.milho.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Card
+import androidx.compose.material3.Divider
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -17,36 +25,139 @@ fun MilhoDiscountResultsTable(
     discounts: DiscountMilho,
     modifier: Modifier = Modifier
 ) {
-    Card(modifier = modifier.padding(12.dp).fillMaxWidth(), shape = MaterialTheme.shapes.medium) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            Text("Descontos — Milho", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-            Spacer(Modifier.height(8.dp))
+    Card(
+        modifier = modifier
+            .padding(6.dp)
+            .fillMaxWidth(),
+        shape = MaterialTheme.shapes.medium
+    ) {
+        Column(modifier = Modifier.padding(6.dp)) {
 
-            Column(modifier = Modifier.fillMaxWidth().border(1.dp, MaterialTheme.colorScheme.outline)) {
-                Row(modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.primaryContainer).padding(8.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("Tipo", modifier = Modifier.weight(2f), fontWeight = FontWeight.Bold)
-                    Text("Kg", modifier = Modifier.weight(1f), textAlign = TextAlign.End, fontWeight = FontWeight.Bold)
-                    Text("R$", modifier = Modifier.weight(1f), textAlign = TextAlign.End, fontWeight = FontWeight.Bold)
+            TableHeaderMilho("DESCONTOS")
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(1.dp, MaterialTheme.colorScheme.outline)
+            ) {
+
+                // Cabeçalho da tabela
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.primaryContainer)
+                        .padding(vertical = 5.dp, horizontal = 6.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        "DEFEITO",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.weight(2f)
+                    )
+                    Text(
+                        "Quantia (kg)",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.weight(1f),
+                        textAlign = TextAlign.End
+                    )
+                    Text(
+                        "Valor (R$)",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.weight(1f),
+                        textAlign = TextAlign.End
+                    )
                 }
 
-                MilhoDiscountRow("Impurezas", discounts.impuritiesLoss, discounts.impuritiesLoss) // price placeholder
-                MilhoDiscountRow("Quebra técnica", discounts.technicalLoss, discounts.technicalLoss)
-                MilhoDiscountRow("Quebra por Partidos", discounts.brokenLoss, discounts.brokenLoss)
-                MilhoDiscountRow("Quebra Ardidos", discounts.ardidoLoss, discounts.ardidoLoss)
-                MilhoDiscountRow("Quebra Mofados", discounts.mofadoLoss, discounts.mofadoLoss)
-                MilhoDiscountRow("Quebra Carunchado", discounts.carunchadoLoss, discounts.carunchadoLoss)
-                MilhoDiscountRow("Peso final do lote (kg)", discounts.finalWeight, discounts.finalWeight)
+                listOf(
+                    Triple("Matéria Estranha e Impurezas", discounts.impuritiesLoss, discounts.impuritiesLossPrice),
+                    Triple("Umidade", discounts.humidityLoss, discounts.humidityLossPrice),
+                    Triple("Quebra Técnica", discounts.technicalLoss, discounts.technicalLossPrice),
+                    Triple("Partidos", discounts.brokenLoss, discounts.brokenLossPrice),
+                    Triple("Ardidos", discounts.ardidoLoss, discounts.ardidoLossPrice),
+                    Triple("Mofados", discounts.mofadoLoss, discounts.mofadoLossPrice),
+                    Triple("Carunchados", discounts.carunchadoLoss, discounts.carunchadoLossPrice),
+                    Triple("Total de Avariados", discounts.spoiledLoss, discounts.spoiledLossPrice)
+                ).forEachIndexed { index, (label, mass, price) ->
+                    TableRowMilho(
+                        label = label,
+                        mass = mass,
+                        price = price,
+                        isLast = index == 7
+                    )
+                }
             }
         }
     }
 }
 
 @Composable
-private fun MilhoDiscountRow(label:String, kg:Float, price:Float) {
-    Row(modifier = Modifier.fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-        Text(label, modifier = Modifier.weight(2f))
-        Text("%.2f".format(kg), modifier = Modifier.weight(1f), textAlign = TextAlign.End)
-        Text("%.2f".format(price), modifier = Modifier.weight(1f), textAlign = TextAlign.End)
+private fun TableRowMilho(
+    label: String,
+    mass: Float,
+    price: Float,
+    isLast: Boolean = false
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 12.dp, horizontal = 16.dp),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.weight(2f),
+            color = MaterialTheme.colorScheme.onSurface
+        )
+
+        Text(
+            text = "%.2f".format(mass),
+            style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.weight(1f),
+            textAlign = TextAlign.End,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+
+        Text(
+            text = "%.2f".format(price),
+            style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.weight(1f),
+            textAlign = TextAlign.End,
+            color = MaterialTheme.colorScheme.onSurface
+        )
     }
-    Divider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+
+    if (!isLast) {
+        Divider(
+            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f),
+            thickness = 1.dp
+        )
+    }
+}
+
+@Composable
+private fun TableHeaderMilho(title: String) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.primary
+        )
+    }
+    Divider(
+        modifier = Modifier.padding(vertical = 8.dp),
+        color = MaterialTheme.colorScheme.outline
+    )
 }

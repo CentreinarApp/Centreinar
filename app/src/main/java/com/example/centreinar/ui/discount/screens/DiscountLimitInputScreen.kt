@@ -26,11 +26,11 @@ fun DiscountLimitInputScreen(
 ) {
     val defaultLimits by viewModel.defaultLimits.collectAsStateWithLifecycle()
 
-    // Pega o grão atual para decidir o layout
+    // Pega o grão atual para decidir o layout e a navegação
     val currentGrain = viewModel.selectedGrain
     val isSoja = currentGrain == "Soja"
 
-    // RESETAR ESTADOS: Se o grão mudar, limpa os campos
+    // RESETAR ESTADOS
     var impurities by remember(currentGrain) { mutableStateOf("") }
     var moisture by remember(currentGrain) { mutableStateOf("") }
     var brokenCrackedDamaged by remember(currentGrain) { mutableStateOf("") }
@@ -39,6 +39,8 @@ fun DiscountLimitInputScreen(
     var burntOrSour by remember(currentGrain) { mutableStateOf("") }
     var moldy by remember(currentGrain) { mutableStateOf("") }
     var spoiled by remember(currentGrain) { mutableStateOf("") }
+    // Campo extra para Milho
+    var carunchado by remember(currentGrain) { mutableStateOf("") }
 
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var defaultsSet by remember(currentGrain) { mutableStateOf(false) }
@@ -54,6 +56,7 @@ fun DiscountLimitInputScreen(
     val burntOrSourFocus = remember { FocusRequester() }
     val moldyFocus = remember { FocusRequester() }
     val spoiledFocus = remember { FocusRequester() }
+    val carunchadoFocus = remember { FocusRequester() }
 
     val keyboardController = LocalSoftwareKeyboardController.current
     val scrollState = rememberScrollState()
@@ -72,8 +75,11 @@ fun DiscountLimitInputScreen(
             brokenCrackedDamaged = defaultLimits?.get("brokenUpLim")?.toString() ?: ""
             moldy = defaultLimits?.get("moldyUpLim")?.toString() ?: ""
 
-            // Campos que variam o nome ou existência
-            burntOrSour = defaultLimits?.get("burntOrSourUpLim")?.toString() ?: "" // Ardidos no Milho
+            // Mapeamento Milho: Ardido usa o campo burntOrSour
+            burntOrSour = defaultLimits?.get("burntOrSourUpLim")?.toString() ?: ""
+
+            // Mapeamento Milho: Carunchado
+            carunchado = defaultLimits?.get("carunchadoUpLim")?.toString() ?: ""
 
             if (isSoja) {
                 greenish = defaultLimits?.get("greenishUpLim")?.toString() ?: ""
@@ -82,7 +88,8 @@ fun DiscountLimitInputScreen(
             } else {
                 greenish = "0"
                 burnt = "0"
-                spoiled = "0"
+                // Se Milho tiver limite de Avariados Total, usa spoiled, se não 0
+                spoiled = defaultLimits?.get("spoiledTotalUpLim")?.toString() ?: "0"
             }
             defaultsSet = true
         }
@@ -92,7 +99,7 @@ fun DiscountLimitInputScreen(
         modifier = Modifier
             .fillMaxSize()
             .padding(32.dp)
-            .verticalScroll(scrollState) // Adicionado Scroll
+            .verticalScroll(scrollState)
     ) {
         val title = if (isEditable) "Insira os limites ($currentGrain)" else "Limites de tolerância ($currentGrain)"
         Text(
@@ -136,7 +143,7 @@ fun DiscountLimitInputScreen(
             Spacer(modifier = Modifier.height(16.dp))
         }
 
-        // --- ARDIDOS / QUEIMADOS (Compartilhado em lógica, nomes diferentes) ---
+        // --- ARDIDOS (Milho) / QUEIMADOS E ARDIDOS (Soja) ---
         NumberInputField(
             value = burntOrSour,
             onValueChange = { burntOrSour = it },
@@ -152,24 +159,35 @@ fun DiscountLimitInputScreen(
             onValueChange = { moldy = it },
             label = "Mofados (%)",
             focusRequester = moldyFocus,
-            nextFocus = spoiledFocus,
+            nextFocus = if (!isSoja) carunchadoFocus else spoiledFocus,
             enabled = isEditable
         )
         Spacer(modifier = Modifier.height(16.dp))
 
-        // --- TOTAL AVARIADOS (Normalmente Soja) ---
-        // Se Milho tiver campo específico de "Total", pode habilitar
-        if (isSoja) {
+        // --- CAMPO ESPECÍFICO MILHO: CARUNCHADO ---
+        if (!isSoja) {
             NumberInputField(
-                value = spoiled,
-                onValueChange = { spoiled = it },
-                label = "Total de Avariados (%)",
-                focusRequester = spoiledFocus,
-                nextFocus = greenishFocus,
+                value = carunchado,
+                onValueChange = { carunchado = it },
+                label = "Carunchados (%)",
+                focusRequester = carunchadoFocus,
+                nextFocus = spoiledFocus,
                 enabled = isEditable
             )
             Spacer(modifier = Modifier.height(16.dp))
         }
+
+        // --- TOTAL AVARIADOS ---
+        // Exibe para Soja e para Milho
+        NumberInputField(
+            value = spoiled,
+            onValueChange = { spoiled = it },
+            label = "Total de Avariados (%)",
+            focusRequester = spoiledFocus,
+            nextFocus = if (isSoja) greenishFocus else brokenFocus,
+            enabled = isEditable
+        )
+        Spacer(modifier = Modifier.height(16.dp))
 
         // --- ESVERDEADOS (Só Soja) ---
         if (isSoja) {
@@ -187,7 +205,7 @@ fun DiscountLimitInputScreen(
         NumberInputField(
             value = brokenCrackedDamaged,
             onValueChange = { if (isEditable) brokenCrackedDamaged = it },
-            label = "Partidos, Quebrados e Amassados (%)",
+            label = if(isSoja) "Partidos, Quebrados e Amassados (%)" else "Quebrados (%)",
             focusRequester = brokenFocus,
             nextFocus = null,
             onDone = { keyboardController?.hide() },
@@ -206,11 +224,15 @@ fun DiscountLimitInputScreen(
 
         Button(
             onClick = {
-                // Validação: ignorar campos ocultos
+                // Validação
                 val allFields = mutableListOf(impurities, moisture, brokenCrackedDamaged, burntOrSour, moldy)
                 if (isSoja) {
                     allFields.add(greenish)
                     allFields.add(burnt)
+                    allFields.add(spoiled)
+                } else {
+                    // Valida campos do Milho
+                    allFields.add(carunchado)
                     allFields.add(spoiled)
                 }
 
@@ -225,27 +247,31 @@ fun DiscountLimitInputScreen(
                             impurities = toFloat(impurities),
                             moisture = toFloat(moisture),
                             brokenCrackedDamaged = toFloat(brokenCrackedDamaged),
-                            // Campos que não existem no milho recebem 0
                             greenish = if(isSoja) toFloat(greenish) else 0f,
                             burnt = if(isSoja) toFloat(burnt) else 0f,
-                            burntOrSour = toFloat(burntOrSour),
+                            burntOrSour = toFloat(burntOrSour), // Ardido
                             moldy = toFloat(moldy),
-                            spoiled = if(isSoja) toFloat(spoiled) else 0f
+                            spoiled = toFloat(spoiled)
                         )
                     } catch (e: NumberFormatException) {
                         errorMessage = "Valores numéricos inválidos detectados"
+                        return@Button
                     }
                 }
-                navController.navigate("discount")
+
+                if (isSoja) {
+                    navController.navigate("discount")
+                } else {
+                    navController.navigate("milhoDiscountInput")
+                }
             },
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text(if(isEditable) "Enviar Limites" else "Próximo")
+            Text(if(isEditable) "Salvar Limites" else "Próximo")
         }
     }
 }
 
-// ... manter funções auxiliares (NumberInputField, toFloat, etc) ...
 @Composable
 private fun NumberInputField(
     value: String,

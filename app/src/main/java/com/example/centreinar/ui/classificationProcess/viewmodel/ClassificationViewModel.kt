@@ -370,13 +370,14 @@ class ClassificationViewModel @Inject constructor(
                     lotWeight = sample.lotWeight,
                     lotPrice = 0f,
                     impurities = sample.impurities,
-                    humidity = 0f,
+                    moisture = 0f,
                     broken = sample.broken,
                     ardidos = sample.ardido,
                     mofados = sample.mofado,
                     carunchado = sample.carunchado,
                     deductionValue = 0f
                 )
+
 
                 val discount = DiscountMilho(
                     id = 0,
@@ -388,11 +389,26 @@ class ClassificationViewModel @Inject constructor(
                     ardidoLoss = classification.ardidoPercentage,
                     mofadoLoss = classification.mofadoPercentage,
                     carunchadoLoss = classification.carunchadoPercentage,
+                    spoiledLoss = 0f,
                     fermentedLoss = classification.fermentedPercentage,
                     germinatedLoss = classification.germinatedPercentage,
+                    immatureLoss = classification.immaturePercentage,
                     gessadoLoss = classification.gessadoPercentage,
                     finalDiscount = 0f,
-                    finalWeight = 0f
+                    finalWeight = 0f,
+
+
+                    impuritiesLossPrice = 0f,
+                    humidityLossPrice = 0f,
+                    technicalLossPrice = 0f,
+                    brokenLossPrice = 0f,
+                    ardidoLossPrice = 0f,
+                    mofadoLossPrice = 0f,
+                    carunchadoLossPrice = 0f,
+                    spoiledLossPrice = 0f,
+                    immatureLossPrice = 0f,
+                    finalDiscountPrice = 0f,
+                    finalWeightPrice = 0f
                 )
 
                 pdfExporterMilho.exportDiscountToPdf(context, discount, inputDiscount, limit)
@@ -408,17 +424,13 @@ class ClassificationViewModel @Inject constructor(
     // =========================================================================
     // UTILITÁRIOS GERAIS
     // =========================================================================
-
     fun getFinalTypeLabel(finalType: Int): String {
         val group = selectedGroup
         val grain = selectedGrain
 
-        // 0 é o código de Desclassificação (Universal)
         if (finalType == 0) return "Desclassificada"
-        // 7 é o código padronizado para FORA DE TIPO
         if (finalType == 7) return "Fora de Tipo"
 
-        // Lógica de mapeamento para SOJA
         if (grain == "Soja") {
             return when (group) {
                 1 -> when (finalType) {
@@ -434,7 +446,6 @@ class ClassificationViewModel @Inject constructor(
             }
         }
 
-        // Lógica de mapeamento para MILHO
         if (grain == "Milho") {
             return when (finalType) {
                 1 -> "Tipo 1"

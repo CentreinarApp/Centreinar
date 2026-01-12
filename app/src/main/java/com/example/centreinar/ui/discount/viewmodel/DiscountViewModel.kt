@@ -143,16 +143,16 @@ class DiscountViewModel @Inject constructor(
                             "impuritiesUpLim" to limitMilho.impuritiesUpLim,
                             "moistureUpLim" to limitMilho.moistureUpLim,
                             "brokenUpLim" to limitMilho.brokenUpLim,
-                            // Mapeia Ardidos para o campo burntOrSour da UI
                             "burntOrSourUpLim" to limitMilho.ardidoUpLim,
                             "moldyUpLim" to limitMilho.mofadoUpLim,
                             "carunchadoUpLim" to limitMilho.carunchadoUpLim,
-                            // Zera campos inexistentes
+                            "spoiledTotalUpLim" to limitMilho.spoiledTotalUpLim,
+
+                            // Zera campos inexistentes no Milho (Exclusivos da Soja)
                             "greenishUpLim" to 0f,
-                            "burntUpLim" to 0f,
-                            "spoiledTotalUpLim" to 0f
+                            "burntUpLim" to 0f
                         )
-                        Log.d("DiscountLimit", "Limites de Milho carregados.")
+                        Log.d("DiscountLimit", "Limites de Milho carregados: $limitMilho")
                     } else {
                         Log.w("DiscountLimit", "Nenhum limite oficial encontrado para Milho.")
                     }

@@ -3,23 +3,35 @@ package com.example.centreinar.ui
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.fillMaxSize // Adicionado
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Surface // Adicionado
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Modifier // Adicionado
+import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navigation
-import com.example.centreinar.ui.classificationProcess.screens.* import com.example.centreinar.ui.classificationProcess.viewmodel.ClassificationViewModel
-import com.example.centreinar.ui.discount.screens.* import com.example.centreinar.ui.discount.viewmodel.DiscountViewModel
+
+// Imports SOJA
+import com.example.centreinar.ui.classificationProcess.screens.*
+import com.example.centreinar.ui.discount.screens.*
+
+// Imports MILHO (Certifique-se que os pacotes estão corretos)
+import com.example.centreinar.ui.screens.MilhoClassificationInputScreen
+import com.example.centreinar.ui.screens.MilhoClassificationResultScreen
+import com.example.centreinar.ui.discount.screens.MilhoDiscountInputScreen
+
+// ViewModels
+import com.example.centreinar.ui.classificationProcess.viewmodel.ClassificationViewModel
+import com.example.centreinar.ui.discount.viewmodel.DiscountViewModel
 import com.example.centreinar.ui.theme.CentreinarTheme
 import dagger.hilt.android.AndroidEntryPoint
+
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -50,7 +62,7 @@ fun CentreinarApp() {
             route = "main_flow"
         ) {
             // -----------------------------
-            // Fluxo CLASSIFICAÇÃO - SOJA
+            // Fluxo CLASSIFICAÇÃO (SOJA)
             // -----------------------------
             composable("home") { backStackEntry ->
                 val parentEntry = remember(backStackEntry) {
@@ -216,7 +228,7 @@ fun CentreinarApp() {
             }
 
             // -----------------------------
-            // Fluxo CLASSIFICAÇÃO - MILHO
+            // Fluxo CLASSIFICAÇÃO (MILHO)
             // -----------------------------
             composable("milhoGrainSelection") { backStackEntry ->
                 val parentEntry = remember(backStackEntry) {
@@ -297,14 +309,35 @@ fun CentreinarApp() {
                     hiltViewModel<ClassificationViewModel>(parentEntry)
                 )
             }
+            // =================================================
+            // FLUXO MILHO (DESCONTOS)
+            // =================================================
+
+            composable("milhoDiscountInput") { backStackEntry ->
+                val parentEntry = remember(backStackEntry) {
+                    navController.getBackStackEntry("main_flow")
+                }
+                MilhoDiscountInputScreen(
+                    navController,
+                    hiltViewModel<DiscountViewModel>(parentEntry)
+                )
+            }
+
+            composable("milhoDiscountResult") { backStackEntry ->
+                val parentEntry = remember(backStackEntry) {
+                    navController.getBackStackEntry("main_flow")
+                }
+                MilhoDiscountResultScreen(
+                    navController,
+                    hiltViewModel<DiscountViewModel>(parentEntry)
+                )
+            }
         }
     }
 }
-//oi
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SimpleAppBar() {
-    TopAppBar(
-        title = { Text("Centreinar") },
-    )
+    TopAppBar(title = { Text("Centreinar") })
 }
