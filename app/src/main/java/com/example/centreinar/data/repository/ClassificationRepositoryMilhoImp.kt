@@ -56,7 +56,7 @@ class ClassificationRepositoryMilhoImpl @Inject constructor(
         val pGessado = tools.calculateDefectPercentage(sample.gessado, cleanWeight)
 
         // Total Avariados
-        val pSpoiledTotal = pArdido + pMofado + pCarunchado + pFermented + pGerminated + pImmature + pGessado
+        val pSpoiledTotal = pArdido + pMofado + pFermented + pGerminated + pImmature + pGessado
 
         // DEFINIÇÃO DOS TIPOS INDIVIDUAIS ---
         // Função local para determinar o tipo baseado nos 3 limites

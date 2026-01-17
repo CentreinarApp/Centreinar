@@ -37,9 +37,8 @@ fun MilhoClassificationTable(
 
                 // rows
                 MilhoTableRow("Matéria Estranha e Impurezas", classification.impuritiesPercentage, "-")
-                MilhoTableRow("Partidos/Quebrados", classification.brokenPercentage, "-")
+                MilhoTableRow("Quebrados", classification.brokenPercentage, "-")
                 MilhoTableRow("Ardidos", classification.ardidoPercentage, "-")
-                MilhoTableRow("Mofados", classification.mofadoPercentage, "-")
                 MilhoTableRow("Carunchado", classification.carunchadoPercentage, "-")
                 MilhoTableRow("Germinados", classification.germinatedPercentage, "-")
                 MilhoTableRow("Imaturos", classification.immaturePercentage, "-")

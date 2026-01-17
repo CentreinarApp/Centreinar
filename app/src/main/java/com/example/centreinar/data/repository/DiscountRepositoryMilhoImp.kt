@@ -71,26 +71,20 @@ class DiscountRepositoryMilhoImpl @Inject constructor(
         val limMoisture = limit["humidity"] ?: 14.0f
         val limBroken = limit["broken"] ?: 3.0f
         val limArdido = limit["ardido"] ?: 1.0f
-        val limMofado = limit["mofado"] ?: 6.0f
         val limCarunchado = limit["carunchado"] ?: 2.0f
-        val limSpoiledTotal = limit["spoiledTotal"] ?: 10.0f
+        val limSpoiledTotal = limit["spoiledTotal"] ?: 6.0f
 
         // DEFEITOS
         var brokenLoss = tools.calculateDifference(sample.broken, limBroken)
         var ardidoLoss = tools.calculateDifference(sample.ardidos, limArdido)
-        var mofadoLoss = tools.calculateDifference(sample.mofados, limMofado)
         var carunchadoLoss = tools.calculateDifference(sample.carunchado, limCarunchado)
 
-        val spoiledInput = if (sample.spoiled > 0) {
-            sample.spoiled
-        } else {
-            sample.broken + sample.ardidos + sample.mofados + sample.carunchado
-        }
+        val spoiledInput = sample.spoiled
 
         var spoiledLoss = tools.calculateDifference(
-            spoiledInput - brokenLoss - ardidoLoss - mofadoLoss - carunchadoLoss,
-            limSpoiledTotal
+            spoiledInput,limSpoiledTotal
         )
+
 
         if (sample.broken > limBroken) {
             brokenLoss = calculateClassificationLossMilho(brokenLoss, limBroken)
@@ -98,17 +92,14 @@ class DiscountRepositoryMilhoImpl @Inject constructor(
         if (sample.ardidos > limArdido) {
             ardidoLoss = calculateClassificationLossMilho(ardidoLoss, limArdido)
         }
-        if (sample.mofados > limMofado) {
-            mofadoLoss = calculateClassificationLossMilho(mofadoLoss, limMofado)
-        }
         if (sample.carunchado > limCarunchado) {
             carunchadoLoss = calculateClassificationLossMilho(carunchadoLoss, limCarunchado)
         }
         if (
             spoiledInput > limSpoiledTotal ||
-            spoiledInput - (brokenLoss + ardidoLoss + mofadoLoss + carunchadoLoss) > limSpoiledTotal
+            spoiledInput - (brokenLoss + ardidoLoss + carunchadoLoss) > limSpoiledTotal
         ) {
-            spoiledLoss = calculateClassificationLossMilho(spoiledLoss, limSpoiledTotal)
+            spoiledLoss = calculateClassificationLossMilho(spoiledLoss - (ardidoLoss), limSpoiledTotal)
         }
 
 
@@ -139,13 +130,12 @@ class DiscountRepositoryMilhoImpl @Inject constructor(
         var classificationDiscountKg = 0f
         if (doesClassificationLoss) {
             classificationDiscountKg =
-                ((brokenLoss + ardidoLoss + mofadoLoss + carunchadoLoss + spoiledLoss) / 100) * lotWeight
+                ((brokenLoss + ardidoLoss + carunchadoLoss + spoiledLoss) / 100) * lotWeight
         }
 
         // Converte % → KG
         brokenLoss = brokenLoss * lotWeight / 100
         ardidoLoss = ardidoLoss * lotWeight / 100
-        mofadoLoss = mofadoLoss * lotWeight / 100
         carunchadoLoss = carunchadoLoss * lotWeight / 100
         spoiledLoss = spoiledLoss * lotWeight / 100
 
@@ -167,12 +157,11 @@ class DiscountRepositoryMilhoImpl @Inject constructor(
 
         val brokenLossPrice = (brokenLoss / 60) * pricePerSack
         val ardidoLossPrice = (ardidoLoss / 60) * pricePerSack
-        val mofadoLossPrice = (mofadoLoss / 60) * pricePerSack
         val carunchadoLossPrice = (carunchadoLoss / 60) * pricePerSack
         val spoiledLossPrice = (spoiledLoss / 60) * pricePerSack
 
         val classificationDiscountPrice =
-            brokenLossPrice + ardidoLossPrice + mofadoLossPrice +
+            brokenLossPrice + ardidoLossPrice +
                     carunchadoLossPrice + spoiledLossPrice
 
         var finalDiscountPrice =
@@ -196,28 +185,16 @@ class DiscountRepositoryMilhoImpl @Inject constructor(
             technicalLoss = technicalLoss,
             brokenLoss = brokenLoss,
             ardidoLoss = ardidoLoss,
-            mofadoLoss = mofadoLoss,
             carunchadoLoss = carunchadoLoss,
             spoiledLoss = spoiledLoss,
-
-            fermentedLoss = 0f,
-            germinatedLoss = 0f,
-            gessadoLoss = 0f,
-            immatureLoss = 0f,
 
             impuritiesLossPrice = impuritiesLossPrice,
             humidityLossPrice = humidityLossPrice,
             technicalLossPrice = technicalLossPrice,
             brokenLossPrice = brokenLossPrice,
             ardidoLossPrice = ardidoLossPrice,
-            mofadoLossPrice = mofadoLossPrice,
             carunchadoLossPrice = carunchadoLossPrice,
             spoiledLossPrice = spoiledLossPrice,
-
-            fermentedLossPrice = 0f,
-            germinatedLossPrice = 0f,
-            gessadoLossPrice = 0f,
-            immatureLossPrice = 0f,
 
             finalDiscount = finalLoss,
             finalWeight = finalWeight,

@@ -78,9 +78,8 @@ fun MilhoDiscountResultsTable(
                     Triple("Matéria Estranha e Impurezas", discounts.impuritiesLoss, discounts.impuritiesLossPrice),
                     Triple("Umidade", discounts.humidityLoss, discounts.humidityLossPrice),
                     Triple("Quebra Técnica", discounts.technicalLoss, discounts.technicalLossPrice),
-                    Triple("Partidos", discounts.brokenLoss, discounts.brokenLossPrice),
+                    Triple("Quebrados", discounts.brokenLoss, discounts.brokenLossPrice),
                     Triple("Ardidos", discounts.ardidoLoss, discounts.ardidoLossPrice),
-                    Triple("Mofados", discounts.mofadoLoss, discounts.mofadoLossPrice),
                     Triple("Carunchados", discounts.carunchadoLoss, discounts.carunchadoLossPrice),
                     Triple("Total de Avariados", discounts.spoiledLoss, discounts.spoiledLossPrice)
                 ).forEachIndexed { index, (label, mass, price) ->

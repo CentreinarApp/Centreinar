@@ -112,7 +112,7 @@ fun ClassificationTable(
         ClassificationRowData(
             "Total Avariados",
             limits.spoiledTotalUpLim,
-            totalAvariados,
+            classification.spoiledTotalPercentage,
             classification.spoiledTotalType // <--- Lê o valor salvo
         ),
         ClassificationRowData(

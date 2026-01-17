@@ -154,15 +154,18 @@ fun DiscountLimitInputScreen(
         )
         Spacer(modifier = Modifier.height(16.dp))
 
-        NumberInputField(
-            value = moldy,
-            onValueChange = { moldy = it },
-            label = "Mofados (%)",
-            focusRequester = moldyFocus,
-            nextFocus = if (!isSoja) carunchadoFocus else spoiledFocus,
-            enabled = isEditable
-        )
-        Spacer(modifier = Modifier.height(16.dp))
+        // Mofado aparece apenas no desconto da soja
+        if (isSoja) {
+            NumberInputField(
+                value = moldy,
+                onValueChange = { moldy = it },
+                label = "Mofados (%)",
+                focusRequester = moldyFocus,
+                nextFocus = if (!isSoja) carunchadoFocus else spoiledFocus,
+                enabled = isEditable
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+        }
 
         // --- CAMPO ESPECÍFICO MILHO: CARUNCHADO ---
         if (!isSoja) {

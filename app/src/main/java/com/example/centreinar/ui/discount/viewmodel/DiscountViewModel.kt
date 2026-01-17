@@ -215,8 +215,6 @@ class DiscountViewModel @Inject constructor(
                     )
                 } else {
                     // Lógica Milho: Mapeia os parâmetros da UI para o Repositório do Milho
-                    // Nota: Milho não tem 'greenish', 'burnt', 'spoiled'
-                    // 'burntOrSour' vira 'ardido'
                     repositoryMilho.setLimit(
                         grain = "Milho",
                         group = group,
@@ -224,7 +222,7 @@ class DiscountViewModel @Inject constructor(
                         impurities = impurities,
                         moisture = moisture,
                         broken = brokenCrackedDamaged,
-                        ardido = burntOrSour, // Mapeado
+                        ardido = burntOrSour,
                         mofado = moldy,
                         carunchado = 0f, // UI de desconto não mandou carunchado neste método específico, assume 0 ou ajusta
                         spoiledTotal = spoiled

@@ -116,7 +116,6 @@ fun MilhoDiscountInputScreen(
                 1 -> MilhoDefectsTab(
                     broken = broken, onBrokenChange = { broken = it },
                     ardidos = ardidos, onArdidosChange = { ardidos = it },
-                    mofados = mofados, onMofadosChange = { mofados = it },
                     carunchado = carunchado, onCarunchadoChange = { carunchado = it },
                     spoiled = spoiled, onSpoiledChange = { spoiled = it },
                     brokenFocus = brokenFocus,
@@ -195,7 +194,7 @@ fun MilhoDiscountInputScreen(
                             moisture = moisture.toFloatOrZero(), // Umidade
                             broken = broken.toFloatOrZero(),     // Quebrados
                             ardidos = ardidos.toFloatOrZero(),   // Ardidos
-                            mofados = mofados.toFloatOrZero(),   // Mofados
+                            spoiled = spoiled.toFloatOrZero(), // Total de Avariados
                             carunchado = carunchado.toFloatOrZero(), // Carunchados
                             deductionValue = deductionValue.toFloatOrZero()
                         )
@@ -249,16 +248,16 @@ fun MilhoBasicInfoTab(
         Spacer(Modifier.height(16.dp))
 
         NumberInputField(
-            value = moisture, onValueChange = onMoistureChange,
-            label = "Umidade (%)",
-            focusRequester = moistureFocus, nextFocus = impuritiesFocus
+            value = impurities, onValueChange = onImpuritiesChange,
+            label = "Matéria Estranha e Impurezas (%)",
+            focusRequester = impuritiesFocus, nextFocus = null
         )
         Spacer(Modifier.height(16.dp))
 
         NumberInputField(
-            value = impurities, onValueChange = onImpuritiesChange,
-            label = "Matéria Estranha e Impurezas (%)",
-            focusRequester = impuritiesFocus, nextFocus = null
+            value = moisture, onValueChange = onMoistureChange,
+            label = "Umidade (%)",
+            focusRequester = moistureFocus, nextFocus = impuritiesFocus
         )
     }
 }
@@ -267,7 +266,6 @@ fun MilhoBasicInfoTab(
 fun MilhoDefectsTab(
     broken: String, onBrokenChange: (String) -> Unit,
     ardidos: String, onArdidosChange: (String) -> Unit,
-    mofados: String, onMofadosChange: (String) -> Unit,
     carunchado: String, onCarunchadoChange: (String) -> Unit,
     spoiled: String, onSpoiledChange: (String) -> Unit,
     brokenFocus: FocusRequester,
@@ -292,9 +290,9 @@ fun MilhoDefectsTab(
         Spacer(Modifier.height(16.dp))
 
         NumberInputField(
-            value = mofados, onValueChange = onMofadosChange,
-            label = "Mofados (%)",
-            focusRequester = mofadosFocus, nextFocus = carunchadoFocus
+            value = spoiled, onValueChange = onSpoiledChange,
+            label = "Total de Avariados (%)",
+            focusRequester = spoiledFocus, nextFocus = null
         )
         Spacer(Modifier.height(16.dp))
 
@@ -302,13 +300,6 @@ fun MilhoDefectsTab(
             value = carunchado, onValueChange = onCarunchadoChange,
             label = "Carunchados (%)",
             focusRequester = carunchadoFocus, nextFocus = spoiledFocus
-        )
-        Spacer(Modifier.height(16.dp))
-
-        NumberInputField(
-            value = spoiled, onValueChange = onSpoiledChange,
-            label = "Total de Avariados (%)",
-            focusRequester = spoiledFocus, nextFocus = null
         )
     }
 }

@@ -387,13 +387,8 @@ class ClassificationViewModel @Inject constructor(
                     technicalLoss = 0f,
                     brokenLoss = classification.brokenPercentage,
                     ardidoLoss = classification.ardidoPercentage,
-                    mofadoLoss = classification.mofadoPercentage,
                     carunchadoLoss = classification.carunchadoPercentage,
-                    spoiledLoss = 0f,
-                    fermentedLoss = classification.fermentedPercentage,
-                    germinatedLoss = classification.germinatedPercentage,
-                    immatureLoss = classification.immaturePercentage,
-                    gessadoLoss = classification.gessadoPercentage,
+                    spoiledLoss = classification.spoiledTotalPercentage,
                     finalDiscount = 0f,
                     finalWeight = 0f,
 
@@ -403,10 +398,8 @@ class ClassificationViewModel @Inject constructor(
                     technicalLossPrice = 0f,
                     brokenLossPrice = 0f,
                     ardidoLossPrice = 0f,
-                    mofadoLossPrice = 0f,
                     carunchadoLossPrice = 0f,
                     spoiledLossPrice = 0f,
-                    immatureLossPrice = 0f,
                     finalDiscountPrice = 0f,
                     finalWeightPrice = 0f
                 )
