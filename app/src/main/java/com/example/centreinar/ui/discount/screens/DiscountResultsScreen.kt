@@ -1,6 +1,7 @@
 package com.example.centreinar.ui.discount.screens
 
 import android.util.Log
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -74,18 +75,29 @@ fun DiscountResultScreen(
 
         Spacer(Modifier.height(16.dp))
 
-        Button(
-            onClick = {
-                navController.navigate("home")
-                viewModel.clearStates()
-            },
-            modifier = Modifier.fillMaxWidth()
+        // Botões de ação
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Text("Nova Análise")
+            Button(
+                modifier = Modifier
+                    .weight(1f),
+                onClick = { navController.popBackStack() }
+            ) {
+                Text("Voltar")
+            }
 
+            Button(
+                modifier = Modifier
+                    .weight(1f),
+                onClick = { navController.navigate("home") }
+            ) {
+                Text("Realizar Nova Análise")
+            }
         }
 
-        Button(onClick = {
+        Button(modifier = Modifier.fillMaxWidth(), onClick = {
             viewModel.loadLastUsedLimit()
             Log.e("DiscountResultsScreen","clicked the button")
             lastUsedLimit?.let{

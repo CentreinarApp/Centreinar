@@ -18,8 +18,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.centreinar.ClassificationSoja
 import com.example.centreinar.ClassificationMilho
+import com.example.centreinar.LimitSoja
 import com.example.centreinar.data.local.entity.LimitMilho
-
 
 // Classe auxiliar para padronizar os dados antes de enviar para o layout compartilhado
 private data class ClassificationRowData(
@@ -28,19 +28,6 @@ private data class ClassificationRowData(
     val percentage: Float,
     val typeCode: Int // Se 0, exibe "-"
 )
-
-// Estrutura de Limites Usada para Soja
-data class LimitSoja(
-    val id: Int = 0,
-    val impuritiesUpLim: Float = 1.0f,
-    val burntUpLim: Float = 0.8f,
-    val sourUpLim: Float = 1.0f,
-    val moldyUpLim: Float = 2.0f,
-    val spoiledUpLim: Float = 8.0f,
-    val greenishUpLim: Float = 8.0f,
-    val brokenCrackedDamagedUpLim: Float = 30.0f
-)
-
 
 // VERSÃO PÚBLICA PARA SOJA
 @Composable
@@ -52,21 +39,86 @@ fun ClassificationTable(
 ) {
     // --- LISTA DE DEFEITOS ---
     val rows = listOf(
-        ClassificationRowData("Matéria Estranha/Imp", limits.impuritiesUpLim, classification.foreignMattersPercentage, classification.foreignMatters),
-        ClassificationRowData("Partidos/Quebrados", limits.brokenCrackedDamagedUpLim, classification.brokenCrackedDamagedPercentage, classification.brokenCrackedDamaged),
-        ClassificationRowData("Esverdeados", limits.greenishUpLim, classification.greenishPercentage, classification.greenish),
-        ClassificationRowData("Mofados", limits.moldyUpLim, classification.moldyPercentage, classification.moldy),
-        ClassificationRowData("Queimados", limits.burntUpLim, classification.burntPercentage, classification.burnt),
-        ClassificationRowData("Queimados/Ardidos (Soma)", limits.burntUpLim + limits.sourUpLim, classification.burntOrSourPercentage, classification.burntOrSour),
-        ClassificationRowData("Total de Avariados", limits.spoiledUpLim, classification.spoiledPercentage, classification.spoiled),
+        ClassificationRowData(
+            "Matéria Estranha/Imp",
+            limits.impuritiesUpLim,
+            classification.foreignMattersPercentage,
+            classification.foreignMatters
+        ),
+        ClassificationRowData(
+            "Esverdeados",
+            limits.greenishUpLim,
+            classification.greenishPercentage,
+            classification.greenish
+        ),
+        ClassificationRowData(
+            "Partidos/Quebrados",
+            limits.brokenCrackedDamagedUpLim,
+            classification.brokenCrackedDamagedPercentage,
+            classification.brokenCrackedDamaged
+        ),
+        ClassificationRowData(
+            "Mofados",
+            limits.moldyUpLim,
+            classification.moldyPercentage,
+            classification.moldy
+        ),
+        ClassificationRowData(
+            "Queimados",
+            limits.burntUpLim,
+            classification.burntPercentage,
+            classification.burnt
+        ),
+        ClassificationRowData(
+            "Queimados/Ardidos (Soma)",
+            limits.burntOrSourUpLim,
+            classification.burntOrSourPercentage,
+            classification.burntOrSour
+        ),
+        ClassificationRowData(
+            "Total de Avariados",
+            limits.spoiledTotalUpLim,
+            classification.spoiledPercentage,
+            classification.spoiled
+        ),
 
         // Defeitos que NÃO classificam (Onde deve aparecer o "-")
-        ClassificationRowData("Ardidos", 0f, classification.sourPercentage, 0),
-        ClassificationRowData("Fermentados", 0f, classification.fermentedPercentage, 0),
-        ClassificationRowData("Germinados", 0f, classification.germinatedPercentage, 0),
-        ClassificationRowData("Imaturos", 0f, classification.immaturePercentage, 0),
-        ClassificationRowData("Chochos", 0f, classification.shriveledPercentage, 0),
-        ClassificationRowData("Danificados", 0f, classification.damagedPercentage, 0)
+        ClassificationRowData(
+            "Ardidos",
+            0f,
+            classification.sourPercentage,
+            0
+        ),
+        ClassificationRowData(
+            "Fermentados",
+            0f,
+            classification.fermentedPercentage,
+            0
+        ),
+        ClassificationRowData(
+            "Germinados",
+            0f,
+            classification.germinatedPercentage,
+            0
+        ),
+        ClassificationRowData(
+            "Imaturos",
+            0f,
+            classification.immaturePercentage,
+            0
+        ),
+        ClassificationRowData(
+            "Chochos",
+            0f,
+            classification.shriveledPercentage,
+            0
+        ),
+        ClassificationRowData(
+            "Danificados",
+            0f,
+            classification.damagedPercentage,
+            0
+        )
     )
 
     SharedTableLayout(
@@ -77,7 +129,6 @@ fun ClassificationTable(
         modifier = modifier
     )
 }
-
 
 // VERSÃO PÚBLICA PARA MILHO
 @Composable
@@ -94,49 +145,48 @@ fun ClassificationTable(
             classification.gessadoPercentage
 
     val rows = listOf(
-        ClassificationRowData("Umidade", limits.moistureUpLim, classification.moisturePercentage, 0),
-
-        // Mostra o valor do tipo de defeito
+        ClassificationRowData(
+            "Umidade",
+            limits.moistureUpLim,
+            classification.moisturePercentage,
+            0
+        ),
         ClassificationRowData(
             "Matéria Estranha/Imp",
             limits.impuritiesUpLim,
             classification.impuritiesPercentage,
-            classification.impuritiesType // <--- Lê o valor salvo
+            classification.impuritiesType
         ),
         ClassificationRowData(
             "Quebrados",
             limits.brokenUpLim,
             classification.brokenPercentage,
-            classification.brokenType // <--- Lê o valor salvo
+            classification.brokenType
         ),
         ClassificationRowData(
             "Total Avariados",
             limits.spoiledTotalUpLim,
             classification.spoiledTotalPercentage,
-            classification.spoiledTotalType // <--- Lê o valor salvo
+            classification.spoiledTotalType
         ),
         ClassificationRowData(
             "Ardidos",
             limits.ardidoUpLim,
             classification.ardidoPercentage,
-            classification.ardidoType // <--- Lê o valor salvo
+            classification.ardidoType
         ),
-        ClassificationRowData(
-            "Mofados",
-            limits.mofadoUpLim,
-            classification.mofadoPercentage,
-            classification.mofadoType // <--- Lê o valor salvo
-        ),
-
-        // Defeitos que geralmente não definem tipo sozinhos
         ClassificationRowData(
             "Carunchados",
             limits.carunchadoUpLim,
             classification.carunchadoPercentage,
             classification.carunchadoType
         ),
-
-        // Defeitos informativos (sem tipo individual)
+        ClassificationRowData(
+            "Mofados",
+            limits.mofadoUpLim,
+            classification.mofadoPercentage,
+            0
+        ),
         ClassificationRowData(
             "Fermentados",
             0f,
@@ -172,7 +222,6 @@ fun ClassificationTable(
     )
 }
 
-
 // LAYOUT COMPARTILHADO
 @Composable
 private fun SharedTableLayout(
@@ -183,29 +232,18 @@ private fun SharedTableLayout(
     modifier: Modifier
 ) {
     Card(
-        modifier = modifier
-            .padding(16.dp)
-            .fillMaxWidth(),
+        modifier = modifier.padding(16.dp).fillMaxWidth(),
         shape = MaterialTheme.shapes.medium
     ) {
         Column(
-            modifier = Modifier
-                .padding(16.dp)
-                .verticalScroll(rememberScrollState())
+            modifier = Modifier.padding(16.dp).verticalScroll(rememberScrollState())
         ) {
             TableHeader(title)
-
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .border(1.dp, MaterialTheme.colorScheme.outline)
+                modifier = Modifier.fillMaxWidth().border(1.dp, MaterialTheme.colorScheme.outline)
             ) {
-                // Cabeçalho
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(MaterialTheme.colorScheme.primaryContainer)
-                        .padding(vertical = 8.dp, horizontal = 8.dp),
+                    modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.primaryContainer).padding(8.dp),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text("DEFEITO", fontSize = 13.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(2f))
@@ -213,106 +251,47 @@ private fun SharedTableLayout(
                     Text("%", fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f), textAlign = TextAlign.End)
                     Text("TIPO", fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f), textAlign = TextAlign.End)
                 }
-
-                // Renderização das linhas
                 rows.forEachIndexed { index, row ->
                     TableRow(
                         label = row.label,
                         limit = row.limit,
                         percentage = row.percentage,
-                        // Se o typeCode for 0, forçamos o "-", senão usamos o tradutor
                         quantity = if (row.typeCode == 0) "-" else typeTranslator(row.typeCode),
                         isLast = index == rows.size - 1
                     )
                 }
             }
-
             Spacer(Modifier.height(16.dp))
-
-            FinalTypeRow(
-                value = finalTypeLabel
-            )
+            FinalTypeRow(value = finalTypeLabel)
         }
     }
 }
 
 @Composable
-private fun TableRow(
-    label: String,
-    limit: Float,
-    percentage: Float,
-    quantity: String,
-    isLast: Boolean = false
-) {
-    // Destaque visual para valores excedidos (se houver limite definido)
+private fun TableRow(label: String, limit: Float, percentage: Float, quantity: String, isLast: Boolean = false) {
     val isExceeded = limit > 0f && percentage > limit
     val textColor = if (isExceeded) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
     val weightFont = if (isExceeded) FontWeight.Bold else FontWeight.Normal
 
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp, horizontal = 8.dp),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
+    Row(modifier = Modifier.fillMaxWidth().padding(8.dp), horizontalArrangement = Arrangement.SpaceBetween) {
         Text(text = label, fontSize = 13.sp, modifier = Modifier.weight(2f), fontWeight = weightFont)
-
-        // Se o limite for 0, mostra traço
-        Text(
-            text = if (limit > 0f) "%.2f%%".format(limit) else "-",
-            fontSize = 13.sp,
-            modifier = Modifier.weight(1f),
-            textAlign = TextAlign.End,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-
-        Text(
-            text = "%.2f%%".format(percentage),
-            fontSize = 13.sp,
-            modifier = Modifier.weight(1f),
-            textAlign = TextAlign.End,
-            color = textColor,
-            fontWeight = weightFont
-        )
-
-        Text(
-            text = quantity,
-            fontSize = 13.sp,
-            modifier = Modifier.weight(1f),
-            textAlign = TextAlign.End
-        )
+        Text(text = if (limit > 0f) "%.2f%%".format(limit) else "-", fontSize = 13.sp, modifier = Modifier.weight(1f), textAlign = TextAlign.End, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(text = "%.2f%%".format(percentage), fontSize = 13.sp, modifier = Modifier.weight(1f), textAlign = TextAlign.End, color = textColor, fontWeight = weightFont)
+        Text(text = quantity, fontSize = 13.sp, modifier = Modifier.weight(1f), textAlign = TextAlign.End)
     }
-
-    if (!isLast) {
-        Divider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f), thickness = 1.dp)
-    }
+    if (!isLast) Divider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f), thickness = 1.dp)
 }
-
 
 @Composable
 private fun FinalTypeRow(value: String) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.secondaryContainer)
-            .padding(12.dp),
-        horizontalArrangement = Arrangement.Center
-    ) {
-        Text(
-            text = "Tipo Final: $value",
-            fontWeight = FontWeight.Bold,
-            fontSize = 18.sp,
-            color = MaterialTheme.colorScheme.onSecondaryContainer
-        )
+    Row(modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.secondaryContainer).padding(12.dp), horizontalArrangement = Arrangement.Center) {
+        Text(text = "Tipo Final: $value", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = MaterialTheme.colorScheme.onSecondaryContainer)
     }
 }
 
 @Composable
 private fun TableHeader(title: String) {
-    Box(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-        contentAlignment = Alignment.Center
-    ) {
+    Box(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), contentAlignment = Alignment.Center) {
         Text(text = title, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
     }
     Divider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.outline)

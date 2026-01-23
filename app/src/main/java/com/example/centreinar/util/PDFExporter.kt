@@ -144,7 +144,7 @@ class PDFExporterSoja @Inject constructor(
 
         // Dados para a tabela (Parameter, Percentage, Type Code)
         val data = listOf(
-            listOf("Final Type", classification.finalType.toString(), ""),
+            listOf("Tipo Final", classification.finalType.toString(), ""),
             listOf("-------------------", "-------------------", "------"),
             listOf("Impurezas (%)", "%.2f".format(classification.foreignMattersPercentage), classification.foreignMatters.toString()),
             listOf("Partidos/Quebrados (%)", "%.2f".format(classification.brokenCrackedDamagedPercentage), classification.brokenCrackedDamaged.toString()),

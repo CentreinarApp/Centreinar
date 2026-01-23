@@ -40,7 +40,6 @@ class ClassificationViewModel @Inject constructor(
 
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
-
     // =========================================================================
     // ESTADOS GERAIS (Compartilhados)
     // =========================================================================
@@ -296,12 +295,13 @@ class ClassificationViewModel @Inject constructor(
         }
     }
 
+    // Exportação para SOJA
     fun exportClassification(context: Context, classification: ClassificationSoja, limit: LimitSoja) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val sample = repositorySoja.getSample(classification.sampleId)
                 val colorClassification = repositorySoja.getLastColorClass()
-                val observation = repositorySoja.getObservations(classification.id, colorClassification)
+                val observation = getObservations(colorClassification)
 
                 if (sample == null) {
                     _error.value = "Dados de amostra não encontrados"
@@ -317,13 +317,39 @@ class ClassificationViewModel @Inject constructor(
         }
     }
 
+    // Exportação para MILHO
+    fun exportClassificationMilho(context: Context, classification: ClassificationMilho, limit: LimitMilho) {
+        Log.d("ExportDebug", "Iniciando exportação de Milho...")
+
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val sample = repositoryMilho.getSample(classification.sampleId)
+
+                if (sample == null) {
+                    Log.e("ExportDebug", "ERRO: Amostra ID ${classification.sampleId} não encontrada")
+                    _error.value = "Amostra não encontrada no banco."
+                    return@launch
+                }
+
+                // Chama o utilitário que criamos anteriormente
+                pdfExporterMilho.exportClassificationToPdf(
+                    context,
+                    classification,
+                    sample,
+                    limit
+                )
+            } catch (e: Exception) {
+                Log.e("ExportDebug", "Falha catastrófica: ${e.message}")
+                _error.value = "Erro ao gerar PDF."
+            }
+        }
+    }
+
+
     // =========================================================================
     // LÓGICA MILHO
     // =========================================================================
 
-    /**
-     * Classifica a amostra de MILHO.
-     */
     fun classifySample(sample: SampleMilho) {
         viewModelScope.launch(Dispatchers.IO) {
             _isLoading.value = true
@@ -348,68 +374,6 @@ class ClassificationViewModel @Inject constructor(
                 Log.e("ClassificationMilho", "Erro ao classificar", e)
             } finally {
                 _isLoading.value = false
-            }
-        }
-    }
-
-    fun exportClassificationToPdf(
-        context: Context,
-        classification: ClassificationMilho,
-        sample: SampleMilho,
-        limit: LimitMilho
-    ) {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                // Criação das entidades de desconto para o PDF do Milho
-                val inputDiscount = InputDiscountMilho(
-                    classificationId = classification.id,
-                    grain = sample.grain,
-                    group = sample.group,
-                    limitSource = 0,
-                    daysOfStorage = 0,
-                    lotWeight = sample.lotWeight,
-                    lotPrice = 0f,
-                    impurities = sample.impurities,
-                    moisture = 0f,
-                    broken = sample.broken,
-                    ardidos = sample.ardido,
-                    mofados = sample.mofado,
-                    carunchado = sample.carunchado,
-                    deductionValue = 0f
-                )
-
-
-                val discount = DiscountMilho(
-                    id = 0,
-                    inputDiscountId = inputDiscount.id,
-                    impuritiesLoss = classification.impuritiesPercentage,
-                    humidityLoss = 0f,
-                    technicalLoss = 0f,
-                    brokenLoss = classification.brokenPercentage,
-                    ardidoLoss = classification.ardidoPercentage,
-                    carunchadoLoss = classification.carunchadoPercentage,
-                    spoiledLoss = classification.spoiledTotalPercentage,
-                    finalDiscount = 0f,
-                    finalWeight = 0f,
-
-
-                    impuritiesLossPrice = 0f,
-                    humidityLossPrice = 0f,
-                    technicalLossPrice = 0f,
-                    brokenLossPrice = 0f,
-                    ardidoLossPrice = 0f,
-                    carunchadoLossPrice = 0f,
-                    spoiledLossPrice = 0f,
-                    finalDiscountPrice = 0f,
-                    finalWeightPrice = 0f
-                )
-
-                pdfExporterMilho.exportDiscountToPdf(context, discount, inputDiscount, limit)
-                Log.i("ClassificationMilho", "PDF exportado com sucesso para o milho.")
-
-            } catch (e: Exception) {
-                _error.value = e.message ?: "Erro ao exportar PDF"
-                Log.e("ClassificationMilho", "Erro ao exportar PDF", e)
             }
         }
     }
@@ -451,4 +415,19 @@ class ClassificationViewModel @Inject constructor(
 
         return "Erro de Classificação"
     }
+
+    // Prepara para exportação
+    fun prepareForPdfExport(grain: String) {
+        // limpa apenas estados que causam vazamento visual/lógico
+        _defaultLimits.value = null
+        _lastUsedLimit.value = null
+        if (grain == "Soja") {
+            _classificationMilho.value = null
+        } else {
+            _classificationSoja.value = null
+        }
+
+        selectedGrain = grain
+    }
+
 }

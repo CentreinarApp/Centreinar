@@ -49,7 +49,7 @@ fun ClassificationInputScreen( // Função Principal
     var lotWeight by remember { mutableStateOf("") }
     var sampleWeight by remember { mutableStateOf("") }
     var foreignMatters by remember { mutableStateOf("") }
-    var humidity by remember { mutableStateOf("") }
+    var moisture by remember { mutableStateOf("") }
 
     // INPUT CONDICIONAL: Peso da Amostra Limpa (usado APENAS se definir classe de cor)
     var cleanSampleWeightInput by remember { mutableStateOf("") }
@@ -185,7 +185,7 @@ fun ClassificationInputScreen( // Função Principal
                 0 -> BasicInfoTabClassification(
                     lotWeight = lotWeight, onLotWeightChange = { lotWeight = it },
                     sampleWeight = sampleWeight, onSampleWeightChange = { sampleWeight = it },
-                    moisture = humidity, onMoistureChange = { humidity = it },
+                    moisture = moisture, onMoistureChange = { moisture = it },
                     impurities = foreignMatters, onImpuritiesChange = { foreignMatters = it },
                     cleanSampleWeight = calculatedCleanSampleWeightDisplay,
                     lotWeightFocus = lotWeightFocus, sampleWeightFocus = sampleWeightFocus,
@@ -202,13 +202,12 @@ fun ClassificationInputScreen( // Função Principal
                     germinated = germinated, onGerminatedChange = { germinated = it },
                     immature = immature, onImmatureChange = { immature = it },
                     gessado = gessado, onGessadoChange = { gessado = it },
-                    carunchado = carunchado, onCarunchadoChange = { carunchado = it },
                     burntFocus = burntFocus, sourFocus = sourFocus, moldyFocus = moldyFocus,
                     shriveledFocus = remember { FocusRequester() },
                     fermentedFocus = remember { FocusRequester() },
                     germinatedFocus = remember { FocusRequester() },
                     immatureFocus = remember { FocusRequester() },
-                    gessadoFocus = gessadoFocus, carunchadoFocus = carunchadoFocus,
+                    gessadoFocus = gessadoFocus,
                     piercingInput = piercingInput,
                     onPiercingInputChange = {
                         piercingInput = it
@@ -229,6 +228,7 @@ fun ClassificationInputScreen( // Função Principal
                     isSoja = isSoja, isMilho = isMilho,
                     brokenCrackedDamaged = brokenCrackedDamaged, onBrokenCrackedDamagedChange = { brokenCrackedDamaged = it },
                     greenish = greenish, onGreenishChange = { greenish = it },
+                    carunchado = carunchado, onCarunchadoChange = { carunchado = it }, carunchadoFocus = carunchadoFocus,
                     brokenCrackedDamagedFocus = brokenFocus, greenishFocus = greenishFocus,
                     doesDefineColorClass = doesDefineColorClass,
                     onDoesDefineColorClassChange = {
@@ -278,7 +278,7 @@ fun ClassificationInputScreen( // Função Principal
                                 lotWeight = lotWeight.toFloatOrZero(),
                                 sampleWeight = sampleWeight.toFloatOrZero(),
                                 foreignMattersAndImpurities = foreignMatters.toFloatOrZero(),
-                                humidity = humidity.toFloatOrZero(),
+                                humidity = moisture.toFloatOrZero(),
                                 greenish = greenish.toFloatOrZero(),
                                 brokenCrackedDamaged = brokenCrackedDamaged.toFloatOrZero(),
                                 damaged = damaged.toFloatOrZero(),
@@ -302,7 +302,7 @@ fun ClassificationInputScreen( // Função Principal
                                 group = group,
                                 lotWeight = lotWeight.toFloatOrZero(),
                                 sampleWeight = sampleWeight.toFloatOrZero(),
-                                humidity = humidity.toFloatOrZero(),
+                                moisture = moisture.toFloatOrZero(),
                                 cleanWeight = baseCleanWeightForColor,
                                 impurities = foreignMatters.toFloatOrZero(), // Matéria estranha
                                 broken = brokenCrackedDamaged.toFloatOrZero(), // Quebrados
@@ -382,10 +382,9 @@ fun DefectsTab1(
     germinated: String, onGerminatedChange: (String) -> Unit,
     immature: String, onImmatureChange: (String) -> Unit,
     gessado: String, onGessadoChange: (String) -> Unit,
-    carunchado: String, onCarunchadoChange: (String) -> Unit,
     burntFocus: FocusRequester, sourFocus: FocusRequester, moldyFocus: FocusRequester,
     shriveledFocus: FocusRequester, fermentedFocus: FocusRequester, germinatedFocus: FocusRequester,
-    immatureFocus: FocusRequester, gessadoFocus: FocusRequester, carunchadoFocus: FocusRequester,
+    immatureFocus: FocusRequester, gessadoFocus: FocusRequester,
     piercingInput: String, onPiercingInputChange: (String) -> Unit,
     damagedInput: String, onDamagedInputChange: (String) -> Unit,
     damaged: String, onDamagedChange: (String) -> Unit,
@@ -415,9 +414,7 @@ fun DefectsTab1(
         Spacer(modifier = Modifier.height(16.dp))
 
         if (isMilho) {
-            NumberInputField(gessado, onGessadoChange, "Gessados (g)", gessadoFocus, carunchadoFocus)
-            Spacer(modifier = Modifier.height(16.dp))
-            NumberInputField(carunchado, onCarunchadoChange, "Grãos Carunchados (g)", carunchadoFocus, null)
+            NumberInputField(gessado, onGessadoChange, "Gessados (g)", gessadoFocus, null)
         } else {
             NumberInputField(shriveled, onShriveledChange, "Chochos (g)", shriveledFocus, insectFocus)
             Spacer(modifier = Modifier.height(24.dp))
@@ -438,8 +435,9 @@ fun DefectsTab1(
 @Composable
 fun DefectsTab2(
     isSoja: Boolean, isMilho: Boolean,
+    carunchado: String, onCarunchadoChange: (String) -> Unit,
     brokenCrackedDamaged: String, onBrokenCrackedDamagedChange: (String) -> Unit,
-    greenish: String, onGreenishChange: (String) -> Unit,
+    greenish: String, onGreenishChange: (String) -> Unit, carunchadoFocus: FocusRequester,
     brokenCrackedDamagedFocus: FocusRequester, greenishFocus: FocusRequester,
     doesDefineColorClass: Boolean, onDoesDefineColorClassChange: (Boolean) -> Unit,
     cleanSampleWeightInput: String, onCleanSampleWeightChange: (String) -> Unit,
@@ -461,6 +459,16 @@ fun DefectsTab2(
 
     Column(modifier = Modifier.padding(16.dp)) {
         Text("Defeitos Finais", style = MaterialTheme.typography.titleMedium)
+        if (isMilho) {
+            NumberInputField(
+                carunchado,
+                onCarunchadoChange,
+                "Grãos Carunchados (g)",
+                carunchadoFocus,
+                null
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+        }
         NumberInputField(brokenCrackedDamaged, onBrokenCrackedDamagedChange, if (isMilho) "Grãos Quebrados (g)" else "Partidos, Quebrados e Amassados (g)", brokenCrackedDamagedFocus, if (isSoja) greenishFocus else null)
 
         if (isSoja) {

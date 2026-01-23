@@ -65,6 +65,19 @@ object DatabaseModule {
                             )
                             sojaDao.insertLimit(
                                 LimitSoja(
+                                    source = 0, grain = "Soja", group = 1, type = 2,
+                                    impuritiesLowerLim = 0.0f, impuritiesUpLim = 1.0f,
+                                    moistureLowerLim = 0.0f, moistureUpLim = 14.0f,
+                                    brokenCrackedDamagedLowerLim = 0.0f, brokenCrackedDamagedUpLim = 15.0f,
+                                    greenishLowerLim = 0.0f, greenishUpLim = 4.0f,
+                                    burntLowerLim = 0.0f, burntUpLim = 1.0f,
+                                    burntOrSourLowerLim = 0.0f, burntOrSourUpLim = 2.0f,
+                                    moldyLowerLim = 0.0f, moldyUpLim = 1.5f,
+                                    spoiledTotalLowerLim = 0.0f, spoiledTotalUpLim = 6.0f
+                                )
+                            )
+                            sojaDao.insertLimit(
+                                LimitSoja(
                                     source = 0, grain = "Soja", group = 2, type = 1,
                                     impuritiesLowerLim = 0.0f, impuritiesUpLim = 1.0f,
                                     moistureLowerLim = 0.0f, moistureUpLim = 14.0f,

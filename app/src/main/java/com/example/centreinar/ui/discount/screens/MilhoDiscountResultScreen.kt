@@ -1,5 +1,6 @@
 package com.example.centreinar.ui.discount.screens
 
+import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -7,9 +8,12 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.example.centreinar.ui.discount.viewmodel.DiscountViewModel
 import com.example.centreinar.ui.milho.components.MilhoDiscountResultsTable
@@ -20,6 +24,9 @@ fun MilhoDiscountResultScreen(
     viewModel: DiscountViewModel = hiltViewModel()
 ) {
     val discountsMilho by viewModel.discountsMilho.collectAsState()
+    val lastUsedLimit by viewModel.lastUsedLimitMilho.collectAsStateWithLifecycle()
+
+    val context = LocalContext.current
 
     Column(
         modifier = Modifier
@@ -45,16 +52,37 @@ fun MilhoDiscountResultScreen(
 
         Spacer(Modifier.height(24.dp))
 
-        Button(
-            onClick = {
-                viewModel.clearStates()
-                navController.navigate("home") {
-                    popUpTo("home") { inclusive = true }
-                }
-            },
-            modifier = Modifier.fillMaxWidth()
+        // Botões de ação
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Text("Nova Análise")
+            Button(
+                modifier = Modifier
+                    .weight(1f),
+                onClick = { navController.popBackStack() }
+            ) {
+                Text("Voltar")
+            }
+
+            Button(
+                modifier = Modifier
+                    .weight(1f),
+                onClick = { navController.navigate("home") }
+            ) {
+                Text("Realizar Nova Análise")
+            }
         }
+        Button(modifier = Modifier.fillMaxWidth(), onClick = {
+            viewModel.loadLastUsedLimit()
+            Log.e("DiscountResultsScreen","clicked the button")
+            lastUsedLimit?.let{
+                Log.e("DiscountResultsScreen","have last limit")
+                viewModel.exportDiscountMilho(context, discountsMilho!!, lastUsedLimit!!)
+            }
+        }) {
+            Text("Exportar PDF")
+        }
+
     }
 }

@@ -18,7 +18,6 @@ class ClassificationRepositoryMilhoImpl @Inject constructor(
     private val sampleDao: SampleMilhoDao,
     private val tools: Utilities
 ) : ClassificationRepositoryMilho {
-
     override suspend fun classifySample(sample: SampleMilho, limitSource: Int): Long {
         // Busca os limites no banco (Retorna uma lista com Limite Tipo 1, Tipo 2 e Tipo 3)
         val limitsList = limitDao.getLimitsBySource(
@@ -73,22 +72,23 @@ class ClassificationRepositoryMilhoImpl @Inject constructor(
         val typeImpurities = getIndividualType(pImpurities, l1.impuritiesUpLim, l2.impuritiesUpLim, l3.impuritiesUpLim)
         val typeBroken = getIndividualType(pBroken, l1.brokenUpLim, l2.brokenUpLim, l3.brokenUpLim)
         val typeArdido = getIndividualType(pArdido, l1.ardidoUpLim, l2.ardidoUpLim, l3.ardidoUpLim)
-        val typeMofado = getIndividualType(pMofado, l1.mofadoUpLim, l2.mofadoUpLim, l3.mofadoUpLim)
         val typeCarunchado = getIndividualType(pCarunchado, l1.carunchadoUpLim, l2.carunchadoUpLim, l3.carunchadoUpLim)
         val typeSpoiledTotal = getIndividualType(pSpoiledTotal, l1.spoiledTotalUpLim, l2.spoiledTotalUpLim, l3.spoiledTotalUpLim)
 
         // Define o Tipo Final (O maior entre eles)
-        val allTypes = listOf(typeImpurities, typeBroken, typeArdido, typeMofado, typeCarunchado, typeSpoiledTotal)
+        val allTypes = listOf(typeImpurities, typeBroken, typeArdido, typeCarunchado, typeSpoiledTotal)
         var finalType = allTypes.maxOrNull() ?: 1
 
         // Salva no Banco
+        val sampleId = sampleDao.insert(sample) // Long
+
         val classification = ClassificationMilho(
-            sampleId = sample.id,
+            sampleId =  sampleId.toInt(),
             grain = sample.grain,
             group = sample.group,
 
             // Valores Float
-            moisturePercentage = 0f, // Ver como fica a umidade na tabela (!!!MUDAR!!!)
+            moisturePercentage = 0f, // TODO: Ver como fica a umidade na tabela (!!!MUDAR!!!)
             impuritiesPercentage = pImpurities,
             brokenPercentage = pBroken,
             ardidoPercentage = pArdido,
@@ -104,7 +104,6 @@ class ClassificationRepositoryMilhoImpl @Inject constructor(
             impuritiesType = typeImpurities,
             brokenType = typeBroken,
             ardidoType = typeArdido,
-            mofadoType = typeMofado,
             carunchadoType = typeCarunchado,
             spoiledTotalType = typeSpoiledTotal,
 

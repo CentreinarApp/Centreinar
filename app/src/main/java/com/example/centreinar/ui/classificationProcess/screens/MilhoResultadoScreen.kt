@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
@@ -24,12 +25,12 @@ fun MilhoResultadoScreen(
         group = 1,
         type = 1,
         moistureUpLim = 14.0f,
-        impuritiesUpLim = 1.0f,
-        brokenUpLim = 3.0f,
-        ardidoUpLim = 1.0f,
-        mofadoUpLim = 1.0f,
-        carunchadoUpLim = 1.0f,
-        spoiledTotalUpLim = 4.0f
+        impuritiesUpLim = 1.00f,
+        brokenUpLim = 3.00f,
+        ardidoUpLim = 1.00f,
+        mofadoUpLim = 1.00f,
+        carunchadoUpLim = 2.00f,
+        spoiledTotalUpLim = 6.00f
     )
 
     // Leitura da Classificação
@@ -39,6 +40,8 @@ fun MilhoResultadoScreen(
     val limitState by viewModel.limitMilho.collectAsState(initial = null)
 
     val safeLimits = limitState ?: mockLimits
+
+    val context = LocalContext.current
 
     Column(
         modifier = Modifier
@@ -69,35 +72,45 @@ fun MilhoResultadoScreen(
 
         val safeClass = classification!!
 
-        // TABELA DE CLASSIFICAÇÃO
-        ClassificationTable(
-            classification = safeClass,
-            limits = safeLimits,
-            typeTranslator = viewModel::getFinalTypeLabel,
-            modifier = Modifier.fillMaxWidth()
-        )
+        Column(modifier = Modifier.weight(1f)) {
+            // TABELA DE CLASSIFICAÇÃO
+            ClassificationTable(
+                classification = safeClass,
+                limits = safeLimits,
+                typeTranslator = viewModel::getFinalTypeLabel,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
 
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(20.dp))
 
         // BOTÕES DE AÇÃO
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Button(
-                modifier = Modifier.weight(1f),
-                onClick = { navController.popBackStack() },
-                colors = ButtonDefaults.outlinedButtonColors()
+                modifier = Modifier
+                    .weight(1f),
+                onClick = { navController.popBackStack() }
             ) {
                 Text("Voltar")
             }
 
             Button(
-                modifier = Modifier.weight(1f),
-                onClick = { navController.navigate("milhoDescontos") }
+                modifier = Modifier
+                    .weight(1f),
+                onClick = { navController.navigate("home") }
             ) {
-                Text("Descontos")
+                Text("Realizar Cálculo de Desconto")
             }
+        }
+
+        Button(modifier = Modifier.fillMaxWidth(), onClick = {
+            viewModel.prepareForPdfExport("Milho")
+            viewModel.exportClassificationMilho(context, safeClass, safeLimits)
+        }) {
+            Text("Exportar PDF")
         }
     }
 }

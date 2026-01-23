@@ -392,7 +392,7 @@ class DiscountViewModel @Inject constructor(
         }
     }
 
-    fun exportDiscount(context: Context, discount: DiscountMilho, limit: LimitMilho) {
+    fun exportDiscountMilho(context: Context, discount: DiscountMilho, limit: LimitMilho) {
         viewModelScope.launch {
             try {
                 val sample = repositoryMilho.getLastInputDiscount()
