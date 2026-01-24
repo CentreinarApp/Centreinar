@@ -34,4 +34,7 @@ interface LimitMilhoDao {
 
     @Query("SELECT source FROM limits_milho ORDER BY source DESC LIMIT 1")
     suspend fun getLastSource(): Int
+
+    @Query("SELECT * FROM limits_milho WHERE grain = :grain AND `group` = :group AND source = :limitSource ORDER BY type ASC")
+    suspend fun getLimitsForTable(grain: String, group: Int, limitSource: Int): List<LimitMilho>
 }

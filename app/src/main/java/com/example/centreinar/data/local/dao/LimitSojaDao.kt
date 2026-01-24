@@ -59,4 +59,7 @@ interface LimitSojaDao {
 
     @Query("SELECT source FROM limits_soja ORDER BY source DESC LIMIT 1")
     suspend fun getLastSource(): Int
+
+    @Query("SELECT * FROM limits_soja WHERE grain = :grain AND `group` = :group AND source = :limitSource ORDER BY type ASC")
+    suspend fun getLimitsByGroup(grain: String, group: Int, limitSource: Int): List<LimitSoja>
 }

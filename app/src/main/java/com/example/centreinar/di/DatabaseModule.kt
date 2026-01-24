@@ -52,7 +52,10 @@ object DatabaseModule {
                             // === INSERTS SOJA ===
                             sojaDao.insertLimit(
                                 LimitSoja(
-                                    source = 0, grain = "Soja", group = 1, type = 1,
+                                    source = 0,
+                                    grain = "Soja",
+                                    group = 1,
+                                    type = 1,
                                     impuritiesLowerLim = 0.0f, impuritiesUpLim = 1.0f,
                                     moistureLowerLim = 0.0f, moistureUpLim = 14.0f,
                                     brokenCrackedDamagedLowerLim = 0.0f, brokenCrackedDamagedUpLim = 8.0f,
@@ -65,7 +68,10 @@ object DatabaseModule {
                             )
                             sojaDao.insertLimit(
                                 LimitSoja(
-                                    source = 0, grain = "Soja", group = 1, type = 2,
+                                    source = 0,
+                                    grain = "Soja",
+                                    group = 1,
+                                    type = 2,
                                     impuritiesLowerLim = 0.0f, impuritiesUpLim = 1.0f,
                                     moistureLowerLim = 0.0f, moistureUpLim = 14.0f,
                                     brokenCrackedDamagedLowerLim = 0.0f, brokenCrackedDamagedUpLim = 15.0f,
@@ -78,7 +84,10 @@ object DatabaseModule {
                             )
                             sojaDao.insertLimit(
                                 LimitSoja(
-                                    source = 0, grain = "Soja", group = 2, type = 1,
+                                    source = 0,
+                                    grain = "Soja",
+                                    group = 2,
+                                    type = 1,
                                     impuritiesLowerLim = 0.0f, impuritiesUpLim = 1.0f,
                                     moistureLowerLim = 0.0f, moistureUpLim = 14.0f,
                                     brokenCrackedDamagedLowerLim = 0.0f, brokenCrackedDamagedUpLim = 30.0f,

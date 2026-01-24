@@ -236,7 +236,7 @@ private fun SharedTableLayout(
         shape = MaterialTheme.shapes.medium
     ) {
         Column(
-            modifier = Modifier.padding(16.dp).verticalScroll(rememberScrollState())
+            modifier = Modifier.padding(16.dp)
         ) {
             TableHeader(title)
             Column(

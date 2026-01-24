@@ -12,6 +12,8 @@ import com.example.centreinar.DiscountSoja
 import com.example.centreinar.InputDiscountSoja
 import com.example.centreinar.LimitSoja
 import com.example.centreinar.SampleSoja
+import com.example.centreinar.data.local.dao.LimitMilhoDao
+import com.example.centreinar.data.local.dao.LimitSojaDao
 import com.example.centreinar.data.local.entity.DiscountMilho
 import com.example.centreinar.data.local.entity.InputDiscountMilho
 import com.example.centreinar.data.local.entity.LimitMilho
@@ -32,10 +34,12 @@ class DiscountViewModel @Inject constructor(
     // Dependências SOJA
     private val repositorySoja: DiscountRepository,
     private val pdfExporterSoja: PDFExporterSoja,
+    private val limitSojaDao: LimitSojaDao, // Busca a lista oficial
 
     // Dependências MILHO
     private val repositoryMilho: DiscountRepositoryMilho,
     private val pdfExporterMilho: PDFExporterMilho,
+    private val limitMilhoDao: LimitMilhoDao, // Busca a lista oficial
 
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
@@ -52,6 +56,10 @@ class DiscountViewModel @Inject constructor(
 
     private val _defaultLimits = MutableStateFlow<Map<String, Float>?>(null)
     val defaultLimits: StateFlow<Map<String, Float>?> = _defaultLimits.asStateFlow()
+
+    // --- LISTA PARA TABELA OFICIAL (ADICIONADO) ---
+    private val _allOfficialLimits = MutableStateFlow<List<Any>>(emptyList())
+    val allOfficialLimits: StateFlow<List<Any>> = _allOfficialLimits.asStateFlow()
 
     // --- ESTADOS SALVÁVEIS ---
     var selectedGrain by savedStateHandle.saveable { mutableStateOf<String?>(null) }
@@ -87,6 +95,7 @@ class DiscountViewModel @Inject constructor(
         _isLoading.value = false
         _error.value = null
         _defaultLimits.value = null
+        _allOfficialLimits.value = emptyList() // Limpa a lista oficial
 
         // Limpa Soja
         _discountsSoja.value = null
@@ -101,9 +110,9 @@ class DiscountViewModel @Inject constructor(
         isOfficial = null
     }
 
-    // Limpa o StateFlow para que a UI saiba que deve recarregar os dados
     fun resetLimits() {
         _defaultLimits.value = null
+        _allOfficialLimits.value = emptyList()
     }
 
     // =========================================================================
@@ -111,8 +120,8 @@ class DiscountViewModel @Inject constructor(
     // =========================================================================
 
     fun loadDefaultLimits() {
-        // Zera os limites carregados previamente...
         _defaultLimits.value = null
+        _allOfficialLimits.value = emptyList()
 
         val grain = selectedGrain?.toString() ?: run {
             Log.w("DiscountLimit", "ERRO: selectedGrain é nulo.")
@@ -122,10 +131,21 @@ class DiscountViewModel @Inject constructor(
             Log.w("DiscountLimit", "ERRO: selectedGroup é nulo.")
             return
         }
+        val official = isOfficial ?: true // Assume oficial se nulo
 
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                // Lógica da SOJA...
+                // Carrega a lista para a Tabela Comparativa se for Oficial
+                if (official) {
+                    if (grain == "Soja") {
+                        _allOfficialLimits.value = limitSojaDao.getLimitsByGroup(grain, group, 0)
+                    } else {
+                        val grainFixed = if (grain.equals("milho", ignoreCase = true)) "Milho" else grain
+                        _allOfficialLimits.value = limitMilhoDao.getLimitsBySource(grainFixed, 0, group)
+                    }
+                }
+
+                // Carrega os limites individuais para os campos de input
                 if (grain == "Soja") {
                     _defaultLimits.value = repositorySoja.getLimitOfType1Official(
                         grain = grain,
@@ -152,9 +172,6 @@ class DiscountViewModel @Inject constructor(
                             "greenishUpLim" to 0f,
                             "burntUpLim" to 0f
                         )
-                        Log.d("DiscountLimit", "Limites de Milho carregados: $limitMilho")
-                    } else {
-                        Log.w("DiscountLimit", "Nenhum limite oficial encontrado para Milho.")
                     }
                 }
             } catch (e: Exception) {
@@ -197,8 +214,15 @@ class DiscountViewModel @Inject constructor(
 
     // Função Unificada para Salvar Limites Personalizados
     fun setLimit(
-        impurities: Float, moisture: Float, brokenCrackedDamaged: Float,
-        greenish: Float, burnt: Float, burntOrSour: Float, moldy: Float, spoiled: Float
+        impurities: Float,
+        moisture: Float,
+        brokenCrackedDamaged: Float,
+        greenish: Float,
+        burnt: Float,
+        burntOrSour: Float,
+        moldy: Float,
+        spoiled: Float,
+        carunchado: Float = 0f
     ) {
         val grain = selectedGrain ?: return
         val group = selectedGroup ?: 0
@@ -222,9 +246,9 @@ class DiscountViewModel @Inject constructor(
                         impurities = impurities,
                         moisture = moisture,
                         broken = brokenCrackedDamaged,
-                        ardido = burntOrSour,
+                        ardido = burntOrSour, // Mapeia 'burntOrSour' da UI para 'ardido' no banco
                         mofado = moldy,
-                        carunchado = 0f, // UI de desconto não mandou carunchado neste método específico, assume 0 ou ajusta
+                        carunchado = carunchado,
                         spoiledTotal = spoiled
                     )
                 }
@@ -238,7 +262,7 @@ class DiscountViewModel @Inject constructor(
     }
 
     // =========================================================================
-    // LÓGICA SOJA
+    // LÓGICA SOJA (Cálculo e Desconto)
     // =========================================================================
 
     fun setDiscount(
@@ -302,7 +326,6 @@ class DiscountViewModel @Inject constructor(
                 val lastInputDiscount = repositorySoja.getLastInputDiscount()
                 selectedGrain = lastInputDiscount.grain
                 selectedGroup = lastInputDiscount.group
-                Log.e("ClassificationToDiscount", "Classification to discount Worked")
             } catch (e: Exception) {
                 _error.value = e.message ?: "Unknown error"
                 Log.e("ClassificationToDisc", "Calculation failed", e)
@@ -342,7 +365,7 @@ class DiscountViewModel @Inject constructor(
     }
 
     // =========================================================================
-    // LÓGICA MILHO
+    // LÓGICA MILHO (Cálculo e Desconto)
     // =========================================================================
 
     fun setDiscount(

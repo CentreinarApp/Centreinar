@@ -2,21 +2,27 @@ package com.example.centreinar.ui.discount.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import com.example.centreinar.LimitSoja
+import com.example.centreinar.data.local.entity.LimitMilho
 import com.example.centreinar.ui.discount.viewmodel.DiscountViewModel
 
 @Composable
@@ -25,239 +31,142 @@ fun DiscountLimitInputScreen(
     viewModel: DiscountViewModel = hiltViewModel()
 ) {
     val defaultLimits by viewModel.defaultLimits.collectAsStateWithLifecycle()
+    val allOfficialLimits by viewModel.allOfficialLimits.collectAsStateWithLifecycle()
 
-    // Pega o grão atual para decidir o layout e a navegação
     val currentGrain = viewModel.selectedGrain
     val isSoja = currentGrain == "Soja"
+    val isOfficial = viewModel.isOfficial == true
 
-    // RESETAR ESTADOS
-    var impurities by remember(currentGrain) { mutableStateOf("") }
+    // Estados dos campos
     var moisture by remember(currentGrain) { mutableStateOf("") }
+    var impurities by remember(currentGrain) { mutableStateOf("") }
     var brokenCrackedDamaged by remember(currentGrain) { mutableStateOf("") }
     var greenish by remember(currentGrain) { mutableStateOf("") }
     var burnt by remember(currentGrain) { mutableStateOf("") }
     var burntOrSour by remember(currentGrain) { mutableStateOf("") }
     var moldy by remember(currentGrain) { mutableStateOf("") }
     var spoiled by remember(currentGrain) { mutableStateOf("") }
-    // Campo extra para Milho
     var carunchado by remember(currentGrain) { mutableStateOf("") }
 
     var errorMessage by remember { mutableStateOf<String?>(null) }
-    var defaultsSet by remember(currentGrain) { mutableStateOf(false) }
-
-    val isEditable = viewModel.isOfficial != true
-
-    // Focus requesters
-    val impuritiesFocus = remember { FocusRequester() }
     val moistureFocus = remember { FocusRequester() }
-    val brokenFocus = remember { FocusRequester() }
-    val greenishFocus = remember { FocusRequester() }
-    val burntFocus = remember { FocusRequester() }
-    val burntOrSourFocus = remember { FocusRequester() }
-    val moldyFocus = remember { FocusRequester() }
-    val spoiledFocus = remember { FocusRequester() }
-    val carunchadoFocus = remember { FocusRequester() }
-
-    val keyboardController = LocalSoftwareKeyboardController.current
     val scrollState = rememberScrollState()
 
-    // Carrega limites ao entrar
-    LaunchedEffect(Unit) {
+    // Carrega limites
+    LaunchedEffect(currentGrain) {
         viewModel.loadDefaultLimits()
-        impuritiesFocus.requestFocus()
     }
 
     // Preenche os campos quando os limites chegam
     LaunchedEffect(defaultLimits) {
-        if (defaultLimits != null && !defaultsSet) {
-            impurities = defaultLimits?.get("impuritiesUpLim")?.toString() ?: ""
-            moisture = defaultLimits?.get("moistureUpLim")?.toString() ?: ""
-            brokenCrackedDamaged = defaultLimits?.get("brokenUpLim")?.toString() ?: ""
-            moldy = defaultLimits?.get("moldyUpLim")?.toString() ?: ""
+        defaultLimits?.let { limits ->
+            moisture = limits["moistureUpLim"]?.toString() ?: ""
+            impurities = limits["impuritiesUpLim"]?.toString() ?: ""
+            brokenCrackedDamaged = limits["brokenUpLim"]?.toString() ?: ""
+            moldy = limits["moldyUpLim"]?.toString() ?: ""
 
             // Mapeamento Milho: Ardido usa o campo burntOrSour
-            burntOrSour = defaultLimits?.get("burntOrSourUpLim")?.toString() ?: ""
+            burntOrSour = limits["burntOrSourUpLim"]?.toString() ?: ""
 
             // Mapeamento Milho: Carunchado
-            carunchado = defaultLimits?.get("carunchadoUpLim")?.toString() ?: ""
+            carunchado = limits["carunchadoUpLim"]?.toString() ?: ""
 
             if (isSoja) {
-                greenish = defaultLimits?.get("greenishUpLim")?.toString() ?: ""
-                burnt = defaultLimits?.get("burntUpLim")?.toString() ?: ""
-                spoiled = defaultLimits?.get("spoiledTotalUpLim")?.toString() ?: ""
+                greenish = limits["greenishUpLim"]?.toString() ?: ""
+                burnt = limits["burntUpLim"]?.toString() ?: ""
+                spoiled = limits["spoiledTotalUpLim"]?.toString() ?: ""
             } else {
                 greenish = "0"
                 burnt = "0"
-                // Se Milho tiver limite de Avariados Total, usa spoiled, se não 0
-                spoiled = defaultLimits?.get("spoiledTotalUpLim")?.toString() ?: "0"
+                spoiled = limits["spoiledTotalUpLim"]?.toString() ?: "0"
             }
-            defaultsSet = true
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(32.dp)
-            .verticalScroll(scrollState)
-    ) {
-        val title = if (isEditable) "Insira os limites ($currentGrain)" else "Limites de tolerância ($currentGrain)"
-        Text(
-            title,
-            style = MaterialTheme.typography.headlineSmall,
-            color = MaterialTheme.colorScheme.onBackground
-        )
-        Spacer(modifier = Modifier.height(24.dp))
+    Column(modifier = Modifier
+        .fillMaxSize()
+        .padding(24.dp)) {
 
-        // --- CAMPOS COMUNS ---
-        NumberInputField(
-            value = impurities,
-            onValueChange = { impurities = it },
-            label = "Matéria estranha e Impurezas (%)",
-            focusRequester = impuritiesFocus,
-            nextFocus = moistureFocus,
-            enabled = isEditable
+        Text(
+            text = if (!isOfficial) "Insira os limites de tolerância" else "Limites de Referência MAPA",
+            style = MaterialTheme.typography.headlineSmall
         )
+        Text(
+            text = "$currentGrain",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.secondary
+        )
+
         Spacer(modifier = Modifier.height(16.dp))
 
+        // UMIDADE FIXA NO TOPO
         NumberInputField(
+            label = "Umidade da Amostra (%)",
             value = moisture,
             onValueChange = { moisture = it },
-            label = "Umidade (%)",
             focusRequester = moistureFocus,
-            nextFocus = if (isSoja) burntFocus else burntOrSourFocus,
-            enabled = isEditable
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // --- CAMPOS ESPECÍFICOS SOJA ---
-        if (isSoja) {
-            NumberInputField(
-                value = burnt,
-                onValueChange = { burnt = it },
-                label = "Queimados (%)",
-                focusRequester = burntFocus,
-                nextFocus = burntOrSourFocus,
-                enabled = isEditable
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-        }
-
-        // --- ARDIDOS (Milho) / QUEIMADOS E ARDIDOS (Soja) ---
-        NumberInputField(
-            value = burntOrSour,
-            onValueChange = { burntOrSour = it },
-            label = if (isSoja) "Ardidos e Queimados (%)" else "Ardidos (%)",
-            focusRequester = burntOrSourFocus,
-            nextFocus = moldyFocus,
-            enabled = isEditable
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Mofado aparece apenas no desconto da soja
-        if (isSoja) {
-            NumberInputField(
-                value = moldy,
-                onValueChange = { moldy = it },
-                label = "Mofados (%)",
-                focusRequester = moldyFocus,
-                nextFocus = if (!isSoja) carunchadoFocus else spoiledFocus,
-                enabled = isEditable
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-        }
-
-        // --- CAMPO ESPECÍFICO MILHO: CARUNCHADO ---
-        if (!isSoja) {
-            NumberInputField(
-                value = carunchado,
-                onValueChange = { carunchado = it },
-                label = "Carunchados (%)",
-                focusRequester = carunchadoFocus,
-                nextFocus = spoiledFocus,
-                enabled = isEditable
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-        }
-
-        // --- TOTAL AVARIADOS ---
-        // Exibe para Soja e para Milho
-        NumberInputField(
-            value = spoiled,
-            onValueChange = { spoiled = it },
-            label = "Total de Avariados (%)",
-            focusRequester = spoiledFocus,
-            nextFocus = if (isSoja) greenishFocus else brokenFocus,
-            enabled = isEditable
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // --- ESVERDEADOS (Só Soja) ---
-        if (isSoja) {
-            NumberInputField(
-                value = greenish,
-                onValueChange = { greenish = it },
-                label = "Esverdeados (%)",
-                focusRequester = greenishFocus,
-                nextFocus = brokenFocus,
-                enabled = isEditable
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-        }
-
-        NumberInputField(
-            value = brokenCrackedDamaged,
-            onValueChange = { if (isEditable) brokenCrackedDamaged = it },
-            label = if(isSoja) "Partidos, Quebrados e Amassados (%)" else "Quebrados (%)",
-            focusRequester = brokenFocus,
             nextFocus = null,
-            onDone = { keyboardController?.hide() },
-            enabled = isEditable
+            enabled = !isOfficial,
+            readOnly = isOfficial
         )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // BOX QUE OCUPA O CENTRO (TABELA OU CAMPOS)
+        Box(modifier = Modifier.weight(1f)) {
+            if (isOfficial) {
+                if (allOfficialLimits.isNotEmpty()) {
+                    OfficialLimitsTable(grain = currentGrain ?: "", data = allOfficialLimits)
+                } else {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text("Carregando tabela oficial...")
+                    }
+                }
+            } else {
+                Column(modifier = Modifier.verticalScroll(scrollState)) {
+                    DiscountEditableFields(
+                        isSoja = isSoja,
+                        impurities = impurities, onImpuritiesChange = { impurities = it },
+                        burnt = burnt, onBurntChange = { burnt = it },
+                        burntOrSour = burntOrSour, onBurntOrSourChange = { burntOrSour = it },
+                        moldy = moldy, onMoldyChange = { moldy = it },
+                        spoiled = spoiled, onSpoiledChange = { spoiled = it },
+                        greenish = greenish, onGreenishChange = { greenish = it },
+                        broken = brokenCrackedDamaged, onBrokenChange = { brokenCrackedDamaged = it },
+                        carunchado = carunchado, onCarunchadoChange = { carunchado = it }
+                    )
+                }
+            }
+        }
+
+        Spacer(Modifier.height(32.dp))
 
         errorMessage?.let {
-            Text(
-                text = it,
-                color = MaterialTheme.colorScheme.error,
-                modifier = Modifier.padding(vertical = 8.dp)
-            )
+            Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(vertical = 4.dp))
         }
-
-        Spacer(modifier = Modifier.height(32.dp))
 
         Button(
             onClick = {
-                // Validação
-                val allFields = mutableListOf(impurities, moisture, brokenCrackedDamaged, burntOrSour, moldy)
-                if (isSoja) {
-                    allFields.add(greenish)
-                    allFields.add(burnt)
-                    allFields.add(spoiled)
-                } else {
-                    // Valida campos do Milho
-                    allFields.add(carunchado)
-                    allFields.add(spoiled)
-                }
-
-                if (allFields.any { it.isEmpty() || it == "." }) {
-                    errorMessage = "Por favor preencha todos os campos com valores válidos"
+                if (moisture.isEmpty() || moisture == ".") {
+                    errorMessage = "Informe a umidade base."
                     return@Button
                 }
 
-                if(isEditable){
+                if (!isOfficial) {
                     try {
                         viewModel.setLimit(
-                            impurities = toFloat(impurities),
-                            moisture = toFloat(moisture),
-                            brokenCrackedDamaged = toFloat(brokenCrackedDamaged),
-                            greenish = if(isSoja) toFloat(greenish) else 0f,
-                            burnt = if(isSoja) toFloat(burnt) else 0f,
-                            burntOrSour = toFloat(burntOrSour), // Ardido
-                            moldy = toFloat(moldy),
-                            spoiled = toFloat(spoiled)
+                            impurities = impurities.toFloatOrDefault(),
+                            moisture = moisture.toFloatOrDefault(),
+                            brokenCrackedDamaged = brokenCrackedDamaged.toFloatOrDefault(),
+                            greenish = if(isSoja) greenish.toFloatOrDefault() else 0f,
+                            burnt = if(isSoja) burnt.toFloatOrDefault() else 0f,
+                            burntOrSour = burntOrSour.toFloatOrDefault(), // Ardido
+                            moldy = moldy.toFloatOrDefault(),
+                            spoiled = spoiled.toFloatOrDefault(),
+                            carunchado = carunchado.toFloatOrDefault()
                         )
-                    } catch (e: NumberFormatException) {
-                        errorMessage = "Valores numéricos inválidos detectados"
+                    } catch (e: Exception) {
+                        errorMessage = "Erro ao salvar valores."
                         return@Button
                     }
                 }
@@ -265,47 +174,155 @@ fun DiscountLimitInputScreen(
                 if (isSoja) {
                     navController.navigate("discount")
                 } else {
+                    // Se for milho, vá para a tela de input de desconto do milho ou resultado
                     navController.navigate("milhoDiscountInput")
                 }
             },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
         ) {
-            Text(if(isEditable) "Salvar Limites" else "Próximo")
+            Text(if (!isOfficial) "Salvar e Continuar" else "Próximo")
         }
     }
 }
 
 @Composable
+fun OfficialLimitsTable(grain: String, data: List<Any>) {
+    val labels = if (grain == "Soja") {
+        listOf("Ardidos/Queim.", "Queimados", "Mofados", "Avariados Total", "Esverdeados", "Partidos/Quebr.", "Impurezas")
+    } else {
+        listOf("Ardidos", "Mofados", "Avariados Total", "Quebrados", "Carunchados", "Impurezas")
+    }
+
+    Card(
+        modifier = Modifier.fillMaxSize(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(12.dp),
+            verticalArrangement = Arrangement.SpaceEvenly
+        ) {
+            // CABEÇALHO
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                Text("Defeito", modifier = Modifier.weight(1.3f), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                data.forEachIndexed { index, _ ->
+                    Text("Tipo ${index + 1}", modifier = Modifier.weight(1f), textAlign = TextAlign.Center, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                }
+            }
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+
+            // LINHAS
+            labels.forEachIndexed { rowIndex, label ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    Text(
+                        text = label,
+                        modifier = Modifier.weight(1.3f),
+                        style = MaterialTheme.typography.bodyMedium.copy(fontSize = 12.sp),
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    data.forEach { item ->
+                        val value = when (item) {
+                            is LimitSoja -> listOf(item.burntOrSourUpLim, item.burntUpLim, item.moldyUpLim, item.spoiledTotalUpLim, item.greenishUpLim, item.brokenCrackedDamagedUpLim, item.impuritiesUpLim)
+                            is LimitMilho -> listOf(item.ardidoUpLim, item.mofadoUpLim, item.spoiledTotalUpLim, item.brokenUpLim, item.carunchadoUpLim, item.impuritiesUpLim)
+                            else -> emptyList()
+                        }.getOrNull(rowIndex) ?: 0f
+
+                        Text(
+                            text = "$value%",
+                            modifier = Modifier.weight(1f),
+                            textAlign = TextAlign.Center,
+                            style = MaterialTheme.typography.bodyLarge.copy(fontSize = 14.sp),
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+                if (rowIndex < labels.lastIndex) {
+                    HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun DiscountEditableFields(
+    isSoja: Boolean,
+    impurities: String, onImpuritiesChange: (String) -> Unit,
+    burnt: String, onBurntChange: (String) -> Unit,
+    burntOrSour: String, onBurntOrSourChange: (String) -> Unit,
+    moldy: String, onMoldyChange: (String) -> Unit,
+    spoiled: String, onSpoiledChange: (String) -> Unit,
+    greenish: String, onGreenishChange: (String) -> Unit,
+    broken: String, onBrokenChange: (String) -> Unit,
+    carunchado: String, onCarunchadoChange: (String) -> Unit
+) {
+    Column {
+        NumberInputField("Impurezas (%)", impurities, onImpuritiesChange, FocusRequester(), null, true)
+        Spacer(Modifier.height(8.dp))
+
+        if (isSoja) {
+            NumberInputField("Queimados (%)", burnt, onBurntChange, FocusRequester(), null, true)
+            Spacer(Modifier.height(8.dp))
+        }
+
+        NumberInputField(if (isSoja) "Ardidos e Queimados (%)" else "Ardidos (%)", burntOrSour, onBurntOrSourChange, FocusRequester(), null, true)
+        Spacer(Modifier.height(8.dp))
+
+        // Mofados: Geralmente entra no cálculo de avariados, mas se precisar editar isoladamente:
+        NumberInputField("Mofados (%)", moldy, onMoldyChange, FocusRequester(), null, true)
+        Spacer(Modifier.height(8.dp))
+
+        if (!isSoja) {
+            NumberInputField("Carunchados (%)", carunchado, onCarunchadoChange, FocusRequester(), null, true)
+            Spacer(Modifier.height(8.dp))
+        }
+
+        NumberInputField("Total Avariados (%)", spoiled, onSpoiledChange, FocusRequester(), null, true)
+        Spacer(Modifier.height(8.dp))
+
+        if (isSoja) {
+            NumberInputField("Esverdeados (%)", greenish, onGreenishChange, FocusRequester(), null, true)
+            Spacer(Modifier.height(8.dp))
+        }
+
+        NumberInputField(if (isSoja) "Quebrados/Amassados (%)" else "Quebrados (%)", broken, onBrokenChange, FocusRequester(), null, true)
+    }
+}
+
+@Composable
 private fun NumberInputField(
+    label: String,
     value: String,
     onValueChange: (String) -> Unit,
-    label: String,
     focusRequester: FocusRequester,
-    nextFocus: FocusRequester? = null,
-    onDone: (() -> Unit)? = null,
-    enabled: Boolean = true
+    nextFocus: FocusRequester?,
+    enabled: Boolean,
+    readOnly: Boolean = false
 ) {
     OutlinedTextField(
         value = value,
-        onValueChange = onValueChange,
+        onValueChange = { if (it.isEmpty() || it.matches(Regex("^(\\d*\\.?\\d*)$"))) onValueChange(it) },
         label = { Text(label) },
-        modifier = Modifier
-            .fillMaxWidth()
-            .focusRequester(focusRequester),
-        keyboardOptions = KeyboardOptions(
-            keyboardType = KeyboardType.Number,
-            imeAction = if (nextFocus != null) ImeAction.Next else ImeAction.Done
-        ),
-        keyboardActions = KeyboardActions(
-            onNext = { nextFocus?.requestFocus() },
-            onDone = { onDone?.invoke() }
-        ),
+        modifier = Modifier.fillMaxWidth().focusRequester(focusRequester),
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = if (nextFocus != null) ImeAction.Next else ImeAction.Done),
         singleLine = true,
         enabled = enabled,
-        readOnly = !enabled
+        readOnly = readOnly
     )
 }
 
-private fun toFloat(value : String): Float {
-    return value.toFloatOrNull() ?: 0f
-}
+private fun String.toFloatOrDefault(): Float = this.toFloatOrNull()?.takeIf { it >= 0f } ?: 0f
