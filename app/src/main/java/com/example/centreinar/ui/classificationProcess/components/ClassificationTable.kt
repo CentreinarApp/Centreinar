@@ -45,6 +45,66 @@ fun ClassificationTable(
             classification.foreignMattersPercentage,
             classification.foreignMatters
         ),
+        ClassificationRowData( // Não classifica => --
+            "Ardidos",
+            0f,
+            classification.sourPercentage,
+            0
+        ),
+        ClassificationRowData(
+            "Queimados",
+            limits.burntUpLim,
+            classification.burntPercentage,
+            classification.burnt
+        ),
+        ClassificationRowData(
+            "Total de Ardidos + Queimados",
+            limits.burntOrSourUpLim,
+            classification.burntOrSourPercentage,
+            classification.burntOrSour
+        ),
+        ClassificationRowData(
+            "Mofados",
+            limits.moldyUpLim,
+            classification.moldyPercentage,
+            classification.moldy
+        ),
+        ClassificationRowData( // Não classifica => --
+            "Fermentados",
+            0f,
+            classification.fermentedPercentage,
+            0
+        ),
+        ClassificationRowData( // Não classifica => --
+            "Germinados",
+            0f,
+            classification.germinatedPercentage,
+            0
+        ),
+        ClassificationRowData( // Não classifica => --
+            "Imaturos",
+            0f,
+            classification.immaturePercentage,
+            0
+        ),
+        ClassificationRowData( // Não classifica => --
+            "Chochos",
+            0f,
+            classification.shriveledPercentage,
+            0
+        ),
+        ClassificationRowData( // Não classifica => --
+            "Danificados",
+            0f,
+            classification.damagedPercentage,
+            0
+        ),
+        ClassificationRowData(
+            "Total de Avariados",
+            limits.spoiledTotalUpLim,
+            classification.spoiledPercentage,
+            classification.spoiled
+        ),
         ClassificationRowData(
             "Esverdeados",
             limits.greenishUpLim,
@@ -56,68 +116,6 @@ fun ClassificationTable(
             limits.brokenCrackedDamagedUpLim,
             classification.brokenCrackedDamagedPercentage,
             classification.brokenCrackedDamaged
-        ),
-        ClassificationRowData(
-            "Mofados",
-            limits.moldyUpLim,
-            classification.moldyPercentage,
-            classification.moldy
-        ),
-        ClassificationRowData(
-            "Queimados",
-            limits.burntUpLim,
-            classification.burntPercentage,
-            classification.burnt
-        ),
-        ClassificationRowData(
-            "Queimados/Ardidos (Soma)",
-            limits.burntOrSourUpLim,
-            classification.burntOrSourPercentage,
-            classification.burntOrSour
-        ),
-        ClassificationRowData(
-            "Total de Avariados",
-            limits.spoiledTotalUpLim,
-            classification.spoiledPercentage,
-            classification.spoiled
-        ),
-
-        // Defeitos que NÃO classificam (Onde deve aparecer o "-")
-        ClassificationRowData(
-            "Ardidos",
-            0f,
-            classification.sourPercentage,
-            0
-        ),
-        ClassificationRowData(
-            "Fermentados",
-            0f,
-            classification.fermentedPercentage,
-            0
-        ),
-        ClassificationRowData(
-            "Germinados",
-            0f,
-            classification.germinatedPercentage,
-            0
-        ),
-        ClassificationRowData(
-            "Imaturos",
-            0f,
-            classification.immaturePercentage,
-            0
-        ),
-        ClassificationRowData(
-            "Chochos",
-            0f,
-            classification.shriveledPercentage,
-            0
-        ),
-        ClassificationRowData(
-            "Danificados",
-            0f,
-            classification.damagedPercentage,
-            0
         )
     )
 
@@ -164,22 +162,10 @@ fun ClassificationTable(
             classification.brokenType
         ),
         ClassificationRowData(
-            "Total Avariados",
-            limits.spoiledTotalUpLim,
-            classification.spoiledTotalPercentage,
-            classification.spoiledTotalType
-        ),
-        ClassificationRowData(
             "Ardidos",
             limits.ardidoUpLim,
             classification.ardidoPercentage,
             classification.ardidoType
-        ),
-        ClassificationRowData(
-            "Carunchados",
-            limits.carunchadoUpLim,
-            classification.carunchadoPercentage,
-            classification.carunchadoType
         ),
         ClassificationRowData(
             "Mofados",
@@ -210,7 +196,19 @@ fun ClassificationTable(
             0f,
             classification.gessadoPercentage,
             0
-        )
+        ),
+        ClassificationRowData(
+            "Total Avariados",
+            limits.spoiledTotalUpLim,
+            classification.spoiledTotalPercentage,
+            classification.spoiledTotalType
+        ),
+        ClassificationRowData(
+            "Carunchados",
+            limits.carunchadoUpLim,
+            classification.carunchadoPercentage,
+            classification.carunchadoType
+        ),
     )
 
     SharedTableLayout(
@@ -247,7 +245,10 @@ private fun SharedTableLayout(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text("DEFEITO", fontSize = 13.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(2f))
-                    Text("LIMITE (%)", fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f), textAlign = TextAlign.End)
+
+                    // COLUNA LIMITE COMENTADA PARA NÃO EXIBIR
+                    // Text("LIMITE (%)", fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f), textAlign = TextAlign.End)
+
                     Text("%", fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f), textAlign = TextAlign.End)
                     Text("TIPO", fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f), textAlign = TextAlign.End)
                 }
@@ -275,7 +276,10 @@ private fun TableRow(label: String, limit: Float, percentage: Float, quantity: S
 
     Row(modifier = Modifier.fillMaxWidth().padding(8.dp), horizontalArrangement = Arrangement.SpaceBetween) {
         Text(text = label, fontSize = 13.sp, modifier = Modifier.weight(2f), fontWeight = weightFont)
-        Text(text = if (limit > 0f) "%.2f%%".format(limit) else "-", fontSize = 13.sp, modifier = Modifier.weight(1f), textAlign = TextAlign.End, color = MaterialTheme.colorScheme.onSurfaceVariant)
+
+        // VALOR DO LIMITE COMENTADO PARA NÃO EXIBIR
+        // Text(text = if (limit > 0f) "%.2f%%".format(limit) else "-", fontSize = 13.sp, modifier = Modifier.weight(1f), textAlign = TextAlign.End, color = MaterialTheme.colorScheme.onSurfaceVariant)
+
         Text(text = "%.2f%%".format(percentage), fontSize = 13.sp, modifier = Modifier.weight(1f), textAlign = TextAlign.End, color = textColor, fontWeight = weightFont)
         Text(text = quantity, fontSize = 13.sp, modifier = Modifier.weight(1f), textAlign = TextAlign.End)
     }
