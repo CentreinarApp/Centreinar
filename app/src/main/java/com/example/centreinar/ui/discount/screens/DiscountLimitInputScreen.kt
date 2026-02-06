@@ -172,7 +172,7 @@ fun DiscountLimitInputScreen(
                 }
 
                 if (isSoja) {
-                    navController.navigate("discount")
+                    navController.navigate("discountInputScreen")
                 } else {
                     // Se for milho, vá para a tela de input de desconto do milho ou resultado
                     navController.navigate("milhoDiscountInput")

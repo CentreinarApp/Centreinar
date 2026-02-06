@@ -12,9 +12,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import androidx.navigation.navigation
 
 // Imports SOJA
@@ -157,13 +159,26 @@ fun CentreinarApp() {
             // -----------------------------
             // Fluxo DESCONTOS (Soja)
             // -----------------------------
-            composable("discount") { backStackEntry ->
+            composable(
+                route = "discountInputScreen?classificationId={classificationId}",
+                arguments = listOf(
+                    navArgument("classificationId") {
+                        type = NavType.IntType
+                        defaultValue = -1 // Se não vier ID, o padrão é -1
+                    }
+                )
+            ) { backStackEntry ->
+                val classificationId = backStackEntry.arguments?.getInt("classificationId") ?: -1
+
                 val parentEntry = remember(backStackEntry) {
                     navController.getBackStackEntry("main_flow")
                 }
+
                 DiscountInputScreen(
-                    navController,
-                    hiltViewModel<DiscountViewModel>(parentEntry)
+                    navController = navController,
+                    // Passa o ID para o ViewModel apenas se ele for válido
+                    classificationId = if (classificationId != -1) classificationId else null,
+                    viewModel = hiltViewModel<DiscountViewModel>(parentEntry)
                 )
             }
 

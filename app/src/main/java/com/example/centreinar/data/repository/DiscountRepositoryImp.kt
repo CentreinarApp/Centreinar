@@ -10,14 +10,13 @@ import com.example.centreinar.data.local.dao.DiscountSojaDao
 import com.example.centreinar.data.local.dao.InputDiscountSojaDao
 import com.example.centreinar.data.local.dao.LimitSojaDao
 import com.example.centreinar.data.local.dao.SampleSojaDao
-import com.example.centreinar.ui.discount.screens.BasicInfoTab
 import com.example.centreinar.util.Utilities
 import javax.inject.Inject
 import javax.inject.Singleton
 
-
-fun calculateClassificationLoss(difValue: Float, endValue: Float) : Float { // Função que calcula os descontos por defeito...
-    return (difValue / ( 100 - endValue )) * 100
+// Função auxiliar para calcular descontos por defeito
+fun calculateClassificationLoss(difValue: Float, endValue: Float): Float {
+    return (difValue / (100 - endValue)) * 100
 }
 
 @Singleton
@@ -29,6 +28,11 @@ class DiscountRepositoryImpl @Inject constructor(
     private val inputDiscountDao: InputDiscountSojaDao,
     private val tools: Utilities
 ) : DiscountRepository {
+
+    // --- NOVO MÉTODO PARA BUSCAR PELO ID ---
+    override suspend fun getClassificationById(id: Int): ClassificationSoja? {
+        return classificationDao.getById(id)
+    }
 
     override suspend fun calculateDiscount(
         grain: String,
@@ -68,14 +72,14 @@ class DiscountRepositoryImpl @Inject constructor(
         val deductionValue = sample.deductionValue
         val pricePerSack = if (lotWeight > 0) (lotPrice / lotWeight) * 60 else 0f
 
-        // perdas por umidade e impurezas
+        // Perdas por umidade e impurezas
         val impuritiesLoss = tools.calculateDifference(sample.foreignMattersAndImpurities, limit["impurities"]!!)
         val humidityLoss = tools.calculateDifference(sample.humidity, limit["humidity"]!!)
 
-        val impuritiesLossKg = ( impuritiesLoss / ( 100 - limit["impurities"]!! ) ) * lotWeight
-        val humidityLossKg = ( humidityLoss / ( 100 - limit["humidity"]!! ) ) * (lotWeight - impuritiesLossKg)
+        val impuritiesLossKg = (impuritiesLoss / (100 - limit["impurities"]!!)) * lotWeight
+        val humidityLossKg = (humidityLoss / (100 - limit["humidity"]!!)) * (lotWeight - impuritiesLossKg)
 
-        var impuritiesAndHumidityLoss = impuritiesLossKg + humidityLossKg
+        val impuritiesAndHumidityLoss = impuritiesLossKg + humidityLossKg
         var technicalLoss = 0f
 
         // Falha técnica
@@ -91,23 +95,23 @@ class DiscountRepositoryImpl @Inject constructor(
         var greenishLoss = tools.calculateDifference(sample.greenish, limit["greenish"]!!)
         var brokenLoss = tools.calculateDifference(sample.brokenCrackedDamaged, limit["broken"]!!)
 
-        // Realiza os cálculos dos descontos por defeitos...
-        if (sample.burnt > limit["burnt"]!!) { // Queimados
+        // Cálculo dos descontos (Fórmula de perda de classificação)
+        if (sample.burnt > limit["burnt"]!!) {
             burntLoss = calculateClassificationLoss(burntLoss, limit["burnt"]!!)
         }
-        if (sample.burntOrSour > limit["burntOrSour"]!! || (sample.burntOrSour - burntLoss) > limit["burntOrSour"]!!) { // Queimados e Ardidos
+        if (sample.burntOrSour > limit["burntOrSour"]!! || (sample.burntOrSour - burntLoss) > limit["burntOrSour"]!!) {
             burntOrSourLoss = calculateClassificationLoss(burntOrSourLoss, limit["burntOrSour"]!!)
         }
-        if (sample.moldy > limit["moldy"]!!) { // Mofados
+        if (sample.moldy > limit["moldy"]!!) {
             moldyLoss = calculateClassificationLoss(moldyLoss, limit["moldy"]!!)
         }
-        if (sample.spoiled > limit["spoiled"]!! || sample.spoiled - (burntLoss + burntOrSourLoss + moldyLoss) > limit["spoiled"]!!) { // Avariados
+        if (sample.spoiled > limit["spoiled"]!! || sample.spoiled - (burntLoss + burntOrSourLoss + moldyLoss) > limit["spoiled"]!!) {
             spoiledLoss = calculateClassificationLoss(spoiledLoss, limit["spoiled"]!!)
         }
-        if (sample.greenish > limit["greenish"]!!) { // Esverdeados
+        if (sample.greenish > limit["greenish"]!!) {
             greenishLoss = calculateClassificationLoss(greenishLoss, limit["greenish"]!!)
         }
-        if (sample.brokenCrackedDamaged > limit["broken"]!!) { // Quebrados
+        if (sample.brokenCrackedDamaged > limit["broken"]!!) {
             brokenLoss = calculateClassificationLoss(brokenLoss, limit["broken"]!!)
         }
 
@@ -134,12 +138,12 @@ class DiscountRepositoryImpl @Inject constructor(
         val impuritiesAndHumidityLossPrice = impuritiesLossPrice + humidityLossPrice
         val technicalLossPrice = (lotPrice / lotWeight) * technicalLoss
 
-        val burntLossPrice = (( ( burntLoss * lotWeight ) / 60 ) * pricePerSack) / 100
-        val burntOrSourLossPrice = ((( burntOrSourLoss * lotWeight ) / 60) * pricePerSack) / 100
-        val brokenLossPrice = (( ( brokenLoss * lotWeight ) / 60 ) * pricePerSack) / 100
-        val greenishLossPrice = (( ( greenishLoss * lotWeight ) / 60 ) * pricePerSack) / 100
-        val moldyLossPrice = (( ( moldyLoss * lotWeight ) / 60 ) * pricePerSack) / 100
-        val spoiledLossPrice = (( ( spoiledLoss * lotWeight ) / 60 ) * pricePerSack) / 100
+        val burntLossPrice = (((burntLoss * lotWeight) / 60) * pricePerSack) / 100
+        val burntOrSourLossPrice = (((burntOrSourLoss * lotWeight) / 60) * pricePerSack) / 100
+        val brokenLossPrice = (((brokenLoss * lotWeight) / 60) * pricePerSack) / 100
+        val greenishLossPrice = (((greenishLoss * lotWeight) / 60) * pricePerSack) / 100
+        val moldyLossPrice = (((moldyLoss * lotWeight) / 60) * pricePerSack) / 100
+        val spoiledLossPrice = (((spoiledLoss * lotWeight) / 60) * pricePerSack) / 100
 
         val classificationDiscountPrice = burntLossPrice + burntOrSourLossPrice + brokenLossPrice +
                 greenishLossPrice + moldyLossPrice + spoiledLossPrice
@@ -151,26 +155,19 @@ class DiscountRepositoryImpl @Inject constructor(
 
         val finalWeightPrice = lotPrice - finalDiscountPrice
 
-        // converter perdas percentuais para peso (kg)
-        burntLoss = burntLoss * lotWeight / 100
-        burntOrSourLoss = burntOrSourLoss * lotWeight / 100
-        brokenLoss = brokenLoss * lotWeight / 100
-        greenishLoss = greenishLoss * lotWeight / 100
-        moldyLoss = moldyLoss * lotWeight / 100
-        spoiledLoss = spoiledLoss * lotWeight / 100
-
+        // Conversão de perdas percentuais para peso (kg)
         val discount = DiscountSoja(
             inputDiscountId = sample.id,
             impuritiesLoss = impuritiesLossKg,
             humidityLoss = humidityLossKg,
             technicalLoss = technicalLoss,
-            burntLoss = burntLoss,
-            burntOrSourLoss = burntOrSourLoss,
-            moldyLoss = moldyLoss,
-            spoiledLoss = spoiledLoss,
+            burntLoss = burntLoss * lotWeight / 100,
+            burntOrSourLoss = burntOrSourLoss * lotWeight / 100,
+            moldyLoss = moldyLoss * lotWeight / 100,
+            spoiledLoss = spoiledLoss * lotWeight / 100,
             classificationDiscount = classificationDiscount,
-            greenishLoss = greenishLoss,
-            brokenLoss = brokenLoss,
+            greenishLoss = greenishLoss * lotWeight / 100,
+            brokenLoss = brokenLoss * lotWeight / 100,
             burntLossPrice = burntLossPrice,
             burntOrSourLossPrice = burntOrSourLossPrice,
             brokenLossPrice = brokenLossPrice,
@@ -216,7 +213,6 @@ class DiscountRepositoryImpl @Inject constructor(
         tipo: Int,
         limitSource: Int
     ): Map<String, Float> {
-        // Tenta buscar o limite e lida com o caso de ser nulo ou exceção.
         val limit: LimitSoja? = try {
             limitDao.getLimitsByType(grain, group, tipo, limitSource)
         } catch (e: Exception) {
@@ -279,36 +275,39 @@ class DiscountRepositoryImpl @Inject constructor(
         return limitDao.insertLimit(limit)
     }
 
-    // CORREÇÃO: Assinatura alterada para retornar LimitSoja? (anulável)
     override suspend fun getLimit(
         grain: String,
         group: Int,
         tipo: Int,
         source: Int
-    ): LimitSoja? { // <-- MUDANÇA AQUI
+    ): LimitSoja? {
         return limitDao.getLimitsByType(grain, group, tipo, source)
     }
 
     override suspend fun getLimitOfType1Official(group: Int, grain: String): Map<String, Float> {
         val limit = limitDao.getLimitsByType(grain, group, 1, 0)
-        return mapOf(
-            "impuritiesLowerLim" to limit!!.impuritiesLowerLim, // ATENÇÃO: Aqui estou usando !! para manter seu código original, mas a função chamadora deve tratar o nulo
-            "impuritiesUpLim" to limit.impuritiesUpLim,
-            "moistureLowerLim" to limit.moistureLowerLim,
-            "moistureUpLim" to limit.moistureUpLim,
-            "brokenLowerLim" to limit.brokenCrackedDamagedLowerLim,
-            "brokenUpLim" to limit.brokenCrackedDamagedUpLim,
-            "greenishLowerLim" to limit.greenishLowerLim,
-            "greenishUpLim" to limit.greenishUpLim,
-            "burntLowerLim" to limit.burntLowerLim,
-            "burntUpLim" to limit.burntUpLim,
-            "burntOrSourLowerLim" to limit.burntOrSourLowerLim,
-            "burntOrSourUpLim" to limit.burntOrSourUpLim,
-            "moldyLowerLim" to limit.moldyLowerLim,
-            "moldyUpLim" to limit.moldyUpLim,
-            "spoiledTotalLowerLim" to limit.spoiledTotalLowerLim,
-            "spoiledTotalUpLim" to limit.spoiledTotalUpLim
-        )
+        return if (limit != null) {
+            mapOf(
+                "impuritiesLowerLim" to limit.impuritiesLowerLim,
+                "impuritiesUpLim" to limit.impuritiesUpLim,
+                "moistureLowerLim" to limit.moistureLowerLim,
+                "moistureUpLim" to limit.moistureUpLim,
+                "brokenLowerLim" to limit.brokenCrackedDamagedLowerLim,
+                "brokenUpLim" to limit.brokenCrackedDamagedUpLim,
+                "greenishLowerLim" to limit.greenishLowerLim,
+                "greenishUpLim" to limit.greenishUpLim,
+                "burntLowerLim" to limit.burntLowerLim,
+                "burntUpLim" to limit.burntUpLim,
+                "burntOrSourLowerLim" to limit.burntOrSourLowerLim,
+                "burntOrSourUpLim" to limit.burntOrSourUpLim,
+                "moldyLowerLim" to limit.moldyLowerLim,
+                "moldyUpLim" to limit.moldyUpLim,
+                "spoiledTotalLowerLim" to limit.spoiledTotalLowerLim,
+                "spoiledTotalUpLim" to limit.spoiledTotalUpLim
+            )
+        } else {
+            emptyMap()
+        }
     }
 
     override suspend fun getLastClassification(): ClassificationSoja {

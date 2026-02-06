@@ -158,7 +158,10 @@ fun ClassificationResult(
 
                 Button(
                     modifier = Modifier.weight(1f),
-                    onClick = { navController.navigate("home") }
+                    onClick = {
+                        val id = classification?.id ?: 0
+                        navController.navigate("discountInputScreen?classificationId=$id")
+                    }
                 ) {
                     Text("Calcular Descontos")
                 }

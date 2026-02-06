@@ -8,6 +8,8 @@ import com.example.centreinar.SampleSoja
 
 interface DiscountRepository {
 
+    suspend fun getClassificationById(id: Int): ClassificationSoja?
+
     suspend fun calculateDiscount(
         grain: String,
         group: Int,
