@@ -41,7 +41,7 @@ class ClassificationRepositoryMilhoImpl @Inject constructor(
         }
 
         // Cálculos de Porcentagem
-        val cleanWeight = if (sample.cleanWeight > 0f) sample.cleanWeight else (sample.sampleWeight - sample.impurities)
+        val cleanWeight = if (sample.cleanWeight > 0f) sample.cleanWeight else (sample.sampleWeight - (sample.impurities + sample.broken))
 
         val pImpurities = tools.calculateDefectPercentage(sample.impurities, cleanWeight)
         val pBroken = tools.calculateDefectPercentage(sample.broken, cleanWeight)
@@ -88,7 +88,7 @@ class ClassificationRepositoryMilhoImpl @Inject constructor(
             group = sample.group,
 
             // Valores Float
-            moisturePercentage = 0f, // TODO: Ver como fica a umidade na tabela (!!!MUDAR!!!)
+            moisturePercentage = sample.moisture,
             impuritiesPercentage = pImpurities,
             brokenPercentage = pBroken,
             ardidoPercentage = pArdido,
@@ -201,5 +201,47 @@ class ClassificationRepositoryMilhoImpl @Inject constructor(
             )
             emptyMap()
         }
+    }
+
+    override suspend fun setLimit(
+        grain: String,
+        group: Int,
+        tipo: Int,
+        impurities: Float,
+        moisture: Float,
+        broken: Float,
+        ardido: Float,
+        mofado: Float,
+        spoiledTotal: Float,
+        carunchado: Float
+    ) {
+        // Define um novo source para limites customizados (diferente de 0 que é o oficial)
+        val lastSource = getLastLimitSource()
+        val newSource = if (lastSource == 0) 1 else lastSource + 1
+
+        // Para o milho, como o seu sistema de classificação busca l1, l2 e l3,
+        // salvaremos o limite informado para os 3 tipos para evitar erros de "Tabela incompleta"
+        val tipos = listOf(1, 2, 3)
+
+        tipos.forEach { tipoIterado ->
+            val limit = LimitMilho(
+                source = newSource,
+                grain = grain,
+                group = group,
+                type = tipoIterado,
+                impuritiesUpLim = impurities,
+                moistureUpLim = moisture,
+                brokenUpLim = broken,
+                ardidoUpLim = ardido,
+                mofadoUpLim = mofado,
+                spoiledTotalUpLim = spoiledTotal,
+                carunchadoUpLim = carunchado
+            )
+            limitDao.insertLimit(limit)
+        }
+    }
+
+    override suspend fun deleteCustomLimits() {
+        limitDao.deleteCustomLimits()
     }
 }

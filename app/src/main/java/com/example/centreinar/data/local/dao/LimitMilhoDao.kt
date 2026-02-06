@@ -37,4 +37,7 @@ interface LimitMilhoDao {
 
     @Query("SELECT * FROM limits_milho WHERE grain = :grain AND `group` = :group AND source = :limitSource ORDER BY type ASC")
     suspend fun getLimitsForTable(grain: String, group: Int, limitSource: Int): List<LimitMilho>
+
+    @Query("DELETE FROM limits_milho WHERE source != 0")
+    suspend fun deleteCustomLimits()
 }

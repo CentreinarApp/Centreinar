@@ -26,7 +26,8 @@ private data class ClassificationRowData(
     val label: String,
     val limit: Float,
     val percentage: Float,
-    val typeCode: Int // Se 0, exibe "-"
+    val typeCode: Int, // Se 0, exibe "-"
+    val shouldHighlight: Boolean = true // Por padrão, todos destacam
 )
 
 // VERSÃO PÚBLICA PARA SOJA
@@ -144,12 +145,6 @@ fun ClassificationTable(
 
     val rows = listOf(
         ClassificationRowData(
-            "Umidade",
-            limits.moistureUpLim,
-            classification.moisturePercentage,
-            0
-        ),
-        ClassificationRowData(
             "Matéria Estranha/Imp",
             limits.impuritiesUpLim,
             classification.impuritiesPercentage,
@@ -171,7 +166,8 @@ fun ClassificationTable(
             "Mofados",
             limits.mofadoUpLim,
             classification.mofadoPercentage,
-            0
+            classification.mofadoType,
+            false
         ),
         ClassificationRowData(
             "Fermentados",
@@ -258,7 +254,8 @@ private fun SharedTableLayout(
                         limit = row.limit,
                         percentage = row.percentage,
                         quantity = if (row.typeCode == 0) "-" else typeTranslator(row.typeCode),
-                        isLast = index == rows.size - 1
+                        isLast = index == rows.size - 1,
+                        shouldHighlight = row.shouldHighlight
                     )
                 }
             }
@@ -269,17 +266,15 @@ private fun SharedTableLayout(
 }
 
 @Composable
-private fun TableRow(label: String, limit: Float, percentage: Float, quantity: String, isLast: Boolean = false) {
-    val isExceeded = limit > 0f && percentage > limit
+private fun TableRow(label: String, limit: Float, percentage: Float, quantity: String, isLast: Boolean = false, shouldHighlight: Boolean = true // Novo parâmetro
+) {
+    // A lógica agora só ativa o destaque se shouldHighlight for verdadeiro
+    val isExceeded = shouldHighlight && limit > 0f && percentage > limit
     val textColor = if (isExceeded) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
     val weightFont = if (isExceeded) FontWeight.Bold else FontWeight.Normal
 
     Row(modifier = Modifier.fillMaxWidth().padding(8.dp), horizontalArrangement = Arrangement.SpaceBetween) {
         Text(text = label, fontSize = 13.sp, modifier = Modifier.weight(2f), fontWeight = weightFont)
-
-        // VALOR DO LIMITE COMENTADO PARA NÃO EXIBIR
-        // Text(text = if (limit > 0f) "%.2f%%".format(limit) else "-", fontSize = 13.sp, modifier = Modifier.weight(1f), textAlign = TextAlign.End, color = MaterialTheme.colorScheme.onSurfaceVariant)
-
         Text(text = "%.2f%%".format(percentage), fontSize = 13.sp, modifier = Modifier.weight(1f), textAlign = TextAlign.End, color = textColor, fontWeight = weightFont)
         Text(text = quantity, fontSize = 13.sp, modifier = Modifier.weight(1f), textAlign = TextAlign.End)
     }

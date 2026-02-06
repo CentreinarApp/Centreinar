@@ -10,6 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
@@ -22,6 +23,16 @@ fun MilhoResultadoScreen(
     navController: NavController,
     viewModel: ClassificationViewModel = hiltViewModel()
 ) {
+    val isOfficialState = viewModel.isOfficial == true
+
+    DisposableEffect(isOfficialState) {
+        onDispose {
+            if (!isOfficialState) {
+                viewModel.deleteCustomLimits()
+            }
+        }
+    }
+
     // 1. O Scaffold envolve toda a tela
     Scaffold(
         modifier = Modifier.fillMaxSize()
@@ -66,9 +77,17 @@ fun MilhoResultadoScreen(
                 .padding(16.dp)
         ) {
             Text(
-                "Resultado da Classificação (Milho)",
+                "Resultado da Classificação",
                 style = MaterialTheme.typography.headlineSmall,
-                color = MaterialTheme.colorScheme.onBackground
+                color = MaterialTheme.colorScheme.onBackground,
+                textAlign = TextAlign.Center
+            )
+            Text(
+                if (isOfficial) "Referência Oficial" else "Referência Não Oficial",
+                style = MaterialTheme.typography.headlineSmall,
+                color = MaterialTheme.colorScheme.onBackground,
+                textAlign = TextAlign.Center,
+                fontSize = 15.sp
             )
 
             Spacer(Modifier.height(16.dp))
@@ -106,6 +125,14 @@ fun MilhoResultadoScreen(
                         textAlign = TextAlign.Center
                     )
 
+                    // --- INSERÇÃO DO CARD DE UMIDADE ---
+                    val moistureValue = safeClass.moisturePercentage
+                    val moistureLimit = safeLimits.moistureUpLim
+
+                    MoistureInfoCard(moisture = moistureValue, limit = moistureLimit)
+
+                    Spacer(Modifier.height(8.dp))
+
                     // Tabela de Resultado da Amostra
                     ClassificationTable(
                         classification = safeClass,
@@ -115,32 +142,40 @@ fun MilhoResultadoScreen(
                     )
 
                     // Se for Oficial, exibe a tabela de limites do MAPA
-                    if (isOfficial) {
-                        Spacer(Modifier.height(32.dp))
+                    // Caso contrário, exibe os limites do usuário
+                    Spacer(Modifier.height(32.dp))
 
-                        Text(
-                            text = "Limites de Referência MAPA",
-                            style = MaterialTheme.typography.titleMedium,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(bottom = 8.dp),
-                            textAlign = TextAlign.Center
+                    Text(
+                        text = if (isOfficial) "Limites de Referência MAPA" else "Limites Utilizados no Cálculo",
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 8.dp),
+                        textAlign = TextAlign.Center
+                    )
+
+                    // Preparamos os dados: Se oficial, a lista do banco. Se manual, o limite usado.
+                    val dadosParaTabela = if (isOfficial) {
+                        allOfficialLimits
+                    } else {
+                        // Quando manual, passamos o safeLimits dentro de uma lista
+                        listOf(safeLimits)
+                    }
+
+                    // Agora verificamos se há dados para mostrar (seja a lista oficial ou a manual)
+                    if (dadosParaTabela.isNotEmpty()) {
+                        OfficialReferenceTable(
+                            grain = "Milho",
+                            group = currentGroup ?: 1,
+                            isOfficial = isOfficial,
+                            data = dadosParaTabela
                         )
-
-                        // Tabela de limites
-                        if (allOfficialLimits.isNotEmpty()) {
-                            OfficialReferenceTable(
-                                grain = "Milho",
-                                group = currentGroup ?: 1,
-                                data = allOfficialLimits
+                    } else {
+                        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                            Text(
+                                "Carregando limites...",
+                                style = MaterialTheme.typography.bodySmall
                             )
-                        } else {
-                            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                                Text(
-                                    "Carregando limites oficiais...",
-                                    style = MaterialTheme.typography.bodySmall
-                                )
-                            }
                         }
                     }
 

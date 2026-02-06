@@ -50,6 +50,7 @@ fun LimitInputScreen(
         var burntOrSour by remember { mutableStateOf("") }
         var moldy by remember { mutableStateOf("") }
         var spoiled by remember { mutableStateOf("") }
+        var carunchado by remember { mutableStateOf("")}
 
         var errorMessage by remember { mutableStateOf<String?>(null) }
         val moistureFocus = remember { FocusRequester() }
@@ -70,6 +71,7 @@ fun LimitInputScreen(
                     moldy = limits["moldyUpLim"]?.toString() ?: ""
                     spoiled = limits["spoiledTotalUpLim"]?.toString() ?: ""
                     burnt = limits["burntUpLim"]?.toString() ?: ""
+                    carunchado = limits["carunchadoUpLim"]?.toString() ?: ""
                     if (isSoja) {
                         greenish = limits["greenishUpLim"]?.toString() ?: ""
                         burntOrSour = limits["burntOrSourUpLim"]?.toString() ?: ""
@@ -113,7 +115,11 @@ fun LimitInputScreen(
             Box(modifier = Modifier.weight(1f)) {
                 if (isOfficial) {
                     if (allOfficialLimits.isNotEmpty()) {
-                        OfficialLimitsTable(grain = currentGrain ?: "", data = allOfficialLimits)
+                        OfficialLimitsTable(
+                            grain = currentGrain ?: "",
+                            group = currentGroup ?: 1,
+                            data = allOfficialLimits
+                        )
                     }
                 } else {
                     Column(modifier = Modifier.verticalScroll(scrollState)) {
@@ -132,7 +138,9 @@ fun LimitInputScreen(
                             greenish = greenish,
                             onGreenishChange = { greenish = it },
                             broken = brokenCrackedDamaged,
-                            onBrokenChange = { brokenCrackedDamaged = it }
+                            onBrokenChange = { brokenCrackedDamaged = it },
+                            carunchados = carunchado,
+                            onCarunchadoChange = { carunchado = it }
                         )
                     }
                 }
@@ -159,7 +167,8 @@ fun LimitInputScreen(
                             impurities.toFloatOrDefault(), moisture.toFloatOrDefault(),
                             brokenCrackedDamaged.toFloatOrDefault(), greenish.toFloatOrDefault(),
                             burnt.toFloatOrDefault(), burntOrSour.toFloatOrDefault(),
-                            moldy.toFloatOrDefault(), spoiled.toFloatOrDefault()
+                            moldy.toFloatOrDefault(), spoiled.toFloatOrDefault(),
+                            carunchado.toFloatOrDefault()
                         )
                     }
                     navController.navigate("disqualification")
@@ -173,12 +182,15 @@ fun LimitInputScreen(
 }
 
 @Composable
-fun OfficialLimitsTable(grain: String, data: List<Any>) {
+fun OfficialLimitsTable(grain: String, group: Int, data: List<Any>) {
     val labels = if (grain == "Soja") {
         listOf("Ardidos/Queim.", "Queimados", "Mofados", "Avariados Total", "Esverdeados", "Partidos/Quebr./Amassados", "Matérias Estranhas e Impurezas")
     } else {
         listOf("Ardidos", "Avariados Total", "Quebrados", "Matérias Estranhas e Impurezas", "Carunchados")
     }
+
+    val columnWeightLabel = 1.0f
+    val columnWeightValue = 1f
 
     Card(
         modifier = Modifier.fillMaxSize(),
@@ -196,9 +208,30 @@ fun OfficialLimitsTable(grain: String, data: List<Any>) {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                Text("Defeito", modifier = Modifier.weight(1.3f), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                Text(
+                    text = "Defeito",
+                    modifier = Modifier.weight(columnWeightLabel), // Espaço maior para o nome
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Start
+                )
+
                 data.forEachIndexed { index, _ ->
-                    Text("Tipo ${index + 1}", modifier = Modifier.weight(1f), textAlign = TextAlign.Center, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                    val textoCabecalho = if (group == 2) {
+                        "Padrão Básico"
+                    } else if (group == 1 && ((index + 1) == 4)) {
+                        "Fora de Tipo"
+                    } else {
+                        "Tipo ${index + 1}"
+                    }
+
+                    Text(
+                        text = textoCabecalho,
+                        modifier = Modifier.weight(1f),
+                        textAlign = TextAlign.Center,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
 
@@ -214,7 +247,7 @@ fun OfficialLimitsTable(grain: String, data: List<Any>) {
                 ) {
                     Text(
                         text = label,
-                        modifier = Modifier.weight(1.3f),
+                        modifier = Modifier.weight(columnWeightLabel),
                         style = MaterialTheme.typography.bodyMedium.copy(fontSize = 12.sp),
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis
@@ -228,7 +261,7 @@ fun OfficialLimitsTable(grain: String, data: List<Any>) {
 
                         Text(
                             text = "$value%",
-                            modifier = Modifier.weight(1f),
+                            modifier = Modifier.weight(columnWeightLabel),
                             textAlign = TextAlign.Center,
                             style = MaterialTheme.typography.bodyLarge.copy(fontSize = 14.sp),
                             fontWeight = FontWeight.SemiBold,
@@ -253,10 +286,11 @@ fun EditableFields(
     moldy: String, onMoldyChange: (String) -> Unit,
     spoiled: String, onSpoiledChange: (String) -> Unit,
     greenish: String, onGreenishChange: (String) -> Unit,
-    broken: String, onBrokenChange: (String) -> Unit
+    broken: String, onBrokenChange: (String) -> Unit,
+    carunchados: String, onCarunchadoChange: (String) -> Unit
 ) {
     Column {
-        NumberInputField("Impurezas (%)", impurities, onImpuritiesChange, FocusRequester(), null, true)
+        NumberInputField("Matérias Estranhas e Impurezas (%)", impurities, onImpuritiesChange, FocusRequester(), null, true)
         Spacer(Modifier.height(8.dp))
         if (isSoja) {
             NumberInputField("Queimados (%)", burnt, onBurntChange, FocusRequester(), null, true)
@@ -273,6 +307,10 @@ fun EditableFields(
             Spacer(Modifier.height(8.dp))
         }
         NumberInputField("Quebrados (%)", broken, onBrokenChange, FocusRequester(), null, true)
+        if (!isSoja) {
+            Spacer(Modifier.height(8.dp))
+            NumberInputField("Carunchados (%)", carunchados, onCarunchadoChange, FocusRequester(), null, true)
+        }
     }
 }
 

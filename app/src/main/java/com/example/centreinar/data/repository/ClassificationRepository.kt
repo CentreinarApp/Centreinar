@@ -84,4 +84,6 @@ interface ClassificationRepository {
 
     //  Garantir que o parâmetro opcional seja aceito
     suspend fun getObservations(idClassification: Int, colorClass: ColorClassificationSoja? = null): String
+
+    suspend fun deleteCustomLimits()
 }

@@ -28,6 +28,15 @@ fun ClassificationResult(
     navController: NavController,
     viewModel: ClassificationViewModel = hiltViewModel()
 ) {
+    val isOfficialState = viewModel.isOfficial == true
+    DisposableEffect(isOfficialState) {
+        onDispose {
+            if (!isOfficialState) {
+                viewModel.deleteCustomLimits()
+            }
+        }
+    }
+
     // 1. O Scaffold envolve toda a tela
     Scaffold(
         modifier = Modifier.fillMaxSize()
@@ -87,7 +96,15 @@ fun ClassificationResult(
             Text(
                 "Resultado da Classificação",
                 style = MaterialTheme.typography.headlineSmall,
-                color = MaterialTheme.colorScheme.onBackground
+                color = MaterialTheme.colorScheme.onBackground,
+                textAlign = TextAlign.Center
+            )
+            Text(
+                if (isOfficial) "Referência Oficial" else "Referência Não Oficial",
+                style = MaterialTheme.typography.headlineSmall,
+                color = MaterialTheme.colorScheme.onBackground,
+                textAlign = TextAlign.Center,
+                fontSize = 15.sp
             )
 
             Spacer(Modifier.height(16.dp))
@@ -114,6 +131,23 @@ fun ClassificationResult(
                     textAlign = TextAlign.Center
                 )
 
+                // --- NOVO BOX DE UMIDADE ---
+                val moistureValue = when (val c = classification) {
+                    is com.example.centreinar.ClassificationSoja -> c.moisturePercentage
+                    is com.example.centreinar.ClassificationMilho -> c.moisturePercentage
+                    else -> 0f
+                }
+
+                val moistureLimit = when (val l = safeLimits) {
+                    is LimitSoja -> l.moistureUpLim
+                    is LimitMilho -> l.moistureUpLim
+                    else -> 14.0f
+                }
+
+                MoistureInfoCard(moisture = moistureValue, limit = moistureLimit)
+
+                Spacer(Modifier.height(8.dp))
+
                 // Tabela de Resultado
                 ClassificationTable(
                     classification = classification!!,
@@ -123,32 +157,32 @@ fun ClassificationResult(
                 )
 
                 // Campo dos limites
-                if (isOfficial) {
-                    Spacer(Modifier.height(32.dp))
+                Spacer(Modifier.height(32.dp))
 
-                    Text(
-                        text = "Limites de Referência MAPA",
-                        style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 8.dp),
-                        textAlign = TextAlign.Center
+                Text(
+                    text = if (isOfficialState) "Limites de Referência MAPA" else "Limites Utilizados no Cálculo",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                    textAlign = TextAlign.Center
+                )
+
+                // Preparamos os dados para a tabela
+                val dadosParaTabela = if (isOfficialState) {
+                    allOfficialLimits
+                } else {
+                    listOf(safeLimits) // Se manual, passa apenas o limite usado
+                }
+
+                if (dadosParaTabela.isNotEmpty()) {
+                    OfficialReferenceTable(
+                        grain = "Soja",
+                        group = currentGroup ?: 1,
+                        isOfficial = isOfficial,
+                        data = dadosParaTabela,
                     )
-
-                    // Carrega a tabela
-                    if (allOfficialLimits.isNotEmpty()) {
-                        OfficialReferenceTable(
-                            grain = currentGrain ?: "Soja",
-                            group = currentGroup ?: 1,
-                            data = allOfficialLimits
-                        )
-                    } else {
-                        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                            Text(
-                                "Carregando limites oficiais...",
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                        }
+                } else {
+                    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                        Text("Carregando limites...", style = MaterialTheme.typography.bodySmall)
                     }
                 }
 
@@ -194,12 +228,15 @@ fun ClassificationResult(
 }
 
 @Composable
-fun OfficialReferenceTable(grain: String, group: Int, data: List<Any>) {
+fun OfficialReferenceTable(grain: String, group: Int, isOfficial: Boolean, data: List<Any>) {
     val labels = if (grain == "Soja") {
         listOf("Ardidos e Queimados", "Queimados", "Mofados", "Avariados Total", "Esverdeados", "Partidos/Quebrados e Amassados", "Matérias Estranhas e Impurezas")
     } else {
         listOf("Ardidos", "Avariados Total", "Quebrados", "Matérias Estranhas e Impurezas", "Carunchados",)
     }
+
+    val columnWeightLabel = 1.0f
+    val columnWeightValue = 1f
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -208,15 +245,18 @@ fun OfficialReferenceTable(grain: String, group: Int, data: List<Any>) {
         Column(modifier = Modifier.padding(12.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    "Defeito",
-                    modifier = Modifier.weight(1.3f),
+                    text = "Defeito",
+                    modifier = Modifier.weight(columnWeightLabel), // Espaço maior para o nome
                     style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Start
                 )
 
                 data.forEachIndexed { index, _ ->
-                    val textoCabecalho = if (group == 2) {
+                    val textoCabecalho = if (group == 2 && isOfficial) {
                         "Padrão Básico"
+                    } else if (group == 1 && ((index + 1) == 4)) {
+                        "Fora de Tipo"
                     } else {
                         "Tipo ${index + 1}"
                     }
@@ -241,7 +281,7 @@ fun OfficialReferenceTable(grain: String, group: Int, data: List<Any>) {
                 ) {
                     Text(
                         text = label,
-                        modifier = Modifier.weight(1.3f),
+                        modifier = Modifier.weight(columnWeightLabel),
                         style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis
@@ -255,7 +295,7 @@ fun OfficialReferenceTable(grain: String, group: Int, data: List<Any>) {
 
                         Text(
                             text = "$value%",
-                            modifier = Modifier.weight(1f),
+                            modifier = Modifier.weight(columnWeightLabel),
                             textAlign = TextAlign.Center,
                             style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp),
                             fontWeight = FontWeight.SemiBold,
@@ -266,6 +306,54 @@ fun OfficialReferenceTable(grain: String, group: Int, data: List<Any>) {
                 if (rowIndex < labels.lastIndex) {
                     HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
                 }
+            }
+        }
+    }
+}
+
+@Composable
+fun MoistureInfoCard(moisture: Float, limit: Float) {
+    val exceeded = moisture > limit
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column {
+                Text(
+                    text = "Umidade da Amostra",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = "%.2f%%".format(moisture),
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = if (exceeded) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                )
+            }
+
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    text = "Limite Permitido",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = "%.1f%%".format(limit),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
             }
         }
     }

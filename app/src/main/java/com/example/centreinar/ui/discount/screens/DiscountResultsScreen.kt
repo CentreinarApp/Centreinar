@@ -39,6 +39,9 @@ fun DiscountResultScreen(
         var showMoreDetails by remember { mutableStateOf(false) }
         val context = LocalContext.current
 
+        // Verificação se é classificação oficial
+        val isOfficial = viewModel.isOfficial == true
+
         // Carrega os limites utilizados assim que a tela abre
         LaunchedEffect(Unit) {
             viewModel.loadLastUsedLimit()
@@ -96,6 +99,7 @@ fun DiscountResultScreen(
                         OfficialReferenceTable(
                             grain = "Soja",
                             group = currentGroup ?: 1,
+                            isOfficial = isOfficial,
                             data = dadosParaTabela
                         )
                     }

@@ -163,21 +163,21 @@ class ClassificationViewModel @Inject constructor(
     // =========================================================================
 
     fun classifySample(sample: SampleSoja) {
-        val grain = selectedGrain ?: return
-        val group = selectedGroup ?: return
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 _isLoading.value = true
-                sample.grain = grain.toString()
-                sample.group = group
-                val source = if (isOfficial == false) repositorySoja.getLastLimitSource() else 0
-                val resultId = repositorySoja.classifySample(sample, source)
-                val resultClassification = repositorySoja.getClassification(resultId.toInt())
+                sample.grain = selectedGrain ?: "Soja"
+                sample.group = selectedGroup ?: 1
 
-                if (resultClassification != null) {
-                    repositorySoja.updateDisqualification(resultId.toInt(), resultClassification.finalType)
-                }
-                _classificationSoja.value = resultClassification
+                // Busca o source correto (se manual, pega o último gravado)
+                val source = if (isOfficial == false) repositorySoja.getLastLimitSource() else 0
+
+                // Captura o limite que será usado e guarda no estado para a tela ver
+                val limitUtilizado = repositorySoja.getLimit(sample.grain, sample.group, 1, source)
+                _lastUsedLimit.value = limitUtilizado
+
+                val resultId = repositorySoja.classifySample(sample, source)
+                _classificationSoja.value = repositorySoja.getClassification(resultId.toInt())
             } catch (e: Exception) {
                 _error.value = e.message
             } finally {
@@ -203,17 +203,34 @@ class ClassificationViewModel @Inject constructor(
         }
     }
 
-    fun setLimit(impurities: Float, moisture: Float, brokenCrackedDamaged: Float, greenish: Float, burnt: Float, burntOrSour: Float, moldy: Float, spoiled: Float) {
+    fun setLimit(impurities: Float, moisture: Float, brokenCrackedDamaged: Float, greenish: Float, burnt: Float, burntOrSour: Float, moldy: Float, spoiled: Float, carunchado: Float) {
         val grain = selectedGrain?.toString() ?: return
         val group = selectedGroup ?: return
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 _isLoading.value = true
-                repositorySoja.setLimit(grain, group, 1, impurities, moisture, brokenCrackedDamaged, greenish, burnt, burntOrSour, moldy, spoiled)
+                if (grain == "Soja") {
+                    repositorySoja.setLimit(grain, group, 1, impurities, moisture, brokenCrackedDamaged, greenish, burnt, burntOrSour, moldy, spoiled)
+                } else {
+                    repositoryMilho.setLimit(grain, group, 1, impurities, moisture, brokenCrackedDamaged, burntOrSour, moldy, spoiled, carunchado)
+                }
             } catch (e: Exception) {
                 _error.value = e.message
             } finally {
                 _isLoading.value = false
+            }
+        }
+    }
+
+    fun deleteCustomLimits() {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                // Chama o delete para ambos os grãos
+                repositoryMilho.deleteCustomLimits()
+                repositorySoja.deleteCustomLimits()
+                Log.d("Cleanup", "Limites customizados (Soja e Milho) apagados com sucesso.")
+            } catch (e: Exception) {
+                Log.e("Cleanup", "Erro ao apagar limites: ${e.message}")
             }
         }
     }

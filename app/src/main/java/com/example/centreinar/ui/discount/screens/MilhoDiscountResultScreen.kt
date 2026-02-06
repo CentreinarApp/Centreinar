@@ -36,6 +36,9 @@ fun MilhoDiscountResultScreen(
         val lastUsedLimit by viewModel.lastUsedLimitMilho.collectAsStateWithLifecycle()
         val allOfficialLimits by viewModel.allOfficialLimits.collectAsStateWithLifecycle()
 
+        // Verificação se é classificação oficial
+        val isOfficial = viewModel.isOfficial == true
+
         val context = LocalContext.current
 
         // Carrega os limites utilizados assim que a tela abre
@@ -78,6 +81,7 @@ fun MilhoDiscountResultScreen(
                         OfficialReferenceTable(
                             grain = "Milho",
                             group = currentGroup ?: 1,
+                            isOfficial = isOfficial,
                             data = allOfficialLimits
                         )
                     } else {

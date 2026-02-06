@@ -151,6 +151,23 @@ object DatabaseModule {
                                 )
                             )
 
+                            // --- Fora de tipo ---
+                            milhoDao.insertLimit(
+                                LimitMilho(
+                                    source = 0,
+                                    grain = "Milho",
+                                    group = 1,
+                                    type = 0,
+                                    moistureUpLim = 14.0f,
+                                    impuritiesUpLim = 2.00f,
+                                    brokenUpLim = 5.00f,
+                                    ardidoUpLim = 5.00f,
+                                    mofadoUpLim = 3.00f,
+                                    carunchadoUpLim = 8.00f,
+                                    spoiledTotalUpLim = 20.00f   // Total de avariados
+                                )
+                            )
+
                         } catch (e: Exception) {
                             e.printStackTrace()
                         }

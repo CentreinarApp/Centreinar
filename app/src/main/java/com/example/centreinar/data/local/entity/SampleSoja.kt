@@ -35,6 +35,9 @@ data class SampleSoja(
     @ColumnInfo(name = "sampleWeight")
     val sampleWeight: Float = 0.0f,
 
+    @ColumnInfo(name = "moisture")
+    val moisture: Float = 0.0f,
+
     @ColumnInfo(name = "cleanWeight")
     var cleanWeight: Float = 0.0f,
 

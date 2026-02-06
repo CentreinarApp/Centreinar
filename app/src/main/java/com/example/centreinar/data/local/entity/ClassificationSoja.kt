@@ -36,6 +36,9 @@ data class ClassificationSoja(
     @ColumnInfo(name = "sample")
     val sampleId: Int = 0,
 
+    @ColumnInfo(name = "moisturePercentage")
+    val moisturePercentage: Float = 0.0f,
+
     @ColumnInfo(name = "foreignMattersPercentage")
     val foreignMattersPercentage: Float = 0.0f,
 

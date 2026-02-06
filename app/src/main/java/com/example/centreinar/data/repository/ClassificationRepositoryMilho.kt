@@ -66,4 +66,19 @@ interface ClassificationRepositoryMilho {
         group: Int,
         grain: String
     ): Map<String, Float> // <-- NOVO MÉTODO NECESSÁRIO
+
+    suspend fun setLimit(
+        grain: String,
+        group: Int,
+        tipo: Int,
+        impurities: Float,
+        moisture: Float,
+        broken: Float,
+        ardido: Float,
+        mofado: Float,
+        spoiledTotal: Float,
+        carunchado: Float
+    )
+
+    suspend fun deleteCustomLimits()
 }

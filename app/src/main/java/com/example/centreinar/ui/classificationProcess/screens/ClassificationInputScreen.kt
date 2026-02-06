@@ -162,7 +162,13 @@ fun ClassificationInputScreen( // Função Principal
             when (selectedTab) {
                 0 -> lotWeightFocus.requestFocus()
                 1 -> sourFocus.requestFocus()
-                2 -> brokenFocus.requestFocus()
+                2 -> if (isMilho) {
+                    // No Milho, o primeiro campo da Tab 2 é o Carunchado
+                    carunchadoFocus.requestFocus()
+                } else {
+                    // Na Soja, o primeiro campo da Tab 2 ainda é o Quebrados (PQA)
+                    brokenFocus.requestFocus()
+                }
             }
         }
 
@@ -216,7 +222,11 @@ fun ClassificationInputScreen( // Função Principal
                         impurities = foreignMatters, onImpuritiesChange = { foreignMatters = it },
                         cleanSampleWeight = calculatedCleanSampleWeightDisplay,
                         lotWeightFocus = lotWeightFocus, sampleWeightFocus = sampleWeightFocus,
-                        moistureFocus = moistureFocus, impuritiesFocus = impuritiesFocus
+                        moistureFocus = moistureFocus, impuritiesFocus = impuritiesFocus,
+                        isMilho = isMilho,
+                        brokenCrackedDamaged = brokenCrackedDamaged,
+                        onBrokenCrackedDamagedChange = { brokenCrackedDamaged = it },
+                        brokenFocus = brokenFocus
                     )
 
                     1 -> DefectsTab1(
@@ -326,6 +336,7 @@ fun ClassificationInputScreen( // Função Principal
                                     group = group,
                                     lotWeight = lotWeight.toFloatOrZero(),
                                     sampleWeight = sampleWeight.toFloatOrZero(),
+                                    moisture = moisture.toFloatOrZero(),
                                     foreignMattersAndImpurities = foreignMatters.toFloatOrZero(),
                                     humidity = moisture.toFloatOrZero(),
                                     greenish = greenish.toFloatOrZero(),
@@ -404,6 +415,10 @@ fun BasicInfoTabClassification(
     cleanSampleWeight: String,
     lotWeightFocus: FocusRequester, sampleWeightFocus: FocusRequester,
     moistureFocus: FocusRequester, impuritiesFocus: FocusRequester,
+    isMilho: Boolean,
+    brokenCrackedDamaged: String,
+    onBrokenCrackedDamagedChange: (String) -> Unit,
+    brokenFocus: FocusRequester
 ) {
     Column(modifier = Modifier.padding(16.dp)) {
         NumberInputField(lotWeight, onLotWeightChange, "Peso do Lote (kg)", lotWeightFocus, sampleWeightFocus)
@@ -412,11 +427,21 @@ fun BasicInfoTabClassification(
         Spacer(modifier = Modifier.height(16.dp))
         NumberInputField(moisture, onMoistureChange, "Umidade (%)", moistureFocus, impuritiesFocus)
         Spacer(modifier = Modifier.height(16.dp))
-        NumberInputField(impurities, onImpuritiesChange, "Matéria Estranha e Impurezas (g)", impuritiesFocus, null)
+        NumberInputField(impurities, onImpuritiesChange, "Matéria Estranha e Impurezas (g)", impuritiesFocus, if(isMilho) brokenFocus else null)
         Spacer(modifier = Modifier.height(16.dp))
         Column(modifier = Modifier.fillMaxWidth()) {
             Text("Peso da Amostra Limpa (Trabalho - Impurezas):", style = MaterialTheme.typography.bodyMedium)
             Text("$cleanSampleWeight g", style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.primary)
+        }
+        if (isMilho) {
+            Spacer(modifier = Modifier.height(24.dp))
+            NumberInputField(
+                value = brokenCrackedDamaged,
+                onValueChange = onBrokenCrackedDamagedChange,
+                label = "Grãos Quebrados (g)",
+                focusRequester = brokenFocus,
+                nextFocus = null // Último campo da tab
+            )
         }
     }
 }
@@ -523,9 +548,9 @@ fun DefectsTab2(
             )
             Spacer(modifier = Modifier.height(16.dp))
         }
-        NumberInputField(brokenCrackedDamaged, onBrokenCrackedDamagedChange, if (isMilho) "Grãos Quebrados (g)" else "Partidos, Quebrados e Amassados (g)", brokenCrackedDamagedFocus, if (isSoja) greenishFocus else null)
 
         if (isSoja) {
+            NumberInputField(brokenCrackedDamaged, onBrokenCrackedDamagedChange, "Partidos, Quebrados e Amassados (g)", brokenCrackedDamagedFocus, greenishFocus)
             Spacer(modifier = Modifier.height(16.dp))
             NumberInputField(greenish, onGreenishChange, "Esverdeados (g)", greenishFocus, null)
             Spacer(modifier = Modifier.height(24.dp))

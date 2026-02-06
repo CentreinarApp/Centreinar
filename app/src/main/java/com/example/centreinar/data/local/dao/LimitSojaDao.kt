@@ -62,4 +62,7 @@ interface LimitSojaDao {
 
     @Query("SELECT * FROM limits_soja WHERE grain = :grain AND `group` = :group AND source = :limitSource ORDER BY type ASC")
     suspend fun getLimitsByGroup(grain: String, group: Int, limitSource: Int): List<LimitSoja>
+
+    @Query("DELETE FROM limits_soja WHERE source != 0")
+    suspend fun deleteCustomLimits()
 }
