@@ -9,6 +9,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -328,13 +329,37 @@ fun CentreinarApp() {
             // FLUXO MILHO (DESCONTOS)
             // =================================================
 
-            composable("milhoDiscountInput") { backStackEntry ->
+            composable(
+                // Adicionamos &isOfficial={isOfficial} na rota
+                route = "milhoDiscountInputScreen?classificationId={classificationId}&isOfficial={isOfficial}",
+                arguments = listOf(
+                    navArgument("classificationId") {
+                        type = NavType.IntType
+                        defaultValue = -1
+                    },
+                    navArgument("isOfficial") {
+                        type = NavType.BoolType
+                        defaultValue = true // Valor padrão
+                    }
+                )
+            ) { backStackEntry ->
+                val id = backStackEntry.arguments?.getInt("classificationId") ?: -1
+                val isOfficialArg = backStackEntry.arguments?.getBoolean("isOfficial") ?: true
+
                 val parentEntry = remember(backStackEntry) {
                     navController.getBackStackEntry("main_flow")
                 }
+                val viewModel = hiltViewModel<DiscountViewModel>(parentEntry)
+
+                // Sincroniza o valor recebido pela rota com o ViewModel
+                LaunchedEffect(isOfficialArg) {
+                    viewModel.isOfficial = isOfficialArg
+                }
+
                 MilhoDiscountInputScreen(
-                    navController,
-                    hiltViewModel<DiscountViewModel>(parentEntry)
+                    navController = navController,
+                    classificationId = if (id != -1) id else null,
+                    viewModel = viewModel
                 )
             }
 

@@ -216,7 +216,7 @@ fun OfficialReferenceTable(grain: String, data: List<Any>) {
                     data.forEach { item ->
                         val value = when (item) {
                             is LimitSoja -> listOf(item.burntOrSourUpLim, item.burntUpLim, item.moldyUpLim, item.spoiledTotalUpLim, item.greenishUpLim, item.brokenCrackedDamagedUpLim, item.impuritiesUpLim)
-                            is LimitMilho -> listOf(item.ardidoUpLim, item.mofadoUpLim, item.spoiledTotalUpLim, item.brokenUpLim, item.carunchadoUpLim, item.impuritiesUpLim)
+                            is LimitMilho -> listOf(item.ardidoUpLim, item.spoiledTotalUpLim, item.brokenUpLim, item.impuritiesUpLim, item.carunchadoUpLim)
                             else -> emptyList()
                         }.getOrNull(rowIndex) ?: 0f
 

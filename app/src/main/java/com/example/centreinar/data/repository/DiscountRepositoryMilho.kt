@@ -5,6 +5,8 @@ import com.example.centreinar.data.local.entity.*
 
 interface DiscountRepositoryMilho {
 
+    suspend fun getClassificationById(id: Int): ClassificationMilho?
+
     suspend fun calculateDiscount(
         grain: String,
         group: Int,
@@ -28,7 +30,7 @@ interface DiscountRepositoryMilho {
 
     suspend fun calculateTechnicalLoss(
         storageDays: Int,
-        impuritiesLoss: Float,
+        humidityAndImpuritiesLoss: Float,
         lotWeight: Float
     ): Float
 

@@ -34,7 +34,12 @@ fun MilhoDiscountResultScreen(
 
     // Carrega os limites utilizados assim que a tela abre
     LaunchedEffect(Unit) {
+        if (viewModel.selectedGrain == null) {
+            viewModel.selectedGrain = "Milho"
+        }
+
         viewModel.loadLastUsedLimit()
+        viewModel.loadDefaultLimits()
     }
 
     Column(
@@ -58,6 +63,8 @@ fun MilhoDiscountResultScreen(
             if (discountsMilho != null) {
                 // TABELA DE RESULTADO
                 MilhoDiscountResultsTable(discounts = discountsMilho!!)
+
+                Spacer(Modifier.height(24.dp))
 
                 // TABELA DE LIMITES MILHO
                 if (allOfficialLimits.isNotEmpty()) {

@@ -93,9 +93,9 @@ fun ClassificationToDiscountInputScreen(
 
                 try {
                     viewModel.getDiscountForClassification(
-                        priceBySack = price,
-                        daysOfStorage = days,
-                        deductionValue = deduction
+                        price = price,
+                        days= days,
+                        deduction = deduction
                     )
                     navController.navigate("discountResultsScreen")
                 } catch (e: Exception) {

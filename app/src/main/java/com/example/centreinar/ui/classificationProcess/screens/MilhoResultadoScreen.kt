@@ -150,7 +150,13 @@ fun MilhoResultadoScreen(
 
                 Button(
                     modifier = Modifier.weight(1f),
-                    onClick = { navController.navigate("home") }
+                    onClick = {
+                        val id = safeClass.id
+                        val official = isOfficial // Pega o estado isOfficial que você já tem nesta tela
+
+                        // Passa os dois parâmetros na URL da rota
+                        navController.navigate("milhoDiscountInputScreen?classificationId=$id&isOfficial=$official")
+                    }
                 ) {
                     Text("Calcular Descontos")
                 }

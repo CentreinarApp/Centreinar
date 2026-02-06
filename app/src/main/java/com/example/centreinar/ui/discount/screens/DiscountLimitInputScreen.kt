@@ -34,6 +34,7 @@ fun DiscountLimitInputScreen(
     val allOfficialLimits by viewModel.allOfficialLimits.collectAsStateWithLifecycle()
 
     val currentGrain = viewModel.selectedGrain
+    val currentGroup = viewModel.selectedGroup
     val isSoja = currentGrain == "Soja"
     val isOfficial = viewModel.isOfficial == true
 
@@ -92,7 +93,7 @@ fun DiscountLimitInputScreen(
             style = MaterialTheme.typography.headlineSmall
         )
         Text(
-            text = "$currentGrain",
+            text = if (currentGrain == "Soja") "$currentGrain - Grupo $currentGroup" else "$currentGrain",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.secondary
         )
@@ -157,10 +158,10 @@ fun DiscountLimitInputScreen(
                         viewModel.setLimit(
                             impurities = impurities.toFloatOrDefault(),
                             moisture = moisture.toFloatOrDefault(),
-                            brokenCrackedDamaged = brokenCrackedDamaged.toFloatOrDefault(),
+                            broken = brokenCrackedDamaged.toFloatOrDefault(), // 'broken' no VM
                             greenish = if(isSoja) greenish.toFloatOrDefault() else 0f,
                             burnt = if(isSoja) burnt.toFloatOrDefault() else 0f,
-                            burntOrSour = burntOrSour.toFloatOrDefault(), // Ardido
+                            ardido = burntOrSour.toFloatOrDefault(),          // 'ardido' no VM
                             moldy = moldy.toFloatOrDefault(),
                             spoiled = spoiled.toFloatOrDefault(),
                             carunchado = carunchado.toFloatOrDefault()
@@ -175,7 +176,7 @@ fun DiscountLimitInputScreen(
                     navController.navigate("discountInputScreen")
                 } else {
                     // Se for milho, vá para a tela de input de desconto do milho ou resultado
-                    navController.navigate("milhoDiscountInput")
+                    navController.navigate("milhoDiscountInputScreen?isOfficial=true")
                 }
             },
             modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
@@ -190,7 +191,7 @@ fun OfficialLimitsTable(grain: String, data: List<Any>) {
     val labels = if (grain == "Soja") {
         listOf("Ardidos/Queim.", "Queimados", "Mofados", "Avariados Total", "Esverdeados", "Partidos/Quebr.", "Impurezas")
     } else {
-        listOf("Ardidos", "Mofados", "Avariados Total", "Quebrados", "Carunchados", "Impurezas")
+        listOf("Ardidos", "Avariados Total", "Quebrados", "Matérias Estranhas e Impurezas", "Carunchados")
     }
 
     Card(
@@ -236,7 +237,7 @@ fun OfficialLimitsTable(grain: String, data: List<Any>) {
                     data.forEach { item ->
                         val value = when (item) {
                             is LimitSoja -> listOf(item.burntOrSourUpLim, item.burntUpLim, item.moldyUpLim, item.spoiledTotalUpLim, item.greenishUpLim, item.brokenCrackedDamagedUpLim, item.impuritiesUpLim)
-                            is LimitMilho -> listOf(item.ardidoUpLim, item.mofadoUpLim, item.spoiledTotalUpLim, item.brokenUpLim, item.carunchadoUpLim, item.impuritiesUpLim)
+                            is LimitMilho -> listOf(item.ardidoUpLim, item.spoiledTotalUpLim, item.brokenUpLim, item.impuritiesUpLim, item.carunchadoUpLim)
                             else -> emptyList()
                         }.getOrNull(rowIndex) ?: 0f
 

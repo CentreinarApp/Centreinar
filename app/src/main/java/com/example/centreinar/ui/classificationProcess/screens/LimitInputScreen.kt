@@ -81,7 +81,7 @@ fun LimitInputScreen(
             style = MaterialTheme.typography.headlineSmall
         )
         Text(
-            text = "$currentGrain - Grupo $currentGroup",
+            text = if (currentGrain == "Soja") "$currentGrain - Grupo $currentGroup" else "$currentGrain",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.secondary
         )
@@ -156,7 +156,7 @@ fun OfficialLimitsTable(grain: String, data: List<Any>) {
     val labels = if (grain == "Soja") {
         listOf("Ardidos/Queim.", "Queimados", "Mofados", "Avariados Total", "Esverdeados", "Partidos/Quebr.", "Impurezas")
     } else {
-        listOf("Ardidos", "Mofados", "Avariados Total", "Quebrados", "Carunchados", "Impurezas")
+        listOf("Ardidos", "Avariados Total", "Quebrados", "Matérias Estranhas e Impurezas", "Carunchados")
     }
 
     Card(
@@ -201,7 +201,7 @@ fun OfficialLimitsTable(grain: String, data: List<Any>) {
                     data.forEach { item ->
                         val value = when (item) {
                             is LimitSoja -> listOf(item.burntOrSourUpLim, item.burntUpLim, item.moldyUpLim, item.spoiledTotalUpLim, item.greenishUpLim, item.brokenCrackedDamagedUpLim, item.impuritiesUpLim)
-                            is LimitMilho -> listOf(item.ardidoUpLim, item.mofadoUpLim, item.spoiledTotalUpLim, item.brokenUpLim, item.carunchadoUpLim, item.impuritiesUpLim)
+                            is LimitMilho -> listOf(item.ardidoUpLim, item.spoiledTotalUpLim, item.brokenUpLim, item.impuritiesUpLim, item.carunchadoUpLim)
                             else -> emptyList()
                         }.getOrNull(rowIndex) ?: 0f
 

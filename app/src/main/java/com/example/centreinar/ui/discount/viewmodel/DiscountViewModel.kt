@@ -12,6 +12,8 @@ import com.example.centreinar.DiscountSoja
 import com.example.centreinar.InputDiscountSoja
 import com.example.centreinar.LimitSoja
 import com.example.centreinar.SampleSoja
+import com.example.centreinar.ClassificationMilho
+import com.example.centreinar.data.local.entity.SampleMilho
 import com.example.centreinar.data.local.dao.LimitMilhoDao
 import com.example.centreinar.data.local.dao.LimitSojaDao
 import com.example.centreinar.data.local.entity.DiscountMilho
@@ -60,15 +62,26 @@ class DiscountViewModel @Inject constructor(
     var selectedGroup by savedStateHandle.saveable { mutableStateOf<Int?>(null) }
     var isOfficial by savedStateHandle.saveable { mutableStateOf<Boolean?>(null) }
 
-    // Estados para preenchimento automático (Soja)
+    // =========================================================================
+    // ESTADOS PARA AUTO-PREENCHIMENTO (AUTO-FILL)
+    // =========================================================================
+
+    // Soja //
     private val _loadedClassification = MutableStateFlow<ClassificationSoja?>(null)
     val loadedClassification: StateFlow<ClassificationSoja?> = _loadedClassification.asStateFlow()
 
     private val _loadedSample = MutableStateFlow<SampleSoja?>(null)
     val loadedSample: StateFlow<SampleSoja?> = _loadedSample.asStateFlow()
 
+    // Milho //
+    private val _loadedClassificationMilho = MutableStateFlow<ClassificationMilho?>(null)
+    val loadedClassificationMilho: StateFlow<ClassificationMilho?> = _loadedClassificationMilho.asStateFlow()
+
+    private val _loadedSampleMilho = MutableStateFlow<SampleMilho?>(null)
+    val loadedSampleMilho: StateFlow<SampleMilho?> = _loadedSampleMilho.asStateFlow()
+
     // =========================================================================
-    // LÓGICA DE CARREGAMENTO DE CLASSIFICAÇÃO (AUTO-FILL)
+    // LÓGICA DE CARREGAMENTO AUTO-FILL
     // =========================================================================
 
     fun loadClassificationData(id: Int) {
@@ -76,20 +89,34 @@ class DiscountViewModel @Inject constructor(
             try {
                 _isLoading.value = true
                 val classification = repositorySoja.getClassificationById(id)
-
                 if (classification != null) {
                     _loadedClassification.value = classification
                     selectedGrain = classification.grain
                     selectedGroup = classification.group
-
-                    val sample = repositorySoja.getSampleById(classification.sampleId)
-                    if (sample != null) {
-                        _loadedSample.value = sample
-                    }
+                    _loadedSample.value = repositorySoja.getSampleById(classification.sampleId)
                 }
             } catch (e: Exception) {
-                _error.value = "Erro ao carregar dados: ${e.message}"
-                Log.e("DiscountVM", "LoadClassificationData failed", e)
+                _error.value = "Erro ao carregar dados Soja: ${e.message}"
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun loadClassificationMilhoData(id: Int) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                _isLoading.value = true
+                val classification = repositoryMilho.getClassificationById(id)
+                if (classification != null) {
+                    _loadedClassificationMilho.value = classification
+                    selectedGrain = "Milho"
+                    selectedGroup = classification.group
+                    // Busca amostra usando o repositório de milho e a entidade SampleMilho
+                    _loadedSampleMilho.value = repositoryMilho.getSampleById(classification.sampleId)
+                }
+            } catch (e: Exception) {
+                _error.value = "Erro ao carregar dados Milho: ${e.message}"
             } finally {
                 _isLoading.value = false
             }
@@ -127,6 +154,8 @@ class DiscountViewModel @Inject constructor(
         _lastUsedLimitMilho.value = null
         _loadedClassification.value = null
         _loadedSample.value = null
+        _loadedClassificationMilho.value = null
+        _loadedSampleMilho.value = null
         selectedGrain = null
         selectedGroup = null
         isOfficial = null
@@ -152,34 +181,27 @@ class DiscountViewModel @Inject constructor(
                     if (grainVal == "Soja") {
                         _allOfficialLimits.value = limitSojaDao.getLimitsByGroup(grainVal, groupVal, 0)
                     } else {
-                        val grainFixed = if (grainVal.equals("milho", ignoreCase = true)) "Milho" else grainVal
-                        _allOfficialLimits.value = limitMilhoDao.getLimitsBySource(grainFixed, 0, groupVal)
+                        _allOfficialLimits.value = limitMilhoDao.getLimitsBySource("Milho", 0, groupVal)
                     }
                 }
 
                 if (grainVal == "Soja") {
-                    // Ordem correta: (group, grain) conforme sua interface
                     _defaultLimits.value = repositorySoja.getLimitOfType1Official(groupVal, grainVal)
                 } else {
-                    val grainFixed = if (grainVal.equals("milho", ignoreCase = true)) "Milho" else grainVal
-                    val limitMilho = repositoryMilho.getLimit(grainFixed, groupVal, 1, 0)
-
-                    if (limitMilho != null) {
+                    repositoryMilho.getLimit("Milho", groupVal, 1, 0)?.let { limit ->
                         _defaultLimits.value = mapOf(
-                            "impuritiesUpLim" to limitMilho.impuritiesUpLim,
-                            "moistureUpLim" to limitMilho.moistureUpLim,
-                            "brokenUpLim" to limitMilho.brokenUpLim,
-                            "burntOrSourUpLim" to limitMilho.ardidoUpLim,
-                            "moldyUpLim" to limitMilho.mofadoUpLim,
-                            "carunchadoUpLim" to limitMilho.carunchadoUpLim,
-                            "spoiledTotalUpLim" to limitMilho.spoiledTotalUpLim,
-                            "greenishUpLim" to 0f,
-                            "burntUpLim" to 0f
+                            "impuritiesUpLim" to limit.impuritiesUpLim,
+                            "moistureUpLim" to limit.moistureUpLim,
+                            "brokenUpLim" to limit.brokenUpLim,
+                            "burntOrSourUpLim" to limit.ardidoUpLim,
+                            "moldyUpLim" to limit.mofadoUpLim,
+                            "carunchadoUpLim" to limit.carunchadoUpLim,
+                            "spoiledTotalUpLim" to limit.spoiledTotalUpLim
                         )
                     }
                 }
             } catch (e: Exception) {
-                _error.value = e.message ?: "Erro ao carregar limites"
+                _error.value = "Erro ao carregar limites: ${e.message}"
             }
         }
     }
@@ -187,24 +209,14 @@ class DiscountViewModel @Inject constructor(
     fun loadLastUsedLimit() {
         val grainVal = selectedGrain ?: return
         val groupVal = selectedGroup ?: 1
-
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 if (grainVal == "Soja") {
-                    if (isOfficial == true) {
-                        _lastUsedLimitSoja.value = repositorySoja.getLimit(grainVal, groupVal, 1, 0)
-                    } else {
-                        val source = repositorySoja.getLastLimitSource()
-                        _lastUsedLimitSoja.value = repositorySoja.getLimit(grainVal, groupVal, 1, source)
-                    }
+                    val source = if (isOfficial == true) 0 else repositorySoja.getLastLimitSource()
+                    _lastUsedLimitSoja.value = repositorySoja.getLimit(grainVal, groupVal, 1, source)
                 } else {
-                    val grainFixed = if (grainVal.equals("milho", ignoreCase = true)) "Milho" else grainVal
-                    if (isOfficial == true) {
-                        _lastUsedLimitMilho.value = repositoryMilho.getLimit(grainFixed, groupVal, 1, 0)
-                    } else {
-                        val source = repositoryMilho.getLastLimitSource()
-                        _lastUsedLimitMilho.value = repositoryMilho.getLimit(grainFixed, groupVal, 1, source)
-                    }
+                    val source = if (isOfficial == true) 0 else repositoryMilho.getLastLimitSource()
+                    _lastUsedLimitMilho.value = repositoryMilho.getLimit("Milho", groupVal, 1, source)
                 }
             } catch (e: Exception) {
                 Log.e("UsedLimit", "Error loading last limit", e)
@@ -213,9 +225,15 @@ class DiscountViewModel @Inject constructor(
     }
 
     fun setLimit(
-        impurities: Float, moisture: Float, brokenCrackedDamaged: Float,
-        greenish: Float, burnt: Float, burntOrSour: Float, moldy: Float,
-        spoiled: Float, carunchado: Float = 0f
+        impurities: Float,
+        moisture: Float,
+        broken: Float,
+        greenish: Float,
+        burnt: Float,
+        ardido: Float,
+        moldy: Float,
+        spoiled: Float,
+        carunchado: Float = 0f
     ) {
         val grain = selectedGrain ?: return
         val group = selectedGroup ?: 0
@@ -225,13 +243,14 @@ class DiscountViewModel @Inject constructor(
                 _isLoading.value = true
                 if (grain == "Soja") {
                     repositorySoja.setLimit(
-                        grain, group, 1, impurities, moisture,
-                        brokenCrackedDamaged, greenish, burnt, burntOrSour, moldy, spoiled
+                        grain = grain, group = group, type = 1, impurities = impurities, moisture = moisture,
+                        brokenCrackedDamaged = broken, greenish = greenish, burnt = burnt, burntOrSour = ardido,
+                        moldy = moldy, spoiled = spoiled
                     )
                 } else {
                     repositoryMilho.setLimit(
-                        "Milho", group, 1, impurities, moisture,
-                        brokenCrackedDamaged, burntOrSour, moldy, carunchado, spoiled
+                        grain = "Milho", group = group, type = 1, impurities = impurities, moisture = moisture,
+                        broken = broken, ardido = ardido, mofado = moldy, carunchado = carunchado, spoiledTotal = spoiled
                     )
                 }
             } catch (e: Exception) {
@@ -243,136 +262,77 @@ class DiscountViewModel @Inject constructor(
     }
 
     // =========================================================================
-    // LÓGICA SOJA (Cálculo e Desconto)
+    // LÓGICA (Cálculo e Desconto)
     // =========================================================================
 
-    fun getDiscountForClassification(
-        priceBySack: Float,
-        daysOfStorage: Int,
-        deductionValue: Float
-    ) {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                _isLoading.value = true
-                val discount = repositorySoja.getDiscountForClassification(
-                    priceBySack, daysOfStorage, deductionValue
-                )
-                _discountsSoja.value = discount
-
-                val lastInput = repositorySoja.getLastInputDiscount()
-                selectedGrain = lastInput.grain
-                selectedGroup = lastInput.group
-
-            } catch (e: Exception) {
-                _error.value = "Erro ao calcular desconto: ${e.message}"
-                Log.e("DiscountVM", "getDiscountForClassification failed", e)
-            } finally {
-                _isLoading.value = false
-            }
-        }
-    }
-
-    fun setDiscount(
-        inputDiscount: InputDiscountSoja,
-        doesTechnicalLoss: Boolean,
-        doesClassificationLoss: Boolean,
-        doesDeduction: Boolean
-    ): Long {
-        var discountId = 0L
+    // --- CÁLCULO SOJA ---
+    fun setDiscount(input: InputDiscountSoja, tech: Boolean, classif: Boolean, deduct: Boolean) {
         viewModelScope.launch {
             try {
                 _isLoading.value = true
-                if (isOfficial == false) {
-                    inputDiscount.limitSource = repositorySoja.getLastLimitSource()
-                }
-                repositorySoja.setInputDiscount(inputDiscount)
+                if (isOfficial == false) input.limitSource = repositorySoja.getLastLimitSource()
+                repositorySoja.setInputDiscount(input)
+                val id = repositorySoja.calculateDiscount(input.grain, input.group, 1, input, tech, classif, deduct)
 
-                discountId = repositorySoja.calculateDiscount(
-                    inputDiscount.grain, inputDiscount.group, 1, inputDiscount,
-                    doesTechnicalLoss, doesClassificationLoss, doesDeduction
-                )
-                getDiscountSoja(discountId)
-            } catch (e: Exception) {
-                _error.value = e.message
-            } finally {
-                _isLoading.value = false
-            }
-        }
-        return discountId
-    }
-
-    fun getDiscountSoja(id: Long) {
-        viewModelScope.launch {
-            try {
+                // CRÍTICO: Atualiza o estado que a tela de resultado observa
                 _discountsSoja.value = repositorySoja.getDiscountById(id)
             } catch (e: Exception) {
                 _error.value = e.message
+            } finally {
+                _isLoading.value = false
             }
         }
     }
+
+    // --- CÁLCULO MILHO ---
+    fun setDiscount(input: InputDiscountMilho, tech: Boolean, classif: Boolean, deduct: Boolean) {
+        viewModelScope.launch {
+            try {
+                _isLoading.value = true
+                if (isOfficial == false) input.limitSource = repositoryMilho.getLastLimitSource()
+                repositoryMilho.setInputDiscount(input)
+                val id = repositoryMilho.calculateDiscount(input.grain, input.group, 1, input, tech, classif, deduct)
+
+                // Atualiza o estado que a tela de resultado observa
+                _discountsMilho.value = repositoryMilho.getDiscountById(id)
+            } catch (e: Exception) {
+                _error.value = e.message
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun getDiscountForClassification(price: Float, days: Int, deduction: Float) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                _isLoading.value = true
+                _discountsSoja.value = repositorySoja.getDiscountForClassification(price, days, deduction)
+            } catch (e: Exception) {
+                _error.value = e.message
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    // =========================================================================
+    // EXPORTAÇÃO
+    // =========================================================================
 
     fun exportDiscount(context: Context, discount: DiscountSoja, limit: LimitSoja) {
         viewModelScope.launch {
             try {
                 val sample = repositorySoja.getLastInputDiscount()
-                var classification: ClassificationSoja? = null
-                var sampleClassification: SampleSoja? = null
-
+                var classif: ClassificationSoja? = null
+                var sampClass: SampleSoja? = null
                 if (sample.classificationId != null) {
-                    classification = repositorySoja.getClassificationById(sample.classificationId!!)
-                    if (classification != null) {
-                        sampleClassification = repositorySoja.getSampleById(classification.sampleId)
-                    }
+                    classif = repositorySoja.getClassificationById(sample.classificationId!!)
+                    if (classif != null) sampClass = repositorySoja.getSampleById(classif.sampleId)
                 }
-
-                pdfExporterSoja.exportDiscountToPdf(
-                    context, discount, sample, limit, classification, sampleClassification
-                )
+                pdfExporterSoja.exportDiscountToPdf(context, discount, sample, limit, classif, sampClass)
             } catch (e: Exception) {
-                _error.value = "Export failed: ${e.message}"
-            }
-        }
-    }
-
-    // =========================================================================
-    // LÓGICA MILHO (Cálculo e Desconto)
-    // =========================================================================
-
-    fun setDiscount(
-        inputDiscount: InputDiscountMilho,
-        doesTechnicalLoss: Boolean,
-        doesClassificationLoss: Boolean,
-        doesDeduction: Boolean
-    ): Long {
-        var discountId = 0L
-        viewModelScope.launch {
-            try {
-                _isLoading.value = true
-                if (isOfficial == false) {
-                    inputDiscount.limitSource = repositoryMilho.getLastLimitSource()
-                }
-                repositoryMilho.setInputDiscount(inputDiscount)
-
-                discountId = repositoryMilho.calculateDiscount(
-                    inputDiscount.grain, inputDiscount.group, 1, inputDiscount,
-                    doesTechnicalLoss, doesClassificationLoss, doesDeduction
-                )
-                getDiscountMilho(discountId)
-            } catch (e: Exception) {
-                _error.value = e.message
-            } finally {
-                _isLoading.value = false
-            }
-        }
-        return discountId
-    }
-
-    fun getDiscountMilho(id: Long) {
-        viewModelScope.launch {
-            try {
-                _discountsMilho.value = repositoryMilho.getDiscountById(id)
-            } catch (e: Exception) {
-                _error.value = e.message
+                _error.value = "Export falhou: ${e.message}"
             }
         }
     }
@@ -383,7 +343,7 @@ class DiscountViewModel @Inject constructor(
                 val sample = repositoryMilho.getLastInputDiscount()
                 pdfExporterMilho.exportDiscountToPdf(context, discount, sample, limit)
             } catch (e: Exception) {
-                _error.value = "Falha ao exportar PDF: ${e.message}"
+                _error.value = "Export falhou: ${e.message}"
             }
         }
     }
