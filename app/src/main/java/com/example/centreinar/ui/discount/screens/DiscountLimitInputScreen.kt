@@ -30,158 +30,179 @@ fun DiscountLimitInputScreen(
     navController: NavController,
     viewModel: DiscountViewModel = hiltViewModel()
 ) {
-    val defaultLimits by viewModel.defaultLimits.collectAsStateWithLifecycle()
-    val allOfficialLimits by viewModel.allOfficialLimits.collectAsStateWithLifecycle()
+    // 1. O Scaffold envolve toda a tela
+    Scaffold(
+        modifier = Modifier.fillMaxSize()
+    ) { innerPadding -> // Esse innerPadding contém as medidas da barra de status e navegação
 
-    val currentGrain = viewModel.selectedGrain
-    val currentGroup = viewModel.selectedGroup
-    val isSoja = currentGrain == "Soja"
-    val isOfficial = viewModel.isOfficial == true
+        val defaultLimits by viewModel.defaultLimits.collectAsStateWithLifecycle()
+        val allOfficialLimits by viewModel.allOfficialLimits.collectAsStateWithLifecycle()
 
-    // Estados dos campos
-    var moisture by remember(currentGrain) { mutableStateOf("") }
-    var impurities by remember(currentGrain) { mutableStateOf("") }
-    var brokenCrackedDamaged by remember(currentGrain) { mutableStateOf("") }
-    var greenish by remember(currentGrain) { mutableStateOf("") }
-    var burnt by remember(currentGrain) { mutableStateOf("") }
-    var burntOrSour by remember(currentGrain) { mutableStateOf("") }
-    var moldy by remember(currentGrain) { mutableStateOf("") }
-    var spoiled by remember(currentGrain) { mutableStateOf("") }
-    var carunchado by remember(currentGrain) { mutableStateOf("") }
+        val currentGrain = viewModel.selectedGrain
+        val currentGroup = viewModel.selectedGroup
+        val isSoja = currentGrain == "Soja"
+        val isOfficial = viewModel.isOfficial == true
 
-    var errorMessage by remember { mutableStateOf<String?>(null) }
-    val moistureFocus = remember { FocusRequester() }
-    val scrollState = rememberScrollState()
+        // Estados dos campos
+        var moisture by remember(currentGrain) { mutableStateOf("") }
+        var impurities by remember(currentGrain) { mutableStateOf("") }
+        var brokenCrackedDamaged by remember(currentGrain) { mutableStateOf("") }
+        var greenish by remember(currentGrain) { mutableStateOf("") }
+        var burnt by remember(currentGrain) { mutableStateOf("") }
+        var burntOrSour by remember(currentGrain) { mutableStateOf("") }
+        var moldy by remember(currentGrain) { mutableStateOf("") }
+        var spoiled by remember(currentGrain) { mutableStateOf("") }
+        var carunchado by remember(currentGrain) { mutableStateOf("") }
 
-    // Carrega limites
-    LaunchedEffect(currentGrain) {
-        viewModel.loadDefaultLimits()
-    }
+        var errorMessage by remember { mutableStateOf<String?>(null) }
+        val moistureFocus = remember { FocusRequester() }
+        val scrollState = rememberScrollState()
 
-    // Preenche os campos quando os limites chegam
-    LaunchedEffect(defaultLimits) {
-        defaultLimits?.let { limits ->
-            moisture = limits["moistureUpLim"]?.toString() ?: ""
-            impurities = limits["impuritiesUpLim"]?.toString() ?: ""
-            brokenCrackedDamaged = limits["brokenUpLim"]?.toString() ?: ""
-            moldy = limits["moldyUpLim"]?.toString() ?: ""
-
-            // Mapeamento Milho: Ardido usa o campo burntOrSour
-            burntOrSour = limits["burntOrSourUpLim"]?.toString() ?: ""
-
-            // Mapeamento Milho: Carunchado
-            carunchado = limits["carunchadoUpLim"]?.toString() ?: ""
-
-            if (isSoja) {
-                greenish = limits["greenishUpLim"]?.toString() ?: ""
-                burnt = limits["burntUpLim"]?.toString() ?: ""
-                spoiled = limits["spoiledTotalUpLim"]?.toString() ?: ""
-            } else {
-                greenish = "0"
-                burnt = "0"
-                spoiled = limits["spoiledTotalUpLim"]?.toString() ?: "0"
-            }
-        }
-    }
-
-    Column(modifier = Modifier
-        .fillMaxSize()
-        .padding(24.dp)) {
-
-        Text(
-            text = if (!isOfficial) "Insira os limites de tolerância" else "Limites de Referência MAPA",
-            style = MaterialTheme.typography.headlineSmall
-        )
-        Text(
-            text = if (currentGrain == "Soja") "$currentGrain - Grupo $currentGroup" else "$currentGrain",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.secondary
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // UMIDADE FIXA NO TOPO
-        NumberInputField(
-            label = "Umidade da Amostra (%)",
-            value = moisture,
-            onValueChange = { moisture = it },
-            focusRequester = moistureFocus,
-            nextFocus = null,
-            enabled = !isOfficial,
-            readOnly = isOfficial
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // BOX QUE OCUPA O CENTRO (TABELA OU CAMPOS)
-        Box(modifier = Modifier.weight(1f)) {
-            if (isOfficial) {
-                if (allOfficialLimits.isNotEmpty()) {
-                    OfficialLimitsTable(grain = currentGrain ?: "", data = allOfficialLimits)
-                } else {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("Carregando tabela oficial...")
-                    }
-                }
-            } else {
-                Column(modifier = Modifier.verticalScroll(scrollState)) {
-                    DiscountEditableFields(
-                        isSoja = isSoja,
-                        impurities = impurities, onImpuritiesChange = { impurities = it },
-                        burnt = burnt, onBurntChange = { burnt = it },
-                        burntOrSour = burntOrSour, onBurntOrSourChange = { burntOrSour = it },
-                        moldy = moldy, onMoldyChange = { moldy = it },
-                        spoiled = spoiled, onSpoiledChange = { spoiled = it },
-                        greenish = greenish, onGreenishChange = { greenish = it },
-                        broken = brokenCrackedDamaged, onBrokenChange = { brokenCrackedDamaged = it },
-                        carunchado = carunchado, onCarunchadoChange = { carunchado = it }
-                    )
-                }
-            }
+        // Carrega limites
+        LaunchedEffect(currentGrain) {
+            viewModel.loadDefaultLimits()
         }
 
-        Spacer(Modifier.height(32.dp))
+        // Preenche os campos quando os limites chegam
+        LaunchedEffect(defaultLimits) {
+            defaultLimits?.let { limits ->
+                moisture = limits["moistureUpLim"]?.toString() ?: ""
+                impurities = limits["impuritiesUpLim"]?.toString() ?: ""
+                brokenCrackedDamaged = limits["brokenUpLim"]?.toString() ?: ""
+                moldy = limits["moldyUpLim"]?.toString() ?: ""
 
-        errorMessage?.let {
-            Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(vertical = 4.dp))
-        }
+                // Mapeamento Milho: Ardido usa o campo burntOrSour
+                burntOrSour = limits["burntOrSourUpLim"]?.toString() ?: ""
 
-        Button(
-            onClick = {
-                if (moisture.isEmpty() || moisture == ".") {
-                    errorMessage = "Informe a umidade base."
-                    return@Button
-                }
-
-                if (!isOfficial) {
-                    try {
-                        viewModel.setLimit(
-                            impurities = impurities.toFloatOrDefault(),
-                            moisture = moisture.toFloatOrDefault(),
-                            broken = brokenCrackedDamaged.toFloatOrDefault(), // 'broken' no VM
-                            greenish = if(isSoja) greenish.toFloatOrDefault() else 0f,
-                            burnt = if(isSoja) burnt.toFloatOrDefault() else 0f,
-                            ardido = burntOrSour.toFloatOrDefault(),          // 'ardido' no VM
-                            moldy = moldy.toFloatOrDefault(),
-                            spoiled = spoiled.toFloatOrDefault(),
-                            carunchado = carunchado.toFloatOrDefault()
-                        )
-                    } catch (e: Exception) {
-                        errorMessage = "Erro ao salvar valores."
-                        return@Button
-                    }
-                }
+                // Mapeamento Milho: Carunchado
+                carunchado = limits["carunchadoUpLim"]?.toString() ?: ""
 
                 if (isSoja) {
-                    navController.navigate("discountInputScreen")
+                    greenish = limits["greenishUpLim"]?.toString() ?: ""
+                    burnt = limits["burntUpLim"]?.toString() ?: ""
+                    spoiled = limits["spoiledTotalUpLim"]?.toString() ?: ""
                 } else {
-                    // Se for milho, vá para a tela de input de desconto do milho ou resultado
-                    navController.navigate("milhoDiscountInputScreen?isOfficial=true")
+                    greenish = "0"
+                    burnt = "0"
+                    spoiled = limits["spoiledTotalUpLim"]?.toString() ?: "0"
                 }
-            },
-            modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+            }
+        }
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(24.dp)
         ) {
-            Text(if (!isOfficial) "Salvar e Continuar" else "Próximo")
+
+            Text(
+                text = if (!isOfficial) "Insira os limites de tolerância" else "Limites de Referência MAPA",
+                style = MaterialTheme.typography.headlineSmall
+            )
+            Text(
+                text = if (currentGrain == "Soja") "$currentGrain - Grupo $currentGroup" else "$currentGrain",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.secondary
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // UMIDADE FIXA NO TOPO
+            NumberInputField(
+                label = "Umidade da Amostra (%)",
+                value = moisture,
+                onValueChange = { moisture = it },
+                focusRequester = moistureFocus,
+                nextFocus = null,
+                enabled = !isOfficial,
+                readOnly = isOfficial
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // BOX QUE OCUPA O CENTRO (TABELA OU CAMPOS)
+            Box(modifier = Modifier.weight(1f)) {
+                if (isOfficial) {
+                    if (allOfficialLimits.isNotEmpty()) {
+                        OfficialLimitsTable(grain = currentGrain ?: "", data = allOfficialLimits)
+                    } else {
+                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Text("Carregando tabela oficial...")
+                        }
+                    }
+                } else {
+                    Column(modifier = Modifier.verticalScroll(scrollState)) {
+                        DiscountEditableFields(
+                            isSoja = isSoja,
+                            impurities = impurities,
+                            onImpuritiesChange = { impurities = it },
+                            burnt = burnt,
+                            onBurntChange = { burnt = it },
+                            burntOrSour = burntOrSour,
+                            onBurntOrSourChange = { burntOrSour = it },
+                            moldy = moldy,
+                            onMoldyChange = { moldy = it },
+                            spoiled = spoiled,
+                            onSpoiledChange = { spoiled = it },
+                            greenish = greenish,
+                            onGreenishChange = { greenish = it },
+                            broken = brokenCrackedDamaged,
+                            onBrokenChange = { brokenCrackedDamaged = it },
+                            carunchado = carunchado,
+                            onCarunchadoChange = { carunchado = it }
+                        )
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(32.dp))
+
+            errorMessage?.let {
+                Text(
+                    it,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(vertical = 4.dp)
+                )
+            }
+
+            Button(
+                onClick = {
+                    if (moisture.isEmpty() || moisture == ".") {
+                        errorMessage = "Informe a umidade base."
+                        return@Button
+                    }
+
+                    if (!isOfficial) {
+                        try {
+                            viewModel.setLimit(
+                                impurities = impurities.toFloatOrDefault(),
+                                moisture = moisture.toFloatOrDefault(),
+                                broken = brokenCrackedDamaged.toFloatOrDefault(), // 'broken' no VM
+                                greenish = if (isSoja) greenish.toFloatOrDefault() else 0f,
+                                burnt = if (isSoja) burnt.toFloatOrDefault() else 0f,
+                                ardido = burntOrSour.toFloatOrDefault(),          // 'ardido' no VM
+                                moldy = moldy.toFloatOrDefault(),
+                                spoiled = spoiled.toFloatOrDefault(),
+                                carunchado = carunchado.toFloatOrDefault()
+                            )
+                        } catch (e: Exception) {
+                            errorMessage = "Erro ao salvar valores."
+                            return@Button
+                        }
+                    }
+
+                    if (isSoja) {
+                        navController.navigate("discountInputScreen")
+                    } else {
+                        // Se for milho, vá para a tela de input de desconto do milho ou resultado
+                        navController.navigate("milhoDiscountInputScreen?isOfficial=true")
+                    }
+                },
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+            ) {
+                Text(if (!isOfficial) "Salvar e Continuar" else "Próximo")
+            }
         }
     }
 }
@@ -189,7 +210,7 @@ fun DiscountLimitInputScreen(
 @Composable
 fun OfficialLimitsTable(grain: String, data: List<Any>) {
     val labels = if (grain == "Soja") {
-        listOf("Ardidos/Queim.", "Queimados", "Mofados", "Avariados Total", "Esverdeados", "Partidos/Quebr.", "Impurezas")
+        listOf("Ardidos/Queim.", "Queimados", "Mofados", "Avariados Total", "Esverdeados", "Partidos/Quebr./Amassados", "Matérias Estranhas e Impurezas")
     } else {
         listOf("Ardidos", "Avariados Total", "Quebrados", "Matérias Estranhas e Impurezas", "Carunchados")
     }

@@ -26,100 +26,112 @@ fun MilhoDiscountResultScreen(
     navController: NavController,
     viewModel: DiscountViewModel = hiltViewModel()
 ) {
-    val discountsMilho by viewModel.discountsMilho.collectAsStateWithLifecycle()
-    val lastUsedLimit by viewModel.lastUsedLimitMilho.collectAsStateWithLifecycle()
-    val allOfficialLimits by viewModel.allOfficialLimits.collectAsStateWithLifecycle()
+    // 1. O Scaffold envolve toda a tela
+    Scaffold(
+        modifier = Modifier.fillMaxSize()
+    ) { innerPadding -> // Esse innerPadding contém as medidas da barra de status e navegação
 
-    val context = LocalContext.current
+        val discountsMilho by viewModel.discountsMilho.collectAsStateWithLifecycle()
+        val currentGroup = viewModel.selectedGroup
+        val lastUsedLimit by viewModel.lastUsedLimitMilho.collectAsStateWithLifecycle()
+        val allOfficialLimits by viewModel.allOfficialLimits.collectAsStateWithLifecycle()
 
-    // Carrega os limites utilizados assim que a tela abre
-    LaunchedEffect(Unit) {
-        if (viewModel.selectedGrain == null) {
-            viewModel.selectedGrain = "Milho"
+        val context = LocalContext.current
+
+        // Carrega os limites utilizados assim que a tela abre
+        LaunchedEffect(Unit) {
+            if (viewModel.selectedGrain == null) {
+                viewModel.selectedGrain = "Milho"
+            }
+
+            viewModel.loadLastUsedLimit()
+            viewModel.loadDefaultLimits()
         }
 
-        viewModel.loadLastUsedLimit()
-        viewModel.loadDefaultLimits()
-    }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
         Column(
             modifier = Modifier
-                .weight(1f)
-                .verticalScroll(rememberScrollState())
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(16.dp)
         ) {
-            Text(
-                "Resultado do Desconto — Milho",
-                style = MaterialTheme.typography.headlineMedium
-            )
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState())
+            ) {
+                Text(
+                    "Resultado do Desconto — Milho",
+                    style = MaterialTheme.typography.headlineMedium
+                )
 
-            Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(12.dp))
 
-            // Tabelas
-            if (discountsMilho != null) {
-                // TABELA DE RESULTADO
-                MilhoDiscountResultsTable(discounts = discountsMilho!!)
+                // Tabelas
+                if (discountsMilho != null) {
+                    // TABELA DE RESULTADO
+                    MilhoDiscountResultsTable(discounts = discountsMilho!!)
 
-                Spacer(Modifier.height(24.dp))
+                    Spacer(Modifier.height(24.dp))
 
-                // TABELA DE LIMITES MILHO
-                if (allOfficialLimits.isNotEmpty()) {
-                    OfficialReferenceTable(
-                        grain = "Milho",
-                        data = allOfficialLimits
-                    )
+                    // TABELA DE LIMITES MILHO
+                    if (allOfficialLimits.isNotEmpty()) {
+                        OfficialReferenceTable(
+                            grain = "Milho",
+                            group = currentGroup ?: 1,
+                            data = allOfficialLimits
+                        )
+                    } else {
+                        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                            Text(
+                                "Carregando limites oficiais...",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
+
                 } else {
-                    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                        Text("Carregando limites oficiais...", style = MaterialTheme.typography.bodySmall)
+                    Text(
+                        "Nenhum resultado encontrado. Verifique se os dados foram preenchidos corretamente na tela anterior.",
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+
+                Spacer(Modifier.height(16.dp))
+            }
+
+            // 2. RODAPÉ FIXO
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Button(
+                        modifier = Modifier.weight(1f),
+                        onClick = { navController.popBackStack() }
+                    ) {
+                        Text("Voltar")
+                    }
+
+                    Button(
+                        modifier = Modifier.weight(1f),
+                        onClick = { navController.navigate("home") }
+                    ) {
+                        Text("Nova Análise")
                     }
                 }
 
-            } else {
-                Text(
-                    "Nenhum resultado encontrado. Verifique se os dados foram preenchidos corretamente na tela anterior.",
-                    color = MaterialTheme.colorScheme.error
-                )
-            }
+                Button(modifier = Modifier.fillMaxWidth(), onClick = {
+                    viewModel.loadLastUsedLimit()
 
-            Spacer(Modifier.height(16.dp))
-        }
-
-        // 2. RODAPÉ FIXO
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Button(
-                    modifier = Modifier.weight(1f),
-                    onClick = { navController.popBackStack() }
-                ) {
-                    Text("Voltar")
+                    val currentLimit = lastUsedLimit
+                    if (currentLimit != null && discountsMilho != null) {
+                        viewModel.exportDiscountMilho(context, discountsMilho!!, currentLimit)
+                    } else {
+                        Log.e("DiscountResultsScreen", "Limit or Discount is null")
+                    }
+                }) {
+                    Text("Exportar PDF")
                 }
-
-                Button(
-                    modifier = Modifier.weight(1f),
-                    onClick = { navController.navigate("home") }
-                ) {
-                    Text("Nova Análise")
-                }
-            }
-
-            Button(modifier = Modifier.fillMaxWidth(), onClick = {
-                viewModel.loadLastUsedLimit()
-
-                val currentLimit = lastUsedLimit
-                if (currentLimit != null && discountsMilho != null) {
-                    viewModel.exportDiscountMilho(context, discountsMilho!!, currentLimit)
-                } else {
-                    Log.e("DiscountResultsScreen", "Limit or Discount is null")
-                }
-            }) {
-                Text("Exportar PDF")
             }
         }
     }

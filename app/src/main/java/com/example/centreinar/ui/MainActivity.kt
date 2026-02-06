@@ -19,6 +19,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.navigation.navigation
+import androidx.activity.enableEdgeToEdge
 
 // Imports SOJA
 import com.example.centreinar.ui.classificationProcess.screens.*
@@ -40,6 +41,9 @@ import dagger.hilt.android.AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        enableEdgeToEdge()
+
         setContent {
             CentreinarTheme {
                 // Surface é necessário para garantir que o NavHost preencha o espaço
@@ -58,7 +62,7 @@ fun CentreinarApp() {
     NavHost(
         navController = navController,
         startDestination = "main_flow",
-        modifier = Modifier.fillMaxSize() // 🚨 CORREÇÃO CRÍTICA AQUI: NavHost preenche o espaço
+        modifier = Modifier.fillMaxSize()
     ) {
         navigation(
             startDestination = "home",

@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -25,52 +26,60 @@ public fun OfficialOrNotOfficialScreen(
     navController: NavController,
     viewModel: ClassificationViewModel = hiltViewModel()
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Button(
-            onClick = {
-                // Define como oficial
-                viewModel.isOfficial = true
+    // 1. O Scaffold envolve toda a tela
+    Scaffold(
+        modifier = Modifier.fillMaxSize()
+    ) { innerPadding -> // Esse innerPadding contém as medidas da barra de status e navegação
 
-                // Navega para a rota da seleção dos limites
-                navController.navigate("limitInput") },
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .height(80.dp)
-                .padding(vertical = 8.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-            )
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            Text("Classificação Oficial", style = MaterialTheme.typography.titleMedium)
-        }
+            Button(
+                onClick = {
+                    // Define como oficial
+                    viewModel.isOfficial = true
 
-        Spacer(modifier = Modifier.height(24.dp))
+                    // Navega para a rota da seleção dos limites
+                    navController.navigate("limitInput")
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(80.dp)
+                    .padding(vertical = 8.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            ) {
+                Text("Classificação Oficial", style = MaterialTheme.typography.titleMedium)
+            }
 
-        Button(
-            onClick = {
-                // Define como não oficial
-                viewModel.isOfficial = false
+            Spacer(modifier = Modifier.height(24.dp))
 
-                // Navega para a rota da seleção dos limites
-                navController.navigate("limitInput")
-                      },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(80.dp)
-                .padding(vertical = 8.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-            )
-        ) {
-            Text("Classificação Não Oficial", style = MaterialTheme.typography.titleMedium)
+            Button(
+                onClick = {
+                    // Define como não oficial
+                    viewModel.isOfficial = false
+
+                    // Navega para a rota da seleção dos limites
+                    navController.navigate("limitInput")
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(80.dp)
+                    .padding(vertical = 8.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                )
+            ) {
+                Text("Classificação Não Oficial", style = MaterialTheme.typography.titleMedium)
+            }
         }
     }
 }

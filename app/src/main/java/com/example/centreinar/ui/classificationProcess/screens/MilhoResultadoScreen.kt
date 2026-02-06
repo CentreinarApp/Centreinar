@@ -22,154 +22,171 @@ fun MilhoResultadoScreen(
     navController: NavController,
     viewModel: ClassificationViewModel = hiltViewModel()
 ) {
-    // Definindo o objeto mock para garantir que os limites nunca sejam nulos na UI.
-    val mockLimits = LimitMilho(
-        source = 0,
-        grain = "Milho",
-        group = 1,
-        type = 1,
-        moistureUpLim = 14.0f,
-        impuritiesUpLim = 1.00f,
-        brokenUpLim = 3.00f,
-        ardidoUpLim = 1.00f,
-        mofadoUpLim = 1.00f,
-        carunchadoUpLim = 2.00f,
-        spoiledTotalUpLim = 6.00f
-    )
+    // 1. O Scaffold envolve toda a tela
+    Scaffold(
+        modifier = Modifier.fillMaxSize()
+    ) { innerPadding -> // Esse innerPadding contém as medidas da barra de status e navegação
 
-    // Coleta de estados (usando WithLifecycle para igualar a tela de Soja)
-    val classification by viewModel.classificationMilho.collectAsStateWithLifecycle(initialValue = null)
-    val limitState by viewModel.limitMilho.collectAsStateWithLifecycle(initialValue = null)
-    val allOfficialLimits by viewModel.allOfficialLimits.collectAsStateWithLifecycle()
-
-    // Verificação se é classificação oficial
-    val isOfficial = viewModel.isOfficial == true
-
-    val safeLimits = limitState ?: mockLimits
-    val context = LocalContext.current
-
-    // Carrega os limites padrão assim que a tela abre
-    LaunchedEffect(Unit) {
-        viewModel.loadDefaultLimits()
-    }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        Text(
-            "Resultado da Classificação (Milho)",
-            style = MaterialTheme.typography.headlineSmall,
-            color = MaterialTheme.colorScheme.onBackground
+        // Definindo o objeto mock para garantir que os limites nunca sejam nulos na UI.
+        val mockLimits = LimitMilho(
+            source = 0,
+            grain = "Milho",
+            group = 1,
+            type = 1,
+            moistureUpLim = 14.0f,
+            impuritiesUpLim = 1.00f,
+            brokenUpLim = 3.00f,
+            ardidoUpLim = 1.00f,
+            mofadoUpLim = 1.00f,
+            carunchadoUpLim = 2.00f,
+            spoiledTotalUpLim = 6.00f
         )
 
-        Spacer(Modifier.height(16.dp))
+        // Coleta de estados (usando WithLifecycle para igualar a tela de Soja)
+        val classification by viewModel.classificationMilho.collectAsStateWithLifecycle(initialValue = null)
+        val limitState by viewModel.limitMilho.collectAsStateWithLifecycle(initialValue = null)
+        val allOfficialLimits by viewModel.allOfficialLimits.collectAsStateWithLifecycle()
+        val currentGroup = viewModel.selectedGroup
 
-        if (classification == null) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text(
-                    "Nenhuma classificação disponível.",
-                    color = MaterialTheme.colorScheme.error
-                )
-                Spacer(Modifier.height(16.dp))
-                Button(onClick = { navController.popBackStack() }) {
-                    Text("Voltar")
-                }
-            }
-            return
+        // Verificação se é classificação oficial
+        val isOfficial = viewModel.isOfficial == true
+
+        val safeLimits = limitState ?: mockLimits
+        val context = LocalContext.current
+
+        // Carrega os limites padrão assim que a tela abre
+        LaunchedEffect(Unit) {
+            viewModel.loadDefaultLimits()
         }
-
-        val safeClass = classification!!
 
         Column(
             modifier = Modifier
-                .weight(1f)
-                .verticalScroll(rememberScrollState())
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(16.dp)
         ) {
             Text(
-                "Dados da Amostra",
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 8.dp),
-                textAlign = TextAlign.Center
+                "Resultado da Classificação (Milho)",
+                style = MaterialTheme.typography.headlineSmall,
+                color = MaterialTheme.colorScheme.onBackground
             )
 
-            // Tabela de Resultado da Amostra
-            ClassificationTable(
-                classification = safeClass,
-                limits = safeLimits,
-                typeTranslator = viewModel::getFinalTypeLabel,
-                modifier = Modifier.fillMaxWidth()
-            )
+            Spacer(Modifier.height(16.dp))
 
-            // Se for Oficial, exibe a tabela de limites do MAPA
-            if (isOfficial) {
-                Spacer(Modifier.height(32.dp))
-
-                Text(
-                    text = "Limites de Referência MAPA",
-                    style = MaterialTheme.typography.titleMedium,
+            if (classification == null) {
+                Column(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 8.dp),
-                    textAlign = TextAlign.Center
-                )
-
-                // Tabela de limites
-                if (allOfficialLimits.isNotEmpty()) {
-                    OfficialReferenceTable(
-                        grain = "Milho",
-                        data = allOfficialLimits
+                        .fillMaxSize(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        "Nenhuma classificação disponível.",
+                        color = MaterialTheme.colorScheme.error
                     )
-                } else {
-                    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                        Text("Carregando limites oficiais...", style = MaterialTheme.typography.bodySmall)
+                    Spacer(Modifier.height(16.dp))
+                    Button(onClick = { navController.popBackStack() }) {
+                        Text("Voltar")
                     }
                 }
-            }
+            } else {
+                val safeClass = classification!!
 
-            Spacer(Modifier.height(32.dp))
-        }
-
-        Spacer(Modifier.height(8.dp))
-
-        // BOTÕES DE AÇÃO
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Button(
-                    modifier = Modifier.weight(1f),
-                    onClick = { navController.popBackStack() }
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .verticalScroll(rememberScrollState())
                 ) {
-                    Text("Voltar")
-                }
+                    Text(
+                        "Dados da Amostra",
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 8.dp),
+                        textAlign = TextAlign.Center
+                    )
 
-                Button(
-                    modifier = Modifier.weight(1f),
-                    onClick = {
-                        val id = safeClass.id
-                        val official = isOfficial // Pega o estado isOfficial que você já tem nesta tela
+                    // Tabela de Resultado da Amostra
+                    ClassificationTable(
+                        classification = safeClass,
+                        limits = safeLimits,
+                        typeTranslator = viewModel::getFinalTypeLabel,
+                        modifier = Modifier.fillMaxWidth()
+                    )
 
-                        // Passa os dois parâmetros na URL da rota
-                        navController.navigate("milhoDiscountInputScreen?classificationId=$id&isOfficial=$official")
+                    // Se for Oficial, exibe a tabela de limites do MAPA
+                    if (isOfficial) {
+                        Spacer(Modifier.height(32.dp))
+
+                        Text(
+                            text = "Limites de Referência MAPA",
+                            style = MaterialTheme.typography.titleMedium,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 8.dp),
+                            textAlign = TextAlign.Center
+                        )
+
+                        // Tabela de limites
+                        if (allOfficialLimits.isNotEmpty()) {
+                            OfficialReferenceTable(
+                                grain = "Milho",
+                                group = currentGroup ?: 1,
+                                data = allOfficialLimits
+                            )
+                        } else {
+                            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                                Text(
+                                    "Carregando limites oficiais...",
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
+                        }
                     }
-                ) {
-                    Text("Calcular Descontos")
-                }
-            }
 
-            Button(
-                modifier = Modifier.fillMaxWidth(),
-                onClick = {
-                    viewModel.prepareForPdfExport("Milho")
-                    viewModel.exportClassificationMilho(context, safeClass, safeLimits)
+                    Spacer(Modifier.height(32.dp))
                 }
-            ) {
-                Text("Exportar PDF")
+
+                Spacer(Modifier.height(8.dp))
+
+                // BOTÕES DE AÇÃO
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Button(
+                            modifier = Modifier.weight(1f),
+                            onClick = { navController.popBackStack() }
+                        ) {
+                            Text("Voltar")
+                        }
+
+                        Button(
+                            modifier = Modifier.weight(1f),
+                            onClick = {
+                                val id = safeClass.id
+                                val official =
+                                    isOfficial // Pega o estado isOfficial que você já tem nesta tela
+
+                                // Passa os dois parâmetros na URL da rota
+                                navController.navigate("milhoDiscountInputScreen?classificationId=$id&isOfficial=$official")
+                            }
+                        ) {
+                            Text("Calcular Descontos")
+                        }
+                    }
+
+                    Button(
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = {
+                            viewModel.prepareForPdfExport("Milho")
+                            viewModel.exportClassificationMilho(context, safeClass, safeLimits)
+                        }
+                    ) {
+                        Text("Exportar PDF")
+                    }
+                }
             }
         }
     }

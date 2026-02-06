@@ -14,36 +14,43 @@ fun MilhoDefinirLimitesScreen(
     navController: NavController,
     viewModel: ClassificationViewModel = hiltViewModel()
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(32.dp),
-        verticalArrangement = Arrangement.Center
-    ) {
-        Text("Etapa 4 - Limites de Tolerância", style = MaterialTheme.typography.headlineSmall)
+    // 1. O Scaffold envolve toda a tela
+    Scaffold(
+        modifier = Modifier.fillMaxSize()
+    ) { innerPadding -> // Esse innerPadding contém as medidas da barra de status e navegação
 
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Button(
-            onClick = {
-                viewModel.isOfficial = true
-                navController.navigate("milhoResultado")
-            },
-            modifier = Modifier.fillMaxWidth()
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(32.dp),
+            verticalArrangement = Arrangement.Center
         ) {
-            Text("Usar Parâmetros Oficiais")
-        }
+            Text("Etapa 4 - Limites de Tolerância", style = MaterialTheme.typography.headlineSmall)
 
-        Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
-        Button(
-            onClick = {
-                viewModel.isOfficial = false
-                navController.navigate("milhoResultado")
-            },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Definir Manualmente")
+            Button(
+                onClick = {
+                    viewModel.isOfficial = true
+                    navController.navigate("milhoResultado")
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Usar Parâmetros Oficiais")
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Button(
+                onClick = {
+                    viewModel.isOfficial = false
+                    navController.navigate("milhoResultado")
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Definir Manualmente")
+            }
         }
     }
 }

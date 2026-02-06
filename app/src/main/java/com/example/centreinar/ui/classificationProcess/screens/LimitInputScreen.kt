@@ -29,124 +29,145 @@ fun LimitInputScreen(
     navController: NavController,
     viewModel: ClassificationViewModel = hiltViewModel()
 ) {
-    val defaultLimits by viewModel.defaultLimits.collectAsStateWithLifecycle()
-    val allOfficialLimits by viewModel.allOfficialLimits.collectAsStateWithLifecycle()
+    // 1. O Scaffold envolve toda a tela
+    Scaffold(
+        modifier = Modifier.fillMaxSize()
+    ) { innerPadding -> // Esse innerPadding contém as medidas da barra de status e navegação
 
-    val currentGrain = viewModel.selectedGrain
-    val currentGroup = viewModel.selectedGroup
-    val isOfficial = viewModel.isOfficial == true
-    val isSoja = currentGrain == "Soja"
+        val defaultLimits by viewModel.defaultLimits.collectAsStateWithLifecycle()
+        val allOfficialLimits by viewModel.allOfficialLimits.collectAsStateWithLifecycle()
 
-    var moisture by remember(currentGrain, currentGroup) { mutableStateOf("") }
-    var impurities by remember { mutableStateOf("") }
-    var brokenCrackedDamaged by remember { mutableStateOf("") }
-    var greenish by remember { mutableStateOf("") }
-    var burnt by remember { mutableStateOf("") }
-    var burntOrSour by remember { mutableStateOf("") }
-    var moldy by remember { mutableStateOf("") }
-    var spoiled by remember { mutableStateOf("") }
+        val currentGrain = viewModel.selectedGrain
+        val currentGroup = viewModel.selectedGroup
+        val isOfficial = viewModel.isOfficial == true
+        val isSoja = currentGrain == "Soja"
 
-    var errorMessage by remember { mutableStateOf<String?>(null) }
-    val moistureFocus = remember { FocusRequester() }
-    val scrollState = rememberScrollState()
+        var moisture by remember(currentGrain, currentGroup) { mutableStateOf("") }
+        var impurities by remember { mutableStateOf("") }
+        var brokenCrackedDamaged by remember { mutableStateOf("") }
+        var greenish by remember { mutableStateOf("") }
+        var burnt by remember { mutableStateOf("") }
+        var burntOrSour by remember { mutableStateOf("") }
+        var moldy by remember { mutableStateOf("") }
+        var spoiled by remember { mutableStateOf("") }
 
-    LaunchedEffect(currentGrain, currentGroup) {
-        if (currentGrain != null) {
-            viewModel.loadDefaultLimits()
-        }
-    }
+        var errorMessage by remember { mutableStateOf<String?>(null) }
+        val moistureFocus = remember { FocusRequester() }
+        val scrollState = rememberScrollState()
 
-    LaunchedEffect(defaultLimits) {
-        defaultLimits?.let { limits ->
-            moisture = limits["moistureUpLim"]?.toString() ?: ""
-            if (!isOfficial) {
-                impurities = limits["impuritiesUpLim"]?.toString() ?: ""
-                brokenCrackedDamaged = limits["brokenUpLim"]?.toString() ?: ""
-                moldy = limits["moldyUpLim"]?.toString() ?: ""
-                spoiled = limits["spoiledTotalUpLim"]?.toString() ?: ""
-                burnt = limits["burntUpLim"]?.toString() ?: ""
-                if (isSoja) {
-                    greenish = limits["greenishUpLim"]?.toString() ?: ""
-                    burntOrSour = limits["burntOrSourUpLim"]?.toString() ?: ""
-                } else {
-                    burntOrSour = limits["ardidosUpLim"]?.toString() ?: ""
-                }
+        LaunchedEffect(currentGrain, currentGroup) {
+            if (currentGrain != null) {
+                viewModel.loadDefaultLimits()
             }
         }
-    }
 
-    Column(modifier = Modifier.fillMaxSize().padding(24.dp)) {
-        Text(
-            text = if (!isOfficial) "Insira os limites de tolerância" else "Limites de Referência MAPA",
-            style = MaterialTheme.typography.headlineSmall
-        )
-        Text(
-            text = if (currentGrain == "Soja") "$currentGrain - Grupo $currentGroup" else "$currentGrain",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.secondary
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        NumberInputField(
-            label = "Umidade da Amostra (%)",
-            value = moisture,
-            onValueChange = { moisture = it },
-            focusRequester = moistureFocus,
-            nextFocus = null,
-            enabled = !isOfficial,
-            readOnly = isOfficial
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-
-        Box(modifier = Modifier.weight(1f)) {
-            if (isOfficial) {
-                if (allOfficialLimits.isNotEmpty()) {
-                    OfficialLimitsTable(grain = currentGrain ?: "", data = allOfficialLimits)
-                }
-            } else {
-                Column(modifier = Modifier.verticalScroll(scrollState)) {
-                    EditableFields(
-                        isSoja = isSoja,
-                        impurities = impurities, onImpuritiesChange = { impurities = it },
-                        burnt = burnt, onBurntChange = { burnt = it },
-                        burntOrSour = burntOrSour, onBurntOrSourChange = { burntOrSour = it },
-                        moldy = moldy, onMoldyChange = { moldy = it },
-                        spoiled = spoiled, onSpoiledChange = { spoiled = it },
-                        greenish = greenish, onGreenishChange = { greenish = it },
-                        broken = brokenCrackedDamaged, onBrokenChange = { brokenCrackedDamaged = it }
-                    )
-                }
-            }
-        }
-        Spacer(Modifier.height(32.dp))
-
-        errorMessage?.let {
-            Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(vertical = 4.dp))
-        }
-
-        Button(
-            onClick = {
-                if (moisture.isEmpty() || moisture == ".") {
-                    errorMessage = "Informe a umidade da amostra."
-                    return@Button
-                }
-
+        LaunchedEffect(defaultLimits) {
+            defaultLimits?.let { limits ->
+                moisture = limits["moistureUpLim"]?.toString() ?: ""
                 if (!isOfficial) {
-                    viewModel.setLimit(
-                        impurities.toFloatOrDefault(), moisture.toFloatOrDefault(),
-                        brokenCrackedDamaged.toFloatOrDefault(), greenish.toFloatOrDefault(),
-                        burnt.toFloatOrDefault(), burntOrSour.toFloatOrDefault(),
-                        moldy.toFloatOrDefault(), spoiled.toFloatOrDefault()
-                    )
+                    impurities = limits["impuritiesUpLim"]?.toString() ?: ""
+                    brokenCrackedDamaged = limits["brokenUpLim"]?.toString() ?: ""
+                    moldy = limits["moldyUpLim"]?.toString() ?: ""
+                    spoiled = limits["spoiledTotalUpLim"]?.toString() ?: ""
+                    burnt = limits["burntUpLim"]?.toString() ?: ""
+                    if (isSoja) {
+                        greenish = limits["greenishUpLim"]?.toString() ?: ""
+                        burntOrSour = limits["burntOrSourUpLim"]?.toString() ?: ""
+                    } else {
+                        burntOrSour = limits["ardidosUpLim"]?.toString() ?: ""
+                    }
                 }
-                navController.navigate("disqualification")
-            },
-            modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+            }
+        }
+
+        Column(
+            modifier = Modifier.fillMaxSize()
+                .padding(innerPadding)
+                .padding(24.dp)
         ) {
-            Text(if (!isOfficial) "Salvar e Continuar" else "Próximo")
+            Text(
+                text = if (!isOfficial) "Insira os limites de tolerância" else "Limites de Referência MAPA",
+                style = MaterialTheme.typography.headlineSmall
+            )
+            Text(
+                text = if (currentGrain == "Soja") "$currentGrain - Grupo $currentGroup" else "$currentGrain",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.secondary
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            NumberInputField(
+                label = "Umidade da Amostra (%)",
+                value = moisture,
+                onValueChange = { moisture = it },
+                focusRequester = moistureFocus,
+                nextFocus = null,
+                enabled = !isOfficial,
+                readOnly = isOfficial
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+
+            Box(modifier = Modifier.weight(1f)) {
+                if (isOfficial) {
+                    if (allOfficialLimits.isNotEmpty()) {
+                        OfficialLimitsTable(grain = currentGrain ?: "", data = allOfficialLimits)
+                    }
+                } else {
+                    Column(modifier = Modifier.verticalScroll(scrollState)) {
+                        EditableFields(
+                            isSoja = isSoja,
+                            impurities = impurities,
+                            onImpuritiesChange = { impurities = it },
+                            burnt = burnt,
+                            onBurntChange = { burnt = it },
+                            burntOrSour = burntOrSour,
+                            onBurntOrSourChange = { burntOrSour = it },
+                            moldy = moldy,
+                            onMoldyChange = { moldy = it },
+                            spoiled = spoiled,
+                            onSpoiledChange = { spoiled = it },
+                            greenish = greenish,
+                            onGreenishChange = { greenish = it },
+                            broken = brokenCrackedDamaged,
+                            onBrokenChange = { brokenCrackedDamaged = it }
+                        )
+                    }
+                }
+            }
+            Spacer(Modifier.height(32.dp))
+
+            errorMessage?.let {
+                Text(
+                    it,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(vertical = 4.dp)
+                )
+            }
+
+            Button(
+                onClick = {
+                    if (moisture.isEmpty() || moisture == ".") {
+                        errorMessage = "Informe a umidade da amostra."
+                        return@Button
+                    }
+
+                    if (!isOfficial) {
+                        viewModel.setLimit(
+                            impurities.toFloatOrDefault(), moisture.toFloatOrDefault(),
+                            brokenCrackedDamaged.toFloatOrDefault(), greenish.toFloatOrDefault(),
+                            burnt.toFloatOrDefault(), burntOrSour.toFloatOrDefault(),
+                            moldy.toFloatOrDefault(), spoiled.toFloatOrDefault()
+                        )
+                    }
+                    navController.navigate("disqualification")
+                },
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+            ) {
+                Text(if (!isOfficial) "Salvar e Continuar" else "Próximo")
+            }
         }
     }
 }
@@ -154,7 +175,7 @@ fun LimitInputScreen(
 @Composable
 fun OfficialLimitsTable(grain: String, data: List<Any>) {
     val labels = if (grain == "Soja") {
-        listOf("Ardidos/Queim.", "Queimados", "Mofados", "Avariados Total", "Esverdeados", "Partidos/Quebr.", "Impurezas")
+        listOf("Ardidos/Queim.", "Queimados", "Mofados", "Avariados Total", "Esverdeados", "Partidos/Quebr./Amassados", "Matérias Estranhas e Impurezas")
     } else {
         listOf("Ardidos", "Avariados Total", "Quebrados", "Matérias Estranhas e Impurezas", "Carunchados")
     }

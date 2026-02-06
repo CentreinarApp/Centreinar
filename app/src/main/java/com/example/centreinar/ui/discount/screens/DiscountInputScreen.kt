@@ -17,6 +17,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
@@ -48,227 +49,244 @@ fun DiscountInputScreen(
     classificationId: Int? = null, // Recebe o ID opcional da classificação
     viewModel: DiscountViewModel = hiltViewModel()
 ) {
-    val scrollState = rememberScrollState()
+    // 1. O Scaffold envolve toda a tela
+    Scaffold(
+        modifier = Modifier.fillMaxSize()
+    ) { innerPadding -> // Esse innerPadding contém as medidas da barra de status e navegação
 
-    // Estados observados do ViewModel
-    val loadedClassif by viewModel.loadedClassification.collectAsStateWithLifecycle()
-    val loadedSample by viewModel.loadedSample.collectAsStateWithLifecycle()
+        val scrollState = rememberScrollState()
 
-    val grain = viewModel.selectedGrain
-    val group = viewModel.selectedGroup
+        // Estados observados do ViewModel
+        val loadedClassif by viewModel.loadedClassification.collectAsStateWithLifecycle()
+        val loadedSample by viewModel.loadedSample.collectAsStateWithLifecycle()
 
-    // Estados dos Campos de Input
-    var lotWeight by remember { mutableStateOf("") }
-    var priceBySack by remember { mutableStateOf("") }
-    var moisture by remember { mutableStateOf("") }
-    var impurities by remember { mutableStateOf("") }
-    var daysOfStorage by remember { mutableStateOf("0") }
-    var deductionValue by remember { mutableStateOf("0") }
-    var brokenCrackedDamaged by remember { mutableStateOf("") }
-    var greenish by remember { mutableStateOf("") }
-    var burnt by remember { mutableStateOf("") }
-    var burntOrSour by remember { mutableStateOf("") }
-    var moldy by remember { mutableStateOf("") }
-    var spoiled by remember { mutableStateOf("") }
-    var doesTechnicalLoss by remember { mutableStateOf(false) }
-    var doesDeduction by remember { mutableStateOf(false) }
+        val grain = viewModel.selectedGrain
+        val group = viewModel.selectedGroup
 
-    var errorMessage by remember { mutableStateOf<String?>(null) }
+        // Estados dos Campos de Input
+        var lotWeight by remember { mutableStateOf("") }
+        var priceBySack by remember { mutableStateOf("") }
+        var moisture by remember { mutableStateOf("") }
+        var impurities by remember { mutableStateOf("") }
+        var daysOfStorage by remember { mutableStateOf("0") }
+        var deductionValue by remember { mutableStateOf("0") }
+        var brokenCrackedDamaged by remember { mutableStateOf("") }
+        var greenish by remember { mutableStateOf("") }
+        var burnt by remember { mutableStateOf("") }
+        var burntOrSour by remember { mutableStateOf("") }
+        var moldy by remember { mutableStateOf("") }
+        var spoiled by remember { mutableStateOf("") }
+        var doesTechnicalLoss by remember { mutableStateOf(false) }
+        var doesDeduction by remember { mutableStateOf(false) }
 
-    // --- LÓGICA DE PREENCHIMENTO AUTOMÁTICO ---
+        var errorMessage by remember { mutableStateOf<String?>(null) }
 
-    // Dispara o carregamento se houver um ID
-    LaunchedEffect(classificationId) {
-        if (classificationId != null && classificationId > 0) {
-            viewModel.loadClassificationData(classificationId)
-        }
-    }
+        // --- LÓGICA DE PREENCHIMENTO AUTOMÁTICO ---
 
-    // Escuta mudanças nos dados carregados e preenche os campos
-    LaunchedEffect(loadedClassif, loadedSample) {
-        // Preenche dados da Amostra (Peso e Umidade)
-        loadedSample?.let { sample ->
-            lotWeight = sample.lotWeight.toString()
-            moisture = sample.humidity.toString()
-        }
-        // Preenche dados da Classificação (Impurezas e Defeitos)
-        loadedClassif?.let { classif ->
-            impurities = classif.foreignMattersPercentage.toString()
-            burnt = classif.burntPercentage.toString()
-            burntOrSour = classif.burntOrSourPercentage.toString()
-            moldy = classif.moldyPercentage.toString()
-            spoiled = classif.spoiledPercentage.toString()
-            greenish = classif.greenishPercentage.toString()
-            brokenCrackedDamaged = classif.brokenCrackedDamagedPercentage.toString()
-        }
-    }
-
-    // --- CONFIGURAÇÃO DE FOCO ---
-    val lotWeightFocus = remember { FocusRequester() }
-    val priceBySackFocus = remember { FocusRequester() }
-    val moistureFocus = remember { FocusRequester() }
-    val impuritiesFocus = remember { FocusRequester() }
-    val brokenFocus = remember { FocusRequester() }
-    val greenishFocus = remember { FocusRequester() }
-    val burntFocus = remember { FocusRequester() }
-    val burntOrSourFocus = remember { FocusRequester() }
-    val moldyFocus = remember { FocusRequester() }
-    val spoiledFocus = remember { FocusRequester() }
-    val daysOfStorageFocus = remember { FocusRequester() }
-    val deductionValueFocus = remember { FocusRequester() }
-
-    val tabTitles = listOf("Informação Básica", "Defeitos 1", "Defeitos 2")
-    var selectedTab by remember { mutableStateOf(0) }
-
-    LaunchedEffect(selectedTab) {
-        when (selectedTab) {
-            0 -> lotWeightFocus.requestFocus()
-            1 -> burntFocus.requestFocus()
-            2 -> greenishFocus.requestFocus()
-        }
-    }
-
-    Column(modifier = Modifier.fillMaxSize()) {
-        TabRow(selectedTabIndex = selectedTab) {
-            tabTitles.forEachIndexed { index, title ->
-                Tab(
-                    selected = selectedTab == index,
-                    onClick = { selectedTab = index },
-                    text = { Text(text = title) }
-                )
+        // Dispara o carregamento se houver um ID
+        LaunchedEffect(classificationId) {
+            if (classificationId != null && classificationId > 0) {
+                viewModel.loadClassificationData(classificationId)
             }
         }
 
-        Column(modifier = Modifier.weight(1f).fillMaxWidth()) {
-            Text(
-                "Insira os dados",
-                style = MaterialTheme.typography.headlineSmall,
-                color = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.padding(16.dp)
-            )
-
-            errorMessage?.let {
-                Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(horizontal = 16.dp))
+        // Escuta mudanças nos dados carregados e preenche os campos
+        LaunchedEffect(loadedClassif, loadedSample) {
+            // Preenche dados da Amostra (Peso e Umidade)
+            loadedSample?.let { sample ->
+                lotWeight = sample.lotWeight.toString()
+                moisture = sample.humidity.toString()
             }
+            // Preenche dados da Classificação (Impurezas e Defeitos)
+            loadedClassif?.let { classif ->
+                impurities = classif.foreignMattersPercentage.toString()
+                burnt = classif.burntPercentage.toString()
+                burntOrSour = classif.burntOrSourPercentage.toString()
+                moldy = classif.moldyPercentage.toString()
+                spoiled = classif.spoiledPercentage.toString()
+                greenish = classif.greenishPercentage.toString()
+                brokenCrackedDamaged = classif.brokenCrackedDamagedPercentage.toString()
+            }
+        }
 
-            Spacer(modifier = Modifier.height(5.dp))
+        // --- CONFIGURAÇÃO DE FOCO ---
+        val lotWeightFocus = remember { FocusRequester() }
+        val priceBySackFocus = remember { FocusRequester() }
+        val moistureFocus = remember { FocusRequester() }
+        val impuritiesFocus = remember { FocusRequester() }
+        val brokenFocus = remember { FocusRequester() }
+        val greenishFocus = remember { FocusRequester() }
+        val burntFocus = remember { FocusRequester() }
+        val burntOrSourFocus = remember { FocusRequester() }
+        val moldyFocus = remember { FocusRequester() }
+        val spoiledFocus = remember { FocusRequester() }
+        val daysOfStorageFocus = remember { FocusRequester() }
+        val deductionValueFocus = remember { FocusRequester() }
 
+        val tabTitles = listOf("Informação Básica", "Defeitos 1", "Defeitos 2")
+        var selectedTab by remember { mutableStateOf(0) }
+
+        LaunchedEffect(selectedTab) {
             when (selectedTab) {
-                0 -> BasicInfoTab(
-                    lotWeight = lotWeight,
-                    onLotWeightChange = { lotWeight = it },
-                    moisture = moisture,
-                    onMoistureChange = { moisture = it },
-                    impurities = impurities,
-                    onImpuritiesChange = { impurities = it },
-                    priceBySack = priceBySack,
-                    onPriceBySackChange = { priceBySack = it },
-                    lotWeightFocus = lotWeightFocus,
-                    moistureFocus = moistureFocus,
-                    impuritiesFocus = impuritiesFocus,
-                    priceBySackFocus = priceBySackFocus
-                )
-
-                1 -> GraveDefectsTab(
-                    burnt = burnt,
-                    onBurntChange = { burnt = it },
-                    burntOrSour = burntOrSour,
-                    onBurntOrSourChange = { burntOrSour = it },
-                    moldy = moldy,
-                    onMoldyChange = { moldy = it },
-                    spoiled = spoiled,
-                    onSpoiledChange = { spoiled = it },
-                    burntFocus = burntFocus,
-                    burntOrSourFocus = burntOrSourFocus,
-                    moldyFocus = moldyFocus,
-                    spoiledFocus = spoiledFocus
-                )
-
-                2 -> FinalDefectsTab(
-                    greenish = greenish,
-                    onGreenishChange = { greenish = it },
-                    brokenCrackedDamaged = brokenCrackedDamaged,
-                    onBrokenCrackedDamagedChange = { brokenCrackedDamaged = it },
-                    greenishFocus = greenishFocus,
-                    brokenCrackedDamagedFocus = brokenFocus,
-                    daysOfStorage = daysOfStorage,
-                    onDaysOfStorageChange = { daysOfStorage = it },
-                    deductionValue = deductionValue,
-                    onDeductionValueChange = { deductionValue = it },
-                    doesDeduction = doesDeduction,
-                    onDoesDeductionChange = { doesDeduction = it },
-                    doesTechnicalLoss = doesTechnicalLoss,
-                    onDoesTechnicalLossChange = { doesTechnicalLoss = it },
-                    daysOfStorageFocus = daysOfStorageFocus,
-                    deductionValueFocus = deductionValueFocus
-                )
+                0 -> lotWeightFocus.requestFocus()
+                1 -> burntFocus.requestFocus()
+                2 -> greenishFocus.requestFocus()
             }
         }
 
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween
+        Column(modifier = Modifier.fillMaxSize().padding(innerPadding)
         ) {
-            if (selectedTab > 0) {
-                Button(onClick = { selectedTab-- }) { Text("Voltar") }
-            } else {
-                Spacer(modifier = Modifier.weight(1f))
+            TabRow(selectedTabIndex = selectedTab) {
+                tabTitles.forEachIndexed { index, title ->
+                    Tab(
+                        selected = selectedTab == index,
+                        onClick = { selectedTab = index },
+                        text = { Text(text = title) }
+                    )
+                }
             }
 
-            if (selectedTab < tabTitles.lastIndex) {
-                Button(onClick = { selectedTab++ }) { Text("Avançar") }
-            } else {
-                Button(
-                    onClick = {
-                        val fLotWeight = lotWeight.toFloatOrZero()
-                        val fPriceBySack = priceBySack.toFloatOrZero()
-                        val fImp = impurities.toFloatOrZero()
-                        val fMoisture = moisture.toFloatOrZero()
-                        val fBroken = brokenCrackedDamaged.toFloatOrZero()
-                        val fGreenish = greenish.toFloatOrZero()
-                        val fBurnt = burnt.toFloatOrZero()
-                        val fBurntOrSour = burntOrSour.toFloatOrZero()
-                        val fMoldy = moldy.toFloatOrZero()
-                        val fSpoiled = spoiled.toFloatOrZero()
-                        val fDays = daysOfStorage.toIntOrZero()
-                        val fDeduction = deductionValue.toFloatOrZero()
+            Column(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                Text(
+                    "Insira os dados",
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.padding(16.dp)
+                )
 
-                        if (fLotWeight <= 0f || fPriceBySack <= 0f) {
-                            errorMessage = "Por favor, insira valores válidos para Peso do Lote e Preço por Saca."
-                            return@Button
-                        }
+                errorMessage?.let {
+                    Text(
+                        it,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    )
+                }
 
-                        val fLotPrice = (fLotWeight * fPriceBySack) / 60f
+                Spacer(modifier = Modifier.height(5.dp))
 
-                        val inputDiscount = InputDiscountSoja(
-                            grain = grain ?: "Soja",
-                            group = group ?: 1,
-                            limitSource = 0,
-                            classificationId = loadedClassif?.id, // Vincula à classificação carregada
-                            daysOfStorage = fDays,
-                            lotWeight = fLotWeight,
-                            lotPrice = fLotPrice,
-                            foreignMattersAndImpurities = fImp,
-                            humidity = fMoisture,
-                            burnt = fBurnt,
-                            burntOrSour = fBurntOrSour,
-                            moldy = fMoldy,
-                            spoiled = fSpoiled,
-                            greenish = fGreenish,
-                            brokenCrackedDamaged = fBroken,
-                            deductionValue = fDeduction
-                        )
+                when (selectedTab) {
+                    0 -> BasicInfoTab(
+                        lotWeight = lotWeight,
+                        onLotWeightChange = { lotWeight = it },
+                        moisture = moisture,
+                        onMoistureChange = { moisture = it },
+                        impurities = impurities,
+                        onImpuritiesChange = { impurities = it },
+                        priceBySack = priceBySack,
+                        onPriceBySackChange = { priceBySack = it },
+                        lotWeightFocus = lotWeightFocus,
+                        moistureFocus = moistureFocus,
+                        impuritiesFocus = impuritiesFocus,
+                        priceBySackFocus = priceBySackFocus
+                    )
 
-                        try {
-                            viewModel.setDiscount(inputDiscount, doesTechnicalLoss, true, doesDeduction)
-                            navController.navigate("discountResultsScreen")
-                        } catch (e: Exception) {
-                            errorMessage = "Erro no cálculo: ${e.message}"
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Calcular Desconto")
+                    1 -> GraveDefectsTab(
+                        burnt = burnt,
+                        onBurntChange = { burnt = it },
+                        burntOrSour = burntOrSour,
+                        onBurntOrSourChange = { burntOrSour = it },
+                        moldy = moldy,
+                        onMoldyChange = { moldy = it },
+                        spoiled = spoiled,
+                        onSpoiledChange = { spoiled = it },
+                        burntFocus = burntFocus,
+                        burntOrSourFocus = burntOrSourFocus,
+                        moldyFocus = moldyFocus,
+                        spoiledFocus = spoiledFocus
+                    )
+
+                    2 -> FinalDefectsTab(
+                        greenish = greenish,
+                        onGreenishChange = { greenish = it },
+                        brokenCrackedDamaged = brokenCrackedDamaged,
+                        onBrokenCrackedDamagedChange = { brokenCrackedDamaged = it },
+                        greenishFocus = greenishFocus,
+                        brokenCrackedDamagedFocus = brokenFocus,
+                        daysOfStorage = daysOfStorage,
+                        onDaysOfStorageChange = { daysOfStorage = it },
+                        deductionValue = deductionValue,
+                        onDeductionValueChange = { deductionValue = it },
+                        doesDeduction = doesDeduction,
+                        onDoesDeductionChange = { doesDeduction = it },
+                        doesTechnicalLoss = doesTechnicalLoss,
+                        onDoesTechnicalLossChange = { doesTechnicalLoss = it },
+                        daysOfStorageFocus = daysOfStorageFocus,
+                        deductionValueFocus = deductionValueFocus
+                    )
+                }
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                if (selectedTab > 0) {
+                    Button(onClick = { selectedTab-- }) { Text("Voltar") }
+                } else {
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+
+                if (selectedTab < tabTitles.lastIndex) {
+                    Button(onClick = { selectedTab++ }) { Text("Avançar") }
+                } else {
+                    Button(
+                        onClick = {
+                            val fLotWeight = lotWeight.toFloatOrZero()
+                            val fPriceBySack = priceBySack.toFloatOrZero()
+                            val fImp = impurities.toFloatOrZero()
+                            val fMoisture = moisture.toFloatOrZero()
+                            val fBroken = brokenCrackedDamaged.toFloatOrZero()
+                            val fGreenish = greenish.toFloatOrZero()
+                            val fBurnt = burnt.toFloatOrZero()
+                            val fBurntOrSour = burntOrSour.toFloatOrZero()
+                            val fMoldy = moldy.toFloatOrZero()
+                            val fSpoiled = spoiled.toFloatOrZero()
+                            val fDays = daysOfStorage.toIntOrZero()
+                            val fDeduction = deductionValue.toFloatOrZero()
+
+                            if (fLotWeight <= 0f || fPriceBySack <= 0f) {
+                                errorMessage =
+                                    "Por favor, insira valores válidos para Peso do Lote e Preço por Saca."
+                                return@Button
+                            }
+
+                            val fLotPrice = (fLotWeight * fPriceBySack) / 60f
+
+                            val inputDiscount = InputDiscountSoja(
+                                grain = grain ?: "Soja",
+                                group = group ?: 1,
+                                limitSource = 0,
+                                classificationId = loadedClassif?.id, // Vincula à classificação carregada
+                                daysOfStorage = fDays,
+                                lotWeight = fLotWeight,
+                                lotPrice = fLotPrice,
+                                foreignMattersAndImpurities = fImp,
+                                humidity = fMoisture,
+                                burnt = fBurnt,
+                                burntOrSour = fBurntOrSour,
+                                moldy = fMoldy,
+                                spoiled = fSpoiled,
+                                greenish = fGreenish,
+                                brokenCrackedDamaged = fBroken,
+                                deductionValue = fDeduction
+                            )
+
+                            try {
+                                viewModel.setDiscount(
+                                    inputDiscount,
+                                    doesTechnicalLoss,
+                                    true,
+                                    doesDeduction
+                                )
+                                navController.navigate("discountResultsScreen")
+                            } catch (e: Exception) {
+                                errorMessage = "Erro no cálculo: ${e.message}"
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Calcular Desconto")
+                    }
                 }
             }
         }

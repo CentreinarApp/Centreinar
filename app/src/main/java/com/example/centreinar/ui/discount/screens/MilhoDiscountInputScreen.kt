@@ -29,198 +29,208 @@ fun MilhoDiscountInputScreen(
     classificationId: Int? = null,
     viewModel: DiscountViewModel = hiltViewModel()
 ) {
-    val scrollState = rememberScrollState()
+    // 1. O Scaffold envolve toda a tela
+    Scaffold(
+        modifier = Modifier.fillMaxSize()
+    ) { innerPadding -> // Esse innerPadding contém as medidas da barra de status e navegação
 
-    // Estados observados do ViewModel para Auto-Fill
-    val loadedClassif by viewModel.loadedClassificationMilho.collectAsStateWithLifecycle()
-    val loadedSample by viewModel.loadedSampleMilho.collectAsStateWithLifecycle()
+        val scrollState = rememberScrollState()
 
-    // --- ESTADOS DOS CAMPOS ---
-    var lotWeight by remember { mutableStateOf("") }
-    var priceBySack by remember { mutableStateOf("") }
-    var moisture by remember { mutableStateOf("") }
-    var impurities by remember { mutableStateOf("") }
-    var broken by remember { mutableStateOf("") }
-    var ardidos by remember { mutableStateOf("") }
-    var mofados by remember { mutableStateOf("") }
-    var carunchado by remember { mutableStateOf("") }
-    var spoiled by remember { mutableStateOf("") }
-    var daysOfStorage by remember { mutableStateOf("0") }
-    var deductionValue by remember { mutableStateOf("0") }
-    var doesTechnicalLoss by remember { mutableStateOf(false) }
-    var doesDeduction by remember { mutableStateOf(false) }
+        // Estados observados do ViewModel para Auto-Fill
+        val loadedClassif by viewModel.loadedClassificationMilho.collectAsStateWithLifecycle()
+        val loadedSample by viewModel.loadedSampleMilho.collectAsStateWithLifecycle()
 
-    var errorMessage by remember { mutableStateOf<String?>(null) }
+        // --- ESTADOS DOS CAMPOS ---
+        var lotWeight by remember { mutableStateOf("") }
+        var priceBySack by remember { mutableStateOf("") }
+        var moisture by remember { mutableStateOf("") }
+        var impurities by remember { mutableStateOf("") }
+        var broken by remember { mutableStateOf("") }
+        var ardidos by remember { mutableStateOf("") }
+        var mofados by remember { mutableStateOf("") }
+        var carunchado by remember { mutableStateOf("") }
+        var spoiled by remember { mutableStateOf("") }
+        var daysOfStorage by remember { mutableStateOf("0") }
+        var deductionValue by remember { mutableStateOf("0") }
+        var doesTechnicalLoss by remember { mutableStateOf(false) }
+        var doesDeduction by remember { mutableStateOf(false) }
 
-    // --- LÓGICA DE AUTO-PREENCHIMENTO ---
+        var errorMessage by remember { mutableStateOf<String?>(null) }
 
-    LaunchedEffect(classificationId) {
-        if (classificationId != null && classificationId > 0) {
-            viewModel.loadClassificationMilhoData(classificationId)
-        }
-    }
+        // --- LÓGICA DE AUTO-PREENCHIMENTO ---
 
-    LaunchedEffect(loadedClassif, loadedSample) {
-        loadedSample?.let { sample ->
-            lotWeight = sample.lotWeight.toString()
-            moisture = sample.moisture.toString()
-        }
-        loadedClassif?.let { classif ->
-            impurities = classif.impuritiesPercentage.toString()
-            broken = classif.brokenPercentage.toString()
-            ardidos = classif.ardidoPercentage.toString()
-            mofados = classif.mofadoPercentage.toString()
-            carunchado = classif.carunchadoPercentage.toString()
-            spoiled = classif.spoiledTotalPercentage.toString()
-        }
-    }
-
-    // FOCUS REQUESTERS
-    val lotWeightFocus = remember { FocusRequester() }
-    val priceBySackFocus = remember { FocusRequester() }
-    val moistureFocus = remember { FocusRequester() }
-    val impuritiesFocus = remember { FocusRequester() }
-    val brokenFocus = remember { FocusRequester() }
-    val ardidosFocus = remember { FocusRequester() }
-    val mofadosFocus = remember { FocusRequester() }
-    val carunchadoFocus = remember { FocusRequester() }
-    val spoiledFocus = remember { FocusRequester() }
-    val daysOfStorageFocus = remember { FocusRequester() }
-    val deductionValueFocus = remember { FocusRequester() }
-
-    val tabTitles = listOf("Básico", "Defeitos", "Extras")
-    var selectedTab by remember { mutableStateOf(0) }
-
-    LaunchedEffect(selectedTab) {
-        when (selectedTab) {
-            0 -> lotWeightFocus.requestFocus()
-            1 -> brokenFocus.requestFocus()
-            2 -> if (doesTechnicalLoss) daysOfStorageFocus.requestFocus()
-        }
-    }
-
-    Column(modifier = Modifier.fillMaxSize()) {
-        TabRow(selectedTabIndex = selectedTab) {
-            tabTitles.forEachIndexed { index, title ->
-                Tab(
-                    selected = selectedTab == index,
-                    onClick = { selectedTab = index },
-                    text = { Text(text = title) }
-                )
+        LaunchedEffect(classificationId) {
+            if (classificationId != null && classificationId > 0) {
+                viewModel.loadClassificationMilhoData(classificationId)
             }
         }
 
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth()
-                .padding(16.dp)
-                .verticalScroll(scrollState)
-        ) {
-            Text(
-                "Dados do Milho",
-                style = MaterialTheme.typography.headlineSmall,
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
+        LaunchedEffect(loadedClassif, loadedSample) {
+            loadedSample?.let { sample ->
+                lotWeight = sample.lotWeight.toString()
+                moisture = sample.moisture.toString()
+            }
+            loadedClassif?.let { classif ->
+                impurities = classif.impuritiesPercentage.toString()
+                broken = classif.brokenPercentage.toString()
+                ardidos = classif.ardidoPercentage.toString()
+                mofados = classif.mofadoPercentage.toString()
+                carunchado = classif.carunchadoPercentage.toString()
+                spoiled = classif.spoiledTotalPercentage.toString()
+            }
+        }
 
+        // FOCUS REQUESTERS
+        val lotWeightFocus = remember { FocusRequester() }
+        val priceBySackFocus = remember { FocusRequester() }
+        val moistureFocus = remember { FocusRequester() }
+        val impuritiesFocus = remember { FocusRequester() }
+        val brokenFocus = remember { FocusRequester() }
+        val ardidosFocus = remember { FocusRequester() }
+        val mofadosFocus = remember { FocusRequester() }
+        val carunchadoFocus = remember { FocusRequester() }
+        val spoiledFocus = remember { FocusRequester() }
+        val daysOfStorageFocus = remember { FocusRequester() }
+        val deductionValueFocus = remember { FocusRequester() }
+
+        val tabTitles = listOf("Básico", "Defeitos", "Extras")
+        var selectedTab by remember { mutableStateOf(0) }
+
+        LaunchedEffect(selectedTab) {
             when (selectedTab) {
-                0 -> MilhoBasicInfoTab(
-                    lotWeight = lotWeight, onLotWeightChange = { lotWeight = it },
-                    priceBySack = priceBySack, onPriceBySackChange = { priceBySack = it },
-                    moisture = moisture, onMoistureChange = { moisture = it },
-                    impurities = impurities, onImpuritiesChange = { impurities = it },
-                    lotWeightFocus = lotWeightFocus,
-                    priceBySackFocus = priceBySackFocus,
-                    moistureFocus = moistureFocus,
-                    impuritiesFocus = impuritiesFocus
-                )
-
-                1 -> MilhoDefectsTab(
-                    broken = broken, onBrokenChange = { broken = it },
-                    ardidos = ardidos, onArdidosChange = { ardidos = it },
-                    mofados = mofados, onMofadosChange = { mofados = it },
-                    carunchado = carunchado, onCarunchadoChange = { carunchado = it },
-                    spoiled = spoiled, onSpoiledChange = { spoiled = it },
-                    brokenFocus = brokenFocus,
-                    ardidosFocus = ardidosFocus,
-                    mofadosFocus = mofadosFocus,
-                    carunchadoFocus = carunchadoFocus,
-                    spoiledFocus = spoiledFocus
-                )
-
-                2 -> MilhoExtrasTab(
-                    daysOfStorage = daysOfStorage, onDaysOfStorageChange = { daysOfStorage = it },
-                    deductionValue = deductionValue, onDeductionValueChange = { deductionValue = it },
-                    doesTechnicalLoss = doesTechnicalLoss, onDoesTechnicalLossChange = { doesTechnicalLoss = it },
-                    doesDeduction = doesDeduction, onDoesDeductionChange = { doesDeduction = it },
-                    daysOfStorageFocus = daysOfStorageFocus,
-                    deductionValueFocus = deductionValueFocus
-                )
-            }
-
-            if (errorMessage != null) {
-                Text(
-                    text = errorMessage!!,
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.padding(top = 8.dp)
-                )
+                0 -> lotWeightFocus.requestFocus()
+                1 -> brokenFocus.requestFocus()
+                2 -> if (doesTechnicalLoss) daysOfStorageFocus.requestFocus()
             }
         }
 
-        // BOTÕES DE NAVEGAÇÃO
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            if (selectedTab > 0) {
-                Button(onClick = { selectedTab-- }) { Text("Voltar") }
-            } else {
-                Spacer(Modifier.weight(1f))
+        Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+            TabRow(selectedTabIndex = selectedTab) {
+                tabTitles.forEachIndexed { index, title ->
+                    Tab(
+                        selected = selectedTab == index,
+                        onClick = { selectedTab = index },
+                        text = { Text(text = title) }
+                    )
+                }
             }
 
-            if (selectedTab < tabTitles.lastIndex) {
-                Button(onClick = { selectedTab++ }) { Text("Avançar") }
-            } else {
-                Button(
-                    onClick = {
-                        val fLotWeight = lotWeight.toFloatOrZero()
-                        val fPriceBySack = priceBySack.toFloatOrZero()
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .padding(16.dp)
+                    .verticalScroll(scrollState)
+            ) {
+                Text(
+                    "Dados do Milho",
+                    style = MaterialTheme.typography.headlineSmall,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
 
-                        if (fLotWeight <= 0f || fPriceBySack <= 0f) {
-                            errorMessage = "Peso e Preço são obrigatórios."
-                            return@Button
-                        }
+                when (selectedTab) {
+                    0 -> MilhoBasicInfoTab(
+                        lotWeight = lotWeight, onLotWeightChange = { lotWeight = it },
+                        priceBySack = priceBySack, onPriceBySackChange = { priceBySack = it },
+                        moisture = moisture, onMoistureChange = { moisture = it },
+                        impurities = impurities, onImpuritiesChange = { impurities = it },
+                        lotWeightFocus = lotWeightFocus,
+                        priceBySackFocus = priceBySackFocus,
+                        moistureFocus = moistureFocus,
+                        impuritiesFocus = impuritiesFocus
+                    )
 
-                        val fLotPrice = (fLotWeight * fPriceBySack) / 60f
+                    1 -> MilhoDefectsTab(
+                        broken = broken, onBrokenChange = { broken = it },
+                        ardidos = ardidos, onArdidosChange = { ardidos = it },
+                        mofados = mofados, onMofadosChange = { mofados = it },
+                        carunchado = carunchado, onCarunchadoChange = { carunchado = it },
+                        spoiled = spoiled, onSpoiledChange = { spoiled = it },
+                        brokenFocus = brokenFocus,
+                        ardidosFocus = ardidosFocus,
+                        mofadosFocus = mofadosFocus,
+                        carunchadoFocus = carunchadoFocus,
+                        spoiledFocus = spoiledFocus
+                    )
 
-                        val input = InputDiscountMilho(
-                            classificationId = loadedClassif?.id ?: classificationId,
-                            grain = "Milho",
-                            group = viewModel.selectedGroup ?: 1,
-                            limitSource = 0,
-                            daysOfStorage = daysOfStorage.toIntOrZero(),
-                            lotWeight = fLotWeight,
-                            lotPrice = fLotPrice,
-                            impurities = impurities.toFloatOrZero(),
-                            moisture = moisture.toFloatOrZero(),
-                            broken = broken.toFloatOrZero(),
-                            ardidos = ardidos.toFloatOrZero(),
-                            mofados = mofados.toFloatOrZero(),
-                            spoiled = spoiled.toFloatOrZero(),
-                            carunchado = carunchado.toFloatOrZero(),
-                            deductionValue = deductionValue.toFloatOrZero()
-                        )
+                    2 -> MilhoExtrasTab(
+                        daysOfStorage = daysOfStorage,
+                        onDaysOfStorageChange = { daysOfStorage = it },
+                        deductionValue = deductionValue,
+                        onDeductionValueChange = { deductionValue = it },
+                        doesTechnicalLoss = doesTechnicalLoss,
+                        onDoesTechnicalLossChange = { doesTechnicalLoss = it },
+                        doesDeduction = doesDeduction,
+                        onDoesDeductionChange = { doesDeduction = it },
+                        daysOfStorageFocus = daysOfStorageFocus,
+                        deductionValueFocus = deductionValueFocus
+                    )
+                }
 
-                        try {
-                            viewModel.setDiscount(input, doesTechnicalLoss, true, doesDeduction)
-                            navController.navigate("milhoDiscountResult")
-                        } catch (e: Exception) {
-                            errorMessage = "Erro no cálculo: ${e.message}"
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth(0.5f)
-                ) {
-                    Text("Calcular")
+                if (errorMessage != null) {
+                    Text(
+                        text = errorMessage!!,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                }
+            }
+
+            // BOTÕES DE NAVEGAÇÃO
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                if (selectedTab > 0) {
+                    Button(onClick = { selectedTab-- }) { Text("Voltar") }
+                } else {
+                    Spacer(Modifier.weight(1f))
+                }
+
+                if (selectedTab < tabTitles.lastIndex) {
+                    Button(onClick = { selectedTab++ }) { Text("Avançar") }
+                } else {
+                    Button(
+                        onClick = {
+                            val fLotWeight = lotWeight.toFloatOrZero()
+                            val fPriceBySack = priceBySack.toFloatOrZero()
+
+                            if (fLotWeight <= 0f || fPriceBySack <= 0f) {
+                                errorMessage = "Peso e Preço são obrigatórios."
+                                return@Button
+                            }
+
+                            val fLotPrice = (fLotWeight * fPriceBySack) / 60f
+
+                            val input = InputDiscountMilho(
+                                classificationId = loadedClassif?.id ?: classificationId,
+                                grain = "Milho",
+                                group = viewModel.selectedGroup ?: 1,
+                                limitSource = 0,
+                                daysOfStorage = daysOfStorage.toIntOrZero(),
+                                lotWeight = fLotWeight,
+                                lotPrice = fLotPrice,
+                                impurities = impurities.toFloatOrZero(),
+                                moisture = moisture.toFloatOrZero(),
+                                broken = broken.toFloatOrZero(),
+                                ardidos = ardidos.toFloatOrZero(),
+                                mofados = mofados.toFloatOrZero(),
+                                spoiled = spoiled.toFloatOrZero(),
+                                carunchado = carunchado.toFloatOrZero(),
+                                deductionValue = deductionValue.toFloatOrZero()
+                            )
+
+                            try {
+                                viewModel.setDiscount(input, doesTechnicalLoss, true, doesDeduction)
+                                navController.navigate("milhoDiscountResult")
+                            } catch (e: Exception) {
+                                errorMessage = "Erro no cálculo: ${e.message}"
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(0.5f)
+                    ) {
+                        Text("Calcular")
+                    }
                 }
             }
         }

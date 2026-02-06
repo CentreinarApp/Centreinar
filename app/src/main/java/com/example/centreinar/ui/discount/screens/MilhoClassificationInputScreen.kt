@@ -24,79 +24,131 @@ fun MilhoClassificationInputScreen(
     navController: NavController,
     viewModel: ClassificationViewModel = hiltViewModel()
 ) {
-    var lotWeight by remember { mutableStateOf("") }
-    var sampleWeight by remember { mutableStateOf("") }
-    var impurities by remember { mutableStateOf("") }
-    var broken by remember { mutableStateOf("") }
-    var ardido by remember { mutableStateOf("") }
-    var mofado by remember { mutableStateOf("") }
-    var carunchado by remember { mutableStateOf("") }
-    var fermented by remember { mutableStateOf("") }
-    var germinated by remember { mutableStateOf("") }
-    var immature by remember { mutableStateOf("") }
-    var gessado by remember { mutableStateOf("") }
+    // 1. O Scaffold envolve toda a tela
+    Scaffold(
+        modifier = Modifier.fillMaxSize()
+    ) { innerPadding -> // Esse innerPadding contém as medidas da barra de status e navegação
 
-    val lotFocus = remember { FocusRequester() }
-    val sampleFocus = remember { FocusRequester() }
-    val impuritiesFocus = remember { FocusRequester() }
-    val brokenFocus = remember { FocusRequester() }
+        var lotWeight by remember { mutableStateOf("") }
+        var sampleWeight by remember { mutableStateOf("") }
+        var impurities by remember { mutableStateOf("") }
+        var broken by remember { mutableStateOf("") }
+        var ardido by remember { mutableStateOf("") }
+        var mofado by remember { mutableStateOf("") }
+        var carunchado by remember { mutableStateOf("") }
+        var fermented by remember { mutableStateOf("") }
+        var germinated by remember { mutableStateOf("") }
+        var immature by remember { mutableStateOf("") }
+        var gessado by remember { mutableStateOf("") }
 
-    val keyboardController = LocalSoftwareKeyboardController.current
+        val lotFocus = remember { FocusRequester() }
+        val sampleFocus = remember { FocusRequester() }
+        val impuritiesFocus = remember { FocusRequester() }
+        val brokenFocus = remember { FocusRequester() }
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        Text("Classificação — Milho", style = MaterialTheme.typography.headlineMedium, modifier = Modifier.padding(16.dp))
-        LazyColumn(modifier = Modifier.padding(16.dp)) {
-            item {
-                NumberField("Peso do lote (kg)", lotWeight, { lotWeight = it }, lotFocus, sampleFocus)
-            }
-            item {
-                NumberField("Peso da amostra (g)", sampleWeight, { sampleWeight = it }, sampleFocus, impuritiesFocus)
-            }
-            item {
-                NumberField("Matéria estranha e Impurezas (g)", impurities, { impurities = it }, impuritiesFocus, brokenFocus)
-            }
-            item {
-                NumberField("Partidos/Quebrados (g)", broken, { broken = it }, brokenFocus, null)
-            }
-            item {
-                Spacer(Modifier.height(8.dp))
-                NumberField("Ardidos (g)", ardido, { ardido = it }, FocusRequester(), null)
-                NumberField("Mofados (g)", mofado, { mofado = it }, FocusRequester(), null)
-                NumberField("Carunchado (g)", carunchado, { carunchado = it }, FocusRequester(), null)
-            }
-            item {
-                NumberField("Fermentados (g)", fermented, { fermented = it }, FocusRequester(), null)
-                NumberField("Germinados (g)", germinated, { germinated = it }, FocusRequester(), null)
-                NumberField("Imaturos (g)", immature, { immature = it }, FocusRequester(), null)
-                NumberField("Gessado (g)", gessado, { gessado = it }, FocusRequester(), null)
-            }
-        }
+        val keyboardController = LocalSoftwareKeyboardController.current
 
-        Spacer(Modifier.height(8.dp))
-        Button(onClick = {
-            // build SampleMilho similar to your entity structure
-            val sample = SampleMilho(
-                grain = "milho",
-                group = viewModel.selectedGroup ?: 1,
-                lotWeight = lotWeight.toFloatOrNull() ?: 0f,
-                sampleWeight = sampleWeight.toFloatOrNull() ?: 0f,
-                cleanWeight = sampleWeight.toFloatOrNull() ?: 0f,
-                impurities = impurities.toFloatOrNull() ?: 0f,
-                broken = broken.toFloatOrNull() ?: 0f,
-                carunchado = carunchado.toFloatOrNull() ?: 0f,
-                ardido = ardido.toFloatOrNull() ?: 0f,
-                mofado = mofado.toFloatOrNull() ?: 0f,
-                fermented = fermented.toFloatOrNull() ?: 0f,
-                germinated = germinated.toFloatOrNull() ?: 0f,
-                immature = immature.toFloatOrNull() ?: 0f,
-                gessado = gessado.toFloatOrNull() ?: 0f
+        Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+            Text(
+                "Classificação — Milho",
+                style = MaterialTheme.typography.headlineMedium,
+                modifier = Modifier.padding(16.dp)
             )
+            LazyColumn(modifier = Modifier.padding(16.dp)) {
+                item {
+                    NumberField(
+                        "Peso do lote (kg)",
+                        lotWeight,
+                        { lotWeight = it },
+                        lotFocus,
+                        sampleFocus
+                    )
+                }
+                item {
+                    NumberField(
+                        "Peso da amostra (g)",
+                        sampleWeight,
+                        { sampleWeight = it },
+                        sampleFocus,
+                        impuritiesFocus
+                    )
+                }
+                item {
+                    NumberField(
+                        "Matéria estranha e Impurezas (g)",
+                        impurities,
+                        { impurities = it },
+                        impuritiesFocus,
+                        brokenFocus
+                    )
+                }
+                item {
+                    NumberField(
+                        "Partidos/Quebrados (g)",
+                        broken,
+                        { broken = it },
+                        brokenFocus,
+                        null
+                    )
+                }
+                item {
+                    Spacer(Modifier.height(8.dp))
+                    NumberField("Ardidos (g)", ardido, { ardido = it }, FocusRequester(), null)
+                    NumberField("Mofados (g)", mofado, { mofado = it }, FocusRequester(), null)
+                    NumberField(
+                        "Carunchado (g)",
+                        carunchado,
+                        { carunchado = it },
+                        FocusRequester(),
+                        null
+                    )
+                }
+                item {
+                    NumberField(
+                        "Fermentados (g)",
+                        fermented,
+                        { fermented = it },
+                        FocusRequester(),
+                        null
+                    )
+                    NumberField(
+                        "Germinados (g)",
+                        germinated,
+                        { germinated = it },
+                        FocusRequester(),
+                        null
+                    )
+                    NumberField("Imaturos (g)", immature, { immature = it }, FocusRequester(), null)
+                    NumberField("Gessado (g)", gessado, { gessado = it }, FocusRequester(), null)
+                }
+            }
 
-            // classify using repository via ViewModel
-            viewModel.classifySample(sample)
-            navController.navigate("milhoClassificationResult")
-        }, modifier = Modifier.fillMaxWidth().padding(16.dp)) {
-            Text("Classificar")
+            Spacer(Modifier.height(8.dp))
+            Button(onClick = {
+                // build SampleMilho similar to your entity structure
+                val sample = SampleMilho(
+                    grain = "milho",
+                    group = viewModel.selectedGroup ?: 1,
+                    lotWeight = lotWeight.toFloatOrNull() ?: 0f,
+                    sampleWeight = sampleWeight.toFloatOrNull() ?: 0f,
+                    cleanWeight = sampleWeight.toFloatOrNull() ?: 0f,
+                    impurities = impurities.toFloatOrNull() ?: 0f,
+                    broken = broken.toFloatOrNull() ?: 0f,
+                    carunchado = carunchado.toFloatOrNull() ?: 0f,
+                    ardido = ardido.toFloatOrNull() ?: 0f,
+                    mofado = mofado.toFloatOrNull() ?: 0f,
+                    fermented = fermented.toFloatOrNull() ?: 0f,
+                    germinated = germinated.toFloatOrNull() ?: 0f,
+                    immature = immature.toFloatOrNull() ?: 0f,
+                    gessado = gessado.toFloatOrNull() ?: 0f
+                )
+
+                // classify using repository via ViewModel
+                viewModel.classifySample(sample)
+                navController.navigate("milhoClassificationResult")
+            }, modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+                Text("Classificar")
+            }
         }
     }
 }

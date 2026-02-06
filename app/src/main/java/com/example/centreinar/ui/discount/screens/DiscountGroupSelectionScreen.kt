@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -25,58 +26,66 @@ fun DiscountGroupSelectionScreen(
     navController: NavController,
     viewModel: DiscountViewModel = hiltViewModel()
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Button(
-            onClick = {
-                // Limpa os limites
-                viewModel.resetLimits()
+    // 1. O Scaffold envolve toda a tela
+    Scaffold(
+        modifier = Modifier.fillMaxSize()
+    ) { innerPadding -> // Esse innerPadding contém as medidas da barra de status e navegação
 
-                // Seleciona o grupo
-                viewModel.selectedGroup = 1
-
-                // Navega para a rota da seleção da referência de limite
-                navController.navigate("officialOrNotDiscount") },
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .height(80.dp)
-                .padding(vertical = 8.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-            )
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            Text("Grupo 1", style = MaterialTheme.typography.titleMedium)
-        }
+            Button(
+                onClick = {
+                    // Limpa os limites
+                    viewModel.resetLimits()
 
-        Spacer(modifier = Modifier.height(24.dp))
+                    // Seleciona o grupo
+                    viewModel.selectedGroup = 1
 
-        Button(
-            onClick = {
-                // Limpa os limites
-                viewModel.resetLimits()
+                    // Navega para a rota da seleção da referência de limite
+                    navController.navigate("officialOrNotDiscount")
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(80.dp)
+                    .padding(vertical = 8.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            ) {
+                Text("Grupo 1", style = MaterialTheme.typography.titleMedium)
+            }
 
-                // Seleciona o grupo
-                viewModel.selectedGroup = 2
+            Spacer(modifier = Modifier.height(24.dp))
 
-                // Navega para a rota da seleção da referência de limite
-                navController.navigate("officialOrNotDiscount")
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(80.dp)
-                .padding(vertical = 8.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-            )
-        ) {
-            Text("Grupo 2", style = MaterialTheme.typography.titleMedium)
+            Button(
+                onClick = {
+                    // Limpa os limites
+                    viewModel.resetLimits()
+
+                    // Seleciona o grupo
+                    viewModel.selectedGroup = 2
+
+                    // Navega para a rota da seleção da referência de limite
+                    navController.navigate("officialOrNotDiscount")
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(80.dp)
+                    .padding(vertical = 8.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                )
+            ) {
+                Text("Grupo 2", style = MaterialTheme.typography.titleMedium)
+            }
         }
     }
 }

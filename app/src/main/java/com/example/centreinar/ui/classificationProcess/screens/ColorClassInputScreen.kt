@@ -13,6 +13,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -37,117 +38,122 @@ fun ColorClassInput(
     navController: NavController,
     viewModel: ClassificationViewModel = hiltViewModel()
 ){
-    //state values
-    var totalWeight by remember { mutableStateOf("") }
-    var otherColorsWeight by remember { mutableStateOf("") }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
+    // 1. O Scaffold envolve toda a tela
+    Scaffold(
+        modifier = Modifier.fillMaxSize()
+    ) { innerPadding -> // Esse innerPadding contém as medidas da barra de status e navegação
+
+        //state values
+        var totalWeight by remember { mutableStateOf("") }
+        var otherColorsWeight by remember { mutableStateOf("") }
+        var errorMessage by remember { mutableStateOf<String?>(null) }
 
 
+        // Focus requesters
+        var totalWeightFocus = remember { FocusRequester() }
+        var otherColorsFocus = remember { FocusRequester() }
 
-    // Focus requesters
-    var totalWeightFocus = remember { FocusRequester() }
-    var otherColorsFocus = remember { FocusRequester() }
+        val result = calculateResult(totalWeight, otherColorsWeight)
 
-    val result = calculateResult(totalWeight, otherColorsWeight)
+        val keyboardController = LocalSoftwareKeyboardController.current
 
-    val keyboardController = LocalSoftwareKeyboardController.current
+        // 1. Defina o estado da rolagem
+        val scrollState = rememberScrollState()
 
-    // 1. Defina o estado da rolagem
-    val scrollState = rememberScrollState()
-
-    LaunchedEffect(Unit) {
-        totalWeightFocus.requestFocus()
-    }
-
-    // 2. Aplique a rolagem ao Column principal
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(32.dp)
-            .verticalScroll(scrollState) // <-- APLICAÇÃO DA ROLAGEM
-    ) {
-        Text(
-            "Insira os dados para obter a classe",
-            style = MaterialTheme.typography.headlineSmall,
-            color = MaterialTheme.colorScheme.onBackground
-        )
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-
-        NumberInputField(
-            value = totalWeight,
-            onValueChange = { totalWeight = it },
-            label = "Peso da amostra isenta de defeitos(g)",
-            focusRequester = totalWeightFocus,
-            nextFocus = otherColorsFocus
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-
-        OutlinedTextField(
-            value = otherColorsWeight,
-            onValueChange = { otherColorsWeight = it },
-            label = { Text("Peso dos grãos não amarelos(g)") },
-            modifier = Modifier
-                .fillMaxWidth()
-                .focusRequester(otherColorsFocus),
-            keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Number,
-                imeAction = ImeAction.Done
-            ),
-            keyboardActions = KeyboardActions(
-                onDone = {
-                    keyboardController?.hide()
-                }
-            ),
-            singleLine = true
-        )
-        Spacer(modifier = Modifier.height(24.dp))
-
-        //just display result
-        OutlinedTextField(
-            value = result,
-            onValueChange = {},
-            label = { Text("Peso dos grãos amarelos (g)") },
-            modifier = Modifier
-                .fillMaxWidth(),
-            singleLine = true,
-            enabled = true,
-            readOnly = true
-        )
-
-
-
-        errorMessage?.let {
-            Text(
-                text = it,
-                color = MaterialTheme.colorScheme.error,
-                modifier = Modifier.padding(vertical = 8.dp)
-            )
+        LaunchedEffect(Unit) {
+            totalWeightFocus.requestFocus()
         }
 
-        Spacer(modifier = Modifier.height(32.dp))
-
-        Button(
-            onClick = {
-                val tWeight = totalWeight.toFloatOrNull()
-                val oWeight = otherColorsWeight.toFloatOrNull()
-
-                if (tWeight == null || oWeight == null) {
-                    errorMessage = "Por favor preencha todos os campos com valores válidos"
-                    return@Button
-                }
-
-                viewModel.setClassColor(tWeight, oWeight)
-                navController.navigate("classificationResult")
-            },
-            modifier = Modifier.fillMaxWidth()
+        // 2. Aplique a rolagem ao Column principal
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(32.dp)
+                .verticalScroll(scrollState) // <-- APLICAÇÃO DA ROLAGEM
         ) {
-            Text("Enviar")
-        }
+            Text(
+                "Insira os dados para obter a classe",
+                style = MaterialTheme.typography.headlineSmall,
+                color = MaterialTheme.colorScheme.onBackground
+            )
 
+            Spacer(modifier = Modifier.height(24.dp))
+
+
+            NumberInputField(
+                value = totalWeight,
+                onValueChange = { totalWeight = it },
+                label = "Peso da amostra isenta de defeitos(g)",
+                focusRequester = totalWeightFocus,
+                nextFocus = otherColorsFocus
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+
+            OutlinedTextField(
+                value = otherColorsWeight,
+                onValueChange = { otherColorsWeight = it },
+                label = { Text("Peso dos grãos não amarelos(g)") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .focusRequester(otherColorsFocus),
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Number,
+                    imeAction = ImeAction.Done
+                ),
+                keyboardActions = KeyboardActions(
+                    onDone = {
+                        keyboardController?.hide()
+                    }
+                ),
+                singleLine = true
+            )
+            Spacer(modifier = Modifier.height(24.dp))
+
+            //just display result
+            OutlinedTextField(
+                value = result,
+                onValueChange = {},
+                label = { Text("Peso dos grãos amarelos (g)") },
+                modifier = Modifier
+                    .fillMaxWidth(),
+                singleLine = true,
+                enabled = true,
+                readOnly = true
+            )
+
+
+
+            errorMessage?.let {
+                Text(
+                    text = it,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(vertical = 8.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            Button(
+                onClick = {
+                    val tWeight = totalWeight.toFloatOrNull()
+                    val oWeight = otherColorsWeight.toFloatOrNull()
+
+                    if (tWeight == null || oWeight == null) {
+                        errorMessage = "Por favor preencha todos os campos com valores válidos"
+                        return@Button
+                    }
+
+                    viewModel.setClassColor(tWeight, oWeight)
+                    navController.navigate("classificationResult")
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Enviar")
+            }
+        }
     }
 }
 

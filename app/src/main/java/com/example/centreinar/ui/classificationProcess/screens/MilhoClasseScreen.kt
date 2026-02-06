@@ -14,28 +14,35 @@ fun MilhoClasseScreen(
     navController: NavController,
     viewModel: ClassificationViewModel = hiltViewModel()
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(32.dp),
-        verticalArrangement = Arrangement.Center
-    ) {
-        Text("Etapa 3 - Classe", style = MaterialTheme.typography.headlineSmall)
+    // 1. O Scaffold envolve toda a tela
+    Scaffold(
+        modifier = Modifier.fillMaxSize()
+    ) { innerPadding -> // Esse innerPadding contém as medidas da barra de status e navegação
 
-        Spacer(modifier = Modifier.height(24.dp))
-        Button(
-            onClick = { navController.navigate("milhoDefinirLimites") },
-            modifier = Modifier.fillMaxWidth()
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(32.dp),
+            verticalArrangement = Arrangement.Center
         ) {
-            Text("Determinar Classe")
-        }
+            Text("Etapa 3 - Classe", style = MaterialTheme.typography.headlineSmall)
 
-        Spacer(modifier = Modifier.height(16.dp))
-        Button(
-            onClick = { navController.navigate("milhoDefinirLimites") },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Pular")
+            Spacer(modifier = Modifier.height(24.dp))
+            Button(
+                onClick = { navController.navigate("milhoDefinirLimites") },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Determinar Classe")
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+            Button(
+                onClick = { navController.navigate("milhoDefinirLimites") },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Pular")
+            }
         }
     }
 }

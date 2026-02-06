@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -24,60 +25,67 @@ fun GrainScreen(
     navController: NavController,
     viewModel: ClassificationViewModel = hiltViewModel()
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center // <-- Centralização mantida
-    ) {
-        Button(
-            onClick = {
-                // Limpa o estado anterior (Remove limites da memória, erros, etc.)
-                viewModel.clearStates()
+    // 1. O Scaffold envolve toda a tela
+    Scaffold(
+        modifier = Modifier.fillMaxSize()
+    ) { innerPadding -> // Esse innerPadding contém as medidas da barra de status e navegação
 
-                // Seleciona o grão da soja
-                viewModel.selectedGrain = "Soja"
-
-                // Navega para a rota da seleção do grupo
-                navController.navigate("groupSelection")
-            },
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .height(80.dp)
-                .padding(vertical = 8.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-            )
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center // <-- Centralização mantida
         ) {
-            Text("Soja", style = MaterialTheme.typography.titleMedium)
-        }
+            Button(
+                onClick = {
+                    // Limpa o estado anterior (Remove limites da memória, erros, etc.)
+                    viewModel.clearStates()
 
-        Spacer(modifier = Modifier.height(24.dp))
+                    // Seleciona o grão da soja
+                    viewModel.selectedGrain = "Soja"
 
-        Button(
-            onClick = {
-                // Limpa o estado anterior (Remove limites da memória, erros, etc.)
-                viewModel.clearStates()
+                    // Navega para a rota da seleção do grupo
+                    navController.navigate("groupSelection")
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(80.dp)
+                    .padding(vertical = 8.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            ) {
+                Text("Soja", style = MaterialTheme.typography.titleMedium)
+            }
 
-                // Seleciona o grão do milho
-                viewModel.selectedGrain = "Milho"
-                viewModel.selectedGroup = 1
+            Spacer(modifier = Modifier.height(24.dp))
 
-                // Navega para a rota da seleção da referência de limite
-                navController.navigate("officialOrNot")
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(80.dp)
-                .padding(vertical = 8.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-            )
-        ) {
-            Text("Milho", style = MaterialTheme.typography.titleMedium)
+            Button(
+                onClick = {
+                    // Limpa o estado anterior (Remove limites da memória, erros, etc.)
+                    viewModel.clearStates()
+
+                    // Seleciona o grão do milho
+                    viewModel.selectedGrain = "Milho"
+                    viewModel.selectedGroup = 1
+
+                    // Navega para a rota da seleção da referência de limite
+                    navController.navigate("officialOrNot")
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(80.dp)
+                    .padding(vertical = 8.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                )
+            ) {
+                Text("Milho", style = MaterialTheme.typography.titleMedium)
+            }
         }
     }
 }

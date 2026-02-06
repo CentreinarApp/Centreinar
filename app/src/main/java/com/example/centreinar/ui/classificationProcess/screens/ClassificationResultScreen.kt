@@ -14,7 +14,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.centreinar.ui.classificationProcess.components.ClassificationTable
 import com.example.centreinar.LimitSoja
@@ -26,100 +28,85 @@ fun ClassificationResult(
     navController: NavController,
     viewModel: ClassificationViewModel = hiltViewModel()
 ) {
-    val context = LocalContext.current
-    val currentGrain = viewModel.selectedGrain
-    val currentGroup = viewModel.selectedGroup
-    val isOfficial = viewModel.isOfficial == true
+    // 1. O Scaffold envolve toda a tela
+    Scaffold(
+        modifier = Modifier.fillMaxSize()
+    ) { innerPadding -> // Esse innerPadding contém as medidas da barra de status e navegação
 
-    val classification by viewModel.classification.collectAsStateWithLifecycle()
-    val allOfficialLimits by viewModel.allOfficialLimits.collectAsStateWithLifecycle()
-    val lastUsedLimitState by viewModel.lastUsedLimit.collectAsStateWithLifecycle()
+        val context = LocalContext.current
+        val currentGrain = viewModel.selectedGrain
+        val currentGroup = viewModel.selectedGroup
+        val isOfficial = viewModel.isOfficial == true
 
-    // Se for o grupo 1 => utiliza os valores de limite do grupo 1
-    // Caso contrário, é o grupo 2 => utiliza os valores de limite do grupo 2
-    val mockLimits = if (currentGroup == 1) {
-        LimitSoja(
-            source = 0, grain = "Soja", group = 1, type = 1,
-            impuritiesLowerLim = 0.0f, impuritiesUpLim = 1.0f,
-            moistureLowerLim = 0.0f, moistureUpLim = 14.0f,
-            brokenCrackedDamagedLowerLim = 0.0f, brokenCrackedDamagedUpLim = 8.0f,
-            greenishLowerLim = 0.0f, greenishUpLim = 2.0f,
-            burntLowerLim = 0.0f, burntUpLim = 0.3f,
-            burntOrSourLowerLim = 0.0f, burntOrSourUpLim = 1.0f,
-            moldyLowerLim = 0.0f, moldyUpLim = 0.5f,
-            spoiledTotalLowerLim = 0.0f, spoiledTotalUpLim = 4.0f
-        )
-    } else {
-        LimitSoja(
-            source = 0, grain = "Soja", group = 2, type = 1,
-            impuritiesLowerLim = 0.0f, impuritiesUpLim = 1.0f,
-            moistureLowerLim = 0.0f, moistureUpLim = 14.0f,
-            brokenCrackedDamagedLowerLim = 0.0f, brokenCrackedDamagedUpLim = 30.0f,
-            greenishLowerLim = 0.0f, greenishUpLim = 8.0f,
-            burntLowerLim = 0.0f, burntUpLim = 1.0f,
-            burntOrSourLowerLim = 0.0f, burntOrSourUpLim = 4.0f,
-            moldyLowerLim = 0.0f, moldyUpLim = 6.0f,
-            spoiledTotalLowerLim = 0.0f, spoiledTotalUpLim = 8.0f
-        )
-    }
+        val classification by viewModel.classification.collectAsStateWithLifecycle()
+        val allOfficialLimits by viewModel.allOfficialLimits.collectAsStateWithLifecycle()
+        val lastUsedLimitState by viewModel.lastUsedLimit.collectAsStateWithLifecycle()
 
-    val safeLimits = lastUsedLimitState ?: mockLimits
-
-    LaunchedEffect(currentGrain, currentGroup) {
-        if (currentGrain != null && currentGroup != null) {
-            viewModel.loadDefaultLimits()
+        // Se for o grupo 1 => utiliza os valores de limite do grupo 1
+        // Caso contrário, é o grupo 2 => utiliza os valores de limite do grupo 2
+        val mockLimits = if (currentGroup == 1) {
+            LimitSoja(
+                source = 0, grain = "Soja", group = 1, type = 1,
+                impuritiesLowerLim = 0.0f, impuritiesUpLim = 1.0f,
+                moistureLowerLim = 0.0f, moistureUpLim = 14.0f,
+                brokenCrackedDamagedLowerLim = 0.0f, brokenCrackedDamagedUpLim = 8.0f,
+                greenishLowerLim = 0.0f, greenishUpLim = 2.0f,
+                burntLowerLim = 0.0f, burntUpLim = 0.3f,
+                burntOrSourLowerLim = 0.0f, burntOrSourUpLim = 1.0f,
+                moldyLowerLim = 0.0f, moldyUpLim = 0.5f,
+                spoiledTotalLowerLim = 0.0f, spoiledTotalUpLim = 4.0f
+            )
+        } else {
+            LimitSoja(
+                source = 0, grain = "Soja", group = 2, type = 1,
+                impuritiesLowerLim = 0.0f, impuritiesUpLim = 1.0f,
+                moistureLowerLim = 0.0f, moistureUpLim = 14.0f,
+                brokenCrackedDamagedLowerLim = 0.0f, brokenCrackedDamagedUpLim = 30.0f,
+                greenishLowerLim = 0.0f, greenishUpLim = 8.0f,
+                burntLowerLim = 0.0f, burntUpLim = 1.0f,
+                burntOrSourLowerLim = 0.0f, burntOrSourUpLim = 4.0f,
+                moldyLowerLim = 0.0f, moldyUpLim = 6.0f,
+                spoiledTotalLowerLim = 0.0f, spoiledTotalUpLim = 8.0f
+            )
         }
-    }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        Text(
-            "Resultado da Classificação",
-            style = MaterialTheme.typography.headlineSmall,
-            color = MaterialTheme.colorScheme.onBackground
-        )
+        val safeLimits = lastUsedLimitState ?: mockLimits
 
-        Spacer(Modifier.height(16.dp))
-
-        if (classification == null) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
+        LaunchedEffect(currentGrain, currentGroup) {
+            if (currentGrain != null && currentGroup != null) {
+                viewModel.loadDefaultLimits()
             }
-            return@Column
         }
-
 
         Column(
             modifier = Modifier
-                .weight(1f)
-                .verticalScroll(rememberScrollState())
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(16.dp)
         ) {
             Text(
-                "Dados da Amostra",
-                style = MaterialTheme.typography.titleMedium,
+                "Resultado da Classificação",
+                style = MaterialTheme.typography.headlineSmall,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+
+            Spacer(Modifier.height(16.dp))
+
+            if (classification == null) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+                return@Column
+            }
+
+
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 8.dp),
-                textAlign = TextAlign.Center
-            )
-
-            // Tabela de Resultado
-            ClassificationTable(
-                classification = classification!!,
-                typeTranslator = viewModel::getFinalTypeLabel,
-                limits = safeLimits,
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            // Campo dos limites
-            if (isOfficial) {
-                Spacer(Modifier.height(32.dp))
-
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState())
+            ) {
                 Text(
-                    text = "Limites de Referência MAPA",
+                    "Dados da Amostra",
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -127,61 +114,87 @@ fun ClassificationResult(
                     textAlign = TextAlign.Center
                 )
 
-                // Carrega a tabela
-                if (allOfficialLimits.isNotEmpty()) {
-                    OfficialReferenceTable(
-                        grain = currentGrain ?: "Soja",
-                        data = allOfficialLimits
+                // Tabela de Resultado
+                ClassificationTable(
+                    classification = classification!!,
+                    typeTranslator = viewModel::getFinalTypeLabel,
+                    limits = safeLimits,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                // Campo dos limites
+                if (isOfficial) {
+                    Spacer(Modifier.height(32.dp))
+
+                    Text(
+                        text = "Limites de Referência MAPA",
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 8.dp),
+                        textAlign = TextAlign.Center
                     )
-                } else {
-                    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                        Text("Carregando limites oficiais...", style = MaterialTheme.typography.bodySmall)
+
+                    // Carrega a tabela
+                    if (allOfficialLimits.isNotEmpty()) {
+                        OfficialReferenceTable(
+                            grain = currentGrain ?: "Soja",
+                            group = currentGroup ?: 1,
+                            data = allOfficialLimits
+                        )
+                    } else {
+                        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                            Text(
+                                "Carregando limites oficiais...",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
                     }
                 }
+
+                Spacer(Modifier.height(32.dp))
             }
 
-            Spacer(Modifier.height(32.dp))
-        }
-
-        // Botões de ação
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Button(
-                    modifier = Modifier.weight(1f),
-                    onClick = { navController.popBackStack() }
+            // Botões de ação
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text("Voltar")
+                    Button(
+                        modifier = Modifier.weight(1f),
+                        onClick = { navController.popBackStack() }
+                    ) {
+                        Text("Voltar")
+                    }
+
+                    Button(
+                        modifier = Modifier.weight(1f),
+                        onClick = {
+                            val id = classification?.id ?: 0
+                            navController.navigate("discountInputScreen?classificationId=$id")
+                        }
+                    ) {
+                        Text("Calcular Descontos")
+                    }
                 }
 
                 Button(
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.fillMaxWidth(),
                     onClick = {
-                        val id = classification?.id ?: 0
-                        navController.navigate("discountInputScreen?classificationId=$id")
+                        viewModel.prepareForPdfExport(currentGrain ?: "Soja")
+                        viewModel.exportClassification(context, classification!!, safeLimits)
                     }
                 ) {
-                    Text("Calcular Descontos")
+                    Text("Exportar PDF")
                 }
-            }
-
-            Button(
-                modifier = Modifier.fillMaxWidth(),
-                onClick = {
-                    viewModel.prepareForPdfExport(currentGrain ?: "Soja")
-                    viewModel.exportClassification(context, classification!!, safeLimits)
-                }
-            ) {
-                Text("Exportar PDF")
             }
         }
     }
 }
 
 @Composable
-fun OfficialReferenceTable(grain: String, data: List<Any>) {
+fun OfficialReferenceTable(grain: String, group: Int, data: List<Any>) {
     val labels = if (grain == "Soja") {
         listOf("Ardidos e Queimados", "Queimados", "Mofados", "Avariados Total", "Esverdeados", "Partidos/Quebrados e Amassados", "Matérias Estranhas e Impurezas")
     } else {
@@ -194,12 +207,32 @@ fun OfficialReferenceTable(grain: String, data: List<Any>) {
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text("Defeito", modifier = Modifier.weight(1.3f), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                Text(
+                    "Defeito",
+                    modifier = Modifier.weight(1.3f),
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold
+                )
+
                 data.forEachIndexed { index, _ ->
-                    Text("Tipo ${index + 1}", modifier = Modifier.weight(1f), textAlign = TextAlign.Center, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                    val textoCabecalho = if (group == 2) {
+                        "Padrão Básico"
+                    } else {
+                        "Tipo ${index + 1}"
+                    }
+
+                    Text(
+                        text = textoCabecalho,
+                        modifier = Modifier.weight(1f),
+                        textAlign = TextAlign.Center,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
+
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
 
             labels.forEachIndexed { rowIndex, label ->
                 Row(
