@@ -47,7 +47,6 @@ fun MilhoDiscountInputScreen(
         var impurities by remember { mutableStateOf("") }
         var broken by remember { mutableStateOf("") }
         var ardidos by remember { mutableStateOf("") }
-        var mofados by remember { mutableStateOf("") }
         var carunchado by remember { mutableStateOf("") }
         var spoiled by remember { mutableStateOf("") }
         var daysOfStorage by remember { mutableStateOf("0") }
@@ -74,7 +73,6 @@ fun MilhoDiscountInputScreen(
                 impurities = classif.impuritiesPercentage.toString()
                 broken = classif.brokenPercentage.toString()
                 ardidos = classif.ardidoPercentage.toString()
-                mofados = classif.mofadoPercentage.toString()
                 carunchado = classif.carunchadoPercentage.toString()
                 spoiled = classif.spoiledTotalPercentage.toString()
             }
@@ -87,7 +85,6 @@ fun MilhoDiscountInputScreen(
         val impuritiesFocus = remember { FocusRequester() }
         val brokenFocus = remember { FocusRequester() }
         val ardidosFocus = remember { FocusRequester() }
-        val mofadosFocus = remember { FocusRequester() }
         val carunchadoFocus = remember { FocusRequester() }
         val spoiledFocus = remember { FocusRequester() }
         val daysOfStorageFocus = remember { FocusRequester() }
@@ -143,12 +140,10 @@ fun MilhoDiscountInputScreen(
                     1 -> MilhoDefectsTab(
                         broken = broken, onBrokenChange = { broken = it },
                         ardidos = ardidos, onArdidosChange = { ardidos = it },
-                        mofados = mofados, onMofadosChange = { mofados = it },
                         carunchado = carunchado, onCarunchadoChange = { carunchado = it },
                         spoiled = spoiled, onSpoiledChange = { spoiled = it },
                         brokenFocus = brokenFocus,
                         ardidosFocus = ardidosFocus,
-                        mofadosFocus = mofadosFocus,
                         carunchadoFocus = carunchadoFocus,
                         spoiledFocus = spoiledFocus
                     )
@@ -214,7 +209,6 @@ fun MilhoDiscountInputScreen(
                                 moisture = moisture.toFloatOrZero(),
                                 broken = broken.toFloatOrZero(),
                                 ardidos = ardidos.toFloatOrZero(),
-                                mofados = mofados.toFloatOrZero(),
                                 spoiled = spoiled.toFloatOrZero(),
                                 carunchado = carunchado.toFloatOrZero(),
                                 deductionValue = deductionValue.toFloatOrZero()
@@ -263,21 +257,17 @@ fun MilhoBasicInfoTab(
 fun MilhoDefectsTab(
     broken: String, onBrokenChange: (String) -> Unit,
     ardidos: String, onArdidosChange: (String) -> Unit,
-    mofados: String, onMofadosChange: (String) -> Unit,
     carunchado: String, onCarunchadoChange: (String) -> Unit,
     spoiled: String, onSpoiledChange: (String) -> Unit,
     brokenFocus: FocusRequester,
     ardidosFocus: FocusRequester,
-    mofadosFocus: FocusRequester,
     carunchadoFocus: FocusRequester,
     spoiledFocus: FocusRequester
 ) {
     Column {
         NumberInputField(broken, onBrokenChange, "Quebrados (%)", brokenFocus, ardidosFocus)
         Spacer(Modifier.height(16.dp))
-        NumberInputField(ardidos, onArdidosChange, "Ardidos (%)", ardidosFocus, mofadosFocus)
-        Spacer(Modifier.height(16.dp))
-        NumberInputField(mofados, onMofadosChange, "Mofados (%)", mofadosFocus, carunchadoFocus)
+        NumberInputField(ardidos, onArdidosChange, "Ardidos (%)", ardidosFocus, carunchadoFocus)
         Spacer(Modifier.height(16.dp))
         NumberInputField(carunchado, onCarunchadoChange, "Carunchados (%)", carunchadoFocus, spoiledFocus)
         Spacer(Modifier.height(16.dp))

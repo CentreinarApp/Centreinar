@@ -9,6 +9,7 @@ import com.example.centreinar.SampleSoja
 import com.example.centreinar.data.local.dao.*
 import com.example.centreinar.domain.model.LimitCategory
 import com.example.centreinar.util.Utilities
+import java.math.RoundingMode
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -37,7 +38,9 @@ class ClassificationRepositoryImpl @Inject constructor(
         val percentageMoldy = tools.calculateDefectPercentage(sample.moldy, safeCleanWeight)
         val percentageBurnt = tools.calculateDefectPercentage(sample.burnt, safeCleanWeight)
         val percentageSour = tools.calculateDefectPercentage(sample.sour, safeCleanWeight)
-        val percentageBurntOrSour = percentageBurnt + percentageSour
+        val percentageBurntOrSourRaw = percentageBurnt + percentageSour
+        val percentageBurntOrSour = percentageBurntOrSourRaw.toBigDecimal()
+            .setScale(2, RoundingMode.HALF_UP).toFloat()
 
         val sumDefectWeights = sample.moldy + sample.fermented + sample.sour + sample.burnt +
                 sample.germinated + sample.immature + sample.shriveled + sample.damaged
@@ -59,7 +62,9 @@ class ClassificationRepositoryImpl @Inject constructor(
 
         var finalType = listOf(brokenType, greenishType, moldyType, burntType, burntOrSourType, spoiledType, impuritiesType).maxOrNull() ?: 1
 
-        val graveDefectsSum = percentageBurntOrSour + percentageMoldy
+        val graveDefectsSumRaw = percentageBurntOrSour + percentageMoldy
+        val graveDefectsSum = graveDefectsSumRaw.toBigDecimal()
+            .setScale(2, RoundingMode.HALF_UP).toFloat()
         var isDisqualify = false
         if (sample.group == 1 && graveDefectsSum > 12f) isDisqualify = true
         if (sample.group == 2 && graveDefectsSum > 40f) isDisqualify = true

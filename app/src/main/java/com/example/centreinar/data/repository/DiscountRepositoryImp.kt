@@ -1,5 +1,6 @@
 package com.example.centreinar.data.repository
 
+import android.util.Log
 import com.example.centreinar.ClassificationSoja
 import com.example.centreinar.DiscountSoja
 import com.example.centreinar.InputDiscountSoja
@@ -17,6 +18,12 @@ import javax.inject.Singleton
 // Função auxiliar para calcular descontos por defeito
 fun calculateClassificationLoss(difValue: Float, endValue: Float): Float {
     return (difValue / (100 - endValue)) * 100
+}
+
+private fun round(value: Float): Float {
+    return java.math.BigDecimal(value.toString())
+        .setScale(2, java.math.RoundingMode.HALF_UP)
+        .toFloat()
 }
 
 @Singleton
@@ -76,8 +83,13 @@ class DiscountRepositoryImpl @Inject constructor(
         val impuritiesLoss = tools.calculateDifference(sample.foreignMattersAndImpurities, limit["impurities"]!!)
         val humidityLoss = tools.calculateDifference(sample.humidity, limit["humidity"]!!)
 
-        val impuritiesLossKg = (impuritiesLoss / (100 - limit["impurities"]!!)) * lotWeight
-        val humidityLossKg = (humidityLoss / (100 - limit["humidity"]!!)) * (lotWeight - impuritiesLossKg)
+        // Arredondando o cálculo
+        val impuritiesLossRound = round(calculateClassificationLoss(impuritiesLoss,limit["impurities"]!!))
+        val impuritiesLossKg = ( impuritiesLossRound / 100 ) * lotWeight
+
+        // Arredondando o cálculo
+        val humidityAndImpuritiesLossRound = round(calculateClassificationLoss(humidityLoss, limit["humidity"]!!))
+        val humidityLossKg = ( humidityAndImpuritiesLossRound / 100 ) * lotWeight
 
         val impuritiesAndHumidityLoss = impuritiesLossKg + humidityLossKg
         var technicalLoss = 0f
@@ -87,33 +99,41 @@ class DiscountRepositoryImpl @Inject constructor(
             technicalLoss = calculateTechnicalLoss(storageDays, impuritiesAndHumidityLoss, lotWeight)
         }
 
-        // Perdas por defeitos
-        var burntLoss = tools.calculateDifference(sample.burnt, limit["burnt"]!!)
-        var burntOrSourLoss = tools.calculateDifference(sample.burntOrSour - burntLoss, limit["burntOrSour"]!!)
-        var moldyLoss = tools.calculateDifference(sample.moldy, limit["moldy"]!!)
-        var spoiledLoss = tools.calculateDifference(sample.spoiled - moldyLoss - burntLoss - burntOrSourLoss, limit["spoiled"]!!)
-        var greenishLoss = tools.calculateDifference(sample.greenish, limit["greenish"]!!)
-        var brokenLoss = tools.calculateDifference(sample.brokenCrackedDamaged, limit["broken"]!!)
+        // Perdas por defeitos (Diferença entre o valor entrada x referência)
+        var burntLoss = round(tools.calculateDifference(sample.burnt, limit["burnt"]!!))
+        var burntOrSourLoss = round(tools.calculateDifference(sample.burntOrSour - burntLoss, limit["burntOrSour"]!!))
+        var moldyLoss = round(tools.calculateDifference(sample.moldy, limit["moldy"]!!))
+        var spoiledLoss = round(tools.calculateDifference(sample.spoiled, limit["spoiled"]!!))
+        var greenishLoss = round(tools.calculateDifference(sample.greenish, limit["greenish"]!!))
+        var brokenLoss = round(tools.calculateDifference(sample.brokenCrackedDamaged, limit["broken"]!!))
 
         // Cálculo dos descontos (Fórmula de perda de classificação)
         if (sample.burnt > limit["burnt"]!!) {
-            burntLoss = calculateClassificationLoss(burntLoss, limit["burnt"]!!)
+            burntLoss = round(calculateClassificationLoss(burntLoss, limit["burnt"]!!))
         }
         if (sample.burntOrSour > limit["burntOrSour"]!! || (sample.burntOrSour - burntLoss) > limit["burntOrSour"]!!) {
-            burntOrSourLoss = calculateClassificationLoss(burntOrSourLoss, limit["burntOrSour"]!!)
+            burntOrSourLoss = round(calculateClassificationLoss(burntOrSourLoss, limit["burntOrSour"]!!))
         }
         if (sample.moldy > limit["moldy"]!!) {
-            moldyLoss = calculateClassificationLoss(moldyLoss, limit["moldy"]!!)
+            moldyLoss = round(calculateClassificationLoss(moldyLoss, limit["moldy"]!!))
         }
         if (sample.spoiled > limit["spoiled"]!! || sample.spoiled - (burntLoss + burntOrSourLoss + moldyLoss) > limit["spoiled"]!!) {
-            spoiledLoss = calculateClassificationLoss(spoiledLoss, limit["spoiled"]!!)
+            spoiledLoss = round(calculateClassificationLoss(spoiledLoss - (burntLoss + burntOrSourLoss + moldyLoss), limit["spoiled"]!!))
         }
         if (sample.greenish > limit["greenish"]!!) {
-            greenishLoss = calculateClassificationLoss(greenishLoss, limit["greenish"]!!)
+            greenishLoss = round(calculateClassificationLoss(greenishLoss, limit["greenish"]!!))
         }
         if (sample.brokenCrackedDamaged > limit["broken"]!!) {
-            brokenLoss = calculateClassificationLoss(brokenLoss, limit["broken"]!!)
+            brokenLoss = round(calculateClassificationLoss(brokenLoss, limit["broken"]!!))
         }
+
+        // Perdas em Kg
+        val burntLossKg = (burntLoss / 100) * lotWeight
+        val burntOrSourLossKg = (burntOrSourLoss / 100) * lotWeight
+        val brokenLossKg = (brokenLoss / 100) * lotWeight
+        val greenishLossKg = (greenishLoss / 100) * lotWeight
+        val moldyLossKg = (moldyLoss / 100) * lotWeight
+        val spoiledLossKg = (spoiledLoss / 100) * lotWeight
 
         // Desconto de classificação //
         var classificationDiscount = 0f
@@ -138,12 +158,12 @@ class DiscountRepositoryImpl @Inject constructor(
         val impuritiesAndHumidityLossPrice = impuritiesLossPrice + humidityLossPrice
         val technicalLossPrice = (lotPrice / lotWeight) * technicalLoss
 
-        val burntLossPrice = (((burntLoss * lotWeight) / 60) * pricePerSack) / 100
-        val burntOrSourLossPrice = (((burntOrSourLoss * lotWeight) / 60) * pricePerSack) / 100
-        val brokenLossPrice = (((brokenLoss * lotWeight) / 60) * pricePerSack) / 100
-        val greenishLossPrice = (((greenishLoss * lotWeight) / 60) * pricePerSack) / 100
-        val moldyLossPrice = (((moldyLoss * lotWeight) / 60) * pricePerSack) / 100
-        val spoiledLossPrice = (((spoiledLoss * lotWeight) / 60) * pricePerSack) / 100
+        val burntLossPrice = (burntLossKg / 60) * pricePerSack
+        val burntOrSourLossPrice = (burntOrSourLossKg / 60) * pricePerSack
+        val brokenLossPrice = (brokenLossKg / 60) * pricePerSack
+        val greenishLossPrice =  (greenishLossKg / 60) * pricePerSack
+        val moldyLossPrice = (moldyLossKg / 60) * pricePerSack
+        val spoiledLossPrice = (spoiledLossKg / 60) * pricePerSack
 
         val classificationDiscountPrice = burntLossPrice + burntOrSourLossPrice + brokenLossPrice +
                 greenishLossPrice + moldyLossPrice + spoiledLossPrice
