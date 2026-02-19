@@ -185,9 +185,15 @@ object DatabaseModule {
     @Provides fun provideClassificationSojaDao(db: AppDatabase): ClassificationSojaDao = db.classificationSojaDao()
     @Provides fun provideLimitSojaDao(db: AppDatabase): LimitSojaDao = db.limitSojaDao()
 
+    @Provides fun provideToxicSeedSojaDao(db: AppDatabase): ToxicSeedSojaDao = db.toxicSeedSojaDao()
+
     @Provides fun provideLimitMilhoDao(db: AppDatabase): LimitMilhoDao = db.limitMilhoDao()
     @Provides fun provideDiscountMilhoDao(db: AppDatabase): DiscountMilhoDao = db.discountMilhoDao()
     @Provides fun provideInputDiscountMilhoDao(db: AppDatabase): InputDiscountMilhoDao = db.inputDiscountMilhoDao()
     @Provides fun provideClassificationMilhoDao(db: AppDatabase): ClassificationMilhoDao = db.classificationMilhoDao()
     @Provides fun provideSampleMilhoDao(db: AppDatabase): SampleMilhoDao = db.sampleMilhoDao()
+
+    @Provides fun provideDisqualificationMilhoDao(db: AppDatabase): DisqualificationMilhoDao = db.disqualificationMilhoDao()
+
+    @Provides fun provideToxicSeedMilhoDao(db: AppDatabase): ToxicSeedMilhoDao = db.toxicSeedMilhoDao()
 }

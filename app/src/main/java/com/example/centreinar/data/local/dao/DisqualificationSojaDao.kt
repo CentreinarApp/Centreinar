@@ -7,6 +7,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 import com.example.centreinar.DisqualificationSoja
+import com.example.centreinar.data.local.relations.DisqualificationWithToxicSeeds
 
 
 @Dao
@@ -51,4 +52,8 @@ interface DisqualificationSojaDao {
 
     @Query("SELECT id FROM disqualification_soja ORDER BY id DESC LIMIT 1")
     suspend fun getLastDisqualificationId(): Int
+
+    @androidx.room.Transaction // Necessário para relacionamentos no Room
+    @Query("SELECT * FROM disqualification_soja WHERE classificationId = :classificationId")
+    suspend fun getDisqualificationWithSeedsByClassificationId(classificationId: Int): DisqualificationWithToxicSeeds?
 }

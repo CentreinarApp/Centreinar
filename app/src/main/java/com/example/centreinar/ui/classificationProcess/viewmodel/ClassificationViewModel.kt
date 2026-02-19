@@ -10,12 +10,20 @@ import androidx.lifecycle.viewmodel.compose.saveable
 import com.example.centreinar.ClassificationMilho
 import com.example.centreinar.ClassificationSoja
 import com.example.centreinar.ColorClassificationSoja
+import com.example.centreinar.DisqualificationSoja
 import com.example.centreinar.LimitSoja
 import com.example.centreinar.SampleSoja
+import com.example.centreinar.data.local.dao.DisqualificationMilhoDao
+import com.example.centreinar.data.local.dao.DisqualificationSojaDao
+import com.example.centreinar.data.local.dao.ToxicSeedSojaDao
 import com.example.centreinar.data.local.dao.LimitMilhoDao
 import com.example.centreinar.data.local.dao.LimitSojaDao
+import com.example.centreinar.data.local.dao.ToxicSeedMilhoDao
+import com.example.centreinar.data.local.entities.ToxicSeedSoja
+import com.example.centreinar.data.local.entity.DisqualificationMilho
 import com.example.centreinar.data.local.entity.LimitMilho
 import com.example.centreinar.data.local.entity.SampleMilho
+import com.example.centreinar.data.local.entity.ToxicSeedMilho
 import com.example.centreinar.data.repository.ClassificationRepository
 import com.example.centreinar.data.repository.ClassificationRepositoryMilhoImpl
 import com.example.centreinar.util.PDFExporterMilho
@@ -36,6 +44,11 @@ class ClassificationViewModel @Inject constructor(
     private val pdfExporterMilho: PDFExporterMilho,
     private val limitSojaDao: LimitSojaDao,
     private val limitMilhoDao: LimitMilhoDao,
+    private val disqualificationSojaDao: DisqualificationSojaDao,
+    private val disqualificationMilhoDao: DisqualificationMilhoDao,
+    private val toxicSeedSojaDao: ToxicSeedSojaDao,
+    private val toxicSeedMilhoDao: ToxicSeedMilhoDao,
+
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -176,7 +189,13 @@ class ClassificationViewModel @Inject constructor(
                 val limitUtilizado = repositorySoja.getLimit(sample.grain, sample.group, 1, source)
                 _lastUsedLimit.value = limitUtilizado
 
+                // Gera o id da classificação
                 val resultId = repositorySoja.classifySample(sample, source)
+                // Pega o id da desclassificação
+                val lastDisqId = disqualificationSojaDao.getLastDisqualificationId()
+                // Atualiza para o id da classificação
+                disqualificationSojaDao.updateClassificationId(lastDisqId, resultId.toInt())
+
                 _classificationSoja.value = repositorySoja.getClassification(resultId.toInt())
             } catch (e: Exception) {
                 _error.value = e.message
@@ -193,8 +212,18 @@ class ClassificationViewModel @Inject constructor(
                 val limitSource = if (isOfficial == false) repositoryMilho.getLastLimitSource() else 0
                 val limitUsed = repositoryMilho.getLimit(sample.grain, sample.group, 1, limitSource)
                 _limitMilho.value = limitUsed
-                val id = repositoryMilho.classifySample(sample, limitSource)
-                _classificationMilho.value = repositoryMilho.getClassification(id.toInt())
+
+                // Gera o id da classificação
+                val resultId = repositoryMilho.classifySample(sample, limitSource)
+                // Pega o id da desclassificação
+                val lastDisqId = disqualificationMilhoDao.getLastDisqualificationId()
+
+                // Usamos o let para só executar o update se lastDisqId NÃO for nulo
+                lastDisqId?.let { disqId ->
+                    disqualificationMilhoDao.updateClassificationId(disqId, resultId.toInt())
+                }
+
+                _classificationMilho.value = repositoryMilho.getClassification(resultId.toInt())
             } catch (e: Exception) {
                 _error.value = e.message
             } finally {
@@ -246,6 +275,83 @@ class ClassificationViewModel @Inject constructor(
             } catch (e: Exception) {
                 _error.value = e.message
             }
+        }
+    }
+
+    fun saveDisqualificationDataSoja(
+        badConservation: Int,
+        strangeSmell: Int,
+        insects: Int,
+        toxicGrains: Int,
+        toxicSeeds: List<Pair<String, String>>,
+        onSuccess: () -> Unit
+    ) {
+        viewModelScope.launch {
+
+            val disqualification = DisqualificationSoja(
+                classificationId = null,
+                badConservation = badConservation,
+                graveDefectSum = 0,
+                strangeSmell = strangeSmell,
+                insects = insects,
+                toxicGrains = toxicGrains
+            )
+
+            val newDisqualificationId = disqualificationSojaDao.insert(disqualification).toInt()
+
+            if (toxicGrains == 1 && toxicSeeds.isNotEmpty()) {
+                val seedsToInsert = toxicSeeds.map { pair ->
+                    ToxicSeedSoja(
+                        disqualificationId = newDisqualificationId,
+                        name = pair.first,
+                        quantity = pair.second.toIntOrNull() ?: 0
+                    )
+                }
+
+                toxicSeedSojaDao.insertAll(seedsToInsert)
+            }
+
+            onSuccess()
+        }
+    }
+
+    fun saveDisqualificationDataMilho(
+        badConservation: Int,
+        strangeSmell: Int,
+        insects: Int,
+        toxicGrains: Int,
+        toxicSeeds: List<Pair<String, String>>,
+        onSuccess: () -> Unit
+    ) {
+        viewModelScope.launch {
+
+            // Cria a entidade do MILHO
+            val disqualification = DisqualificationMilho(
+                classificationId = null,
+                badConservation = badConservation,
+                strangeSmell = strangeSmell,
+                insects = insects,
+                toxicGrains = toxicGrains
+            )
+
+            // Salva usando o DAO do MILHO e pega o ID gerado
+            val newDisqualificationId = disqualificationMilhoDao.insert(disqualification).toInt()
+
+            // Se houver sementes tóxicas, salva na tabela de sementes do MILHO
+            if (toxicGrains == 1 && toxicSeeds.isNotEmpty()) {
+                val seedsToInsert = toxicSeeds.map { pair ->
+                    ToxicSeedMilho(
+                        disqualificationId = newDisqualificationId,
+                        name = pair.first,
+                        quantity = pair.second.toIntOrNull() ?: 0
+                    )
+                }
+
+                // Salva usando o DAO de sementes do MILHO
+                toxicSeedMilhoDao.insertAll(seedsToInsert)
+            }
+
+            onSuccess()
         }
     }
 

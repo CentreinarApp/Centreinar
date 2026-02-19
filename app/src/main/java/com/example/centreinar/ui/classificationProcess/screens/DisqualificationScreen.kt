@@ -231,14 +231,32 @@ public fun DisqualificationScreen(
                         val insectsInt = if (insects) 1 else 0
                         val toxicGrainInt = if (toxicGrains) 1 else 0
 
-                        viewModel.setDisqualification(
-                            badConservationInt,
-                            strangeSmellInt,
-                            insectsInt,
-                            toxicGrainInt
-                        )
-
-                        navController.navigate("classification")
+                        // VERIFICA QUAL É O GRÃO SELECIONADO NO VIEWMODEL
+                        if (viewModel.selectedGrain == "Milho") {
+                            // Salva na tabela de MILHO
+                            viewModel.saveDisqualificationDataMilho(
+                                badConservation = badConservationInt,
+                                strangeSmell = strangeSmellInt,
+                                insects = insectsInt,
+                                toxicGrains = toxicGrainInt,
+                                toxicSeeds = toxicSeedDetails,
+                                onSuccess = {
+                                    navController.navigate("classification")
+                                }
+                            )
+                        } else {
+                            // Salva na tabela de SOJA (Caso não seja milho)
+                            viewModel.saveDisqualificationDataSoja(
+                                badConservation = badConservationInt,
+                                strangeSmell = strangeSmellInt,
+                                insects = insectsInt,
+                                toxicGrains = toxicGrainInt,
+                                toxicSeeds = toxicSeedDetails,
+                                onSuccess = {
+                                    navController.navigate("classification")
+                                }
+                            )
+                        }
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {

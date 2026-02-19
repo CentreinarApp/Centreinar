@@ -34,6 +34,10 @@ import com.example.centreinar.data.local.entity.LimitMilho
 import com.example.centreinar.LimitSoja
 import com.example.centreinar.data.local.entity.SampleMilho
 import com.example.centreinar.SampleSoja
+import com.example.centreinar.data.local.dao.ToxicSeedMilhoDao
+import com.example.centreinar.data.local.dao.ToxicSeedSojaDao
+import com.example.centreinar.data.local.entities.ToxicSeedSoja
+import com.example.centreinar.data.local.entity.ToxicSeedMilho
 
 @Database(
     entities = [
@@ -50,7 +54,9 @@ import com.example.centreinar.SampleSoja
         ColorClassificationMilho::class,
         ColorClassificationSoja::class,
         DisqualificationMilho::class,
-        DisqualificationSoja::class
+        DisqualificationSoja::class,
+        ToxicSeedSoja::class,
+        ToxicSeedMilho::class
     ],
     version = 5,
     exportSchema = false
@@ -59,6 +65,10 @@ abstract class AppDatabase : RoomDatabase() {
 
     abstract fun limitMilhoDao(): LimitMilhoDao
     abstract fun limitSojaDao(): LimitSojaDao
+
+    abstract fun toxicSeedSojaDao(): ToxicSeedSojaDao
+
+    abstract fun toxicSeedMilhoDao(): ToxicSeedMilhoDao
 
     abstract fun classificationMilhoDao(): ClassificationMilhoDao
     abstract fun classificationSojaDao(): ClassificationSojaDao
