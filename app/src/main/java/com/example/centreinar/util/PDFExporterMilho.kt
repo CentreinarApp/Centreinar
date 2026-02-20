@@ -80,7 +80,7 @@ class PDFExporterMilho @Inject constructor(
             listOf("Gessados (%)", "%.2f".format(classification.gessadoPercentage), "--"),
             listOf("Total Avariados (%)", "%.2f".format(classification.spoiledTotalPercentage), formatType(classification.spoiledTotalType)),
             listOf("Carunchados (%)", "%.2f".format(classification.carunchadoPercentage), formatType(classification.carunchadoType)),
-            listOf("-------------------", "-----------", "-------"),
+            listOf(" ", " ", " "),
             listOf("TIPO FINAL", "---", getFinalTypeLabel(classification.finalType))
         )
 

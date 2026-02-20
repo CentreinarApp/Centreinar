@@ -153,6 +153,11 @@ fun ClassificationInputScreen( // Função Principal
         val damagedFocus = remember { FocusRequester() }
         val otherColorsFocus = remember { FocusRequester() }
         val gessadoFocus = remember { FocusRequester() }
+        val focusBranca = remember { FocusRequester() }
+        val focusCores = remember { FocusRequester() }
+        val focusDuro = remember { FocusRequester() }
+        val focusDentado = remember { FocusRequester() }
+        val focusSemi = remember { FocusRequester() }
 
 
         val tabTitles = listOf("Informação Básica", "Avariados", "Defeitos Finais")
@@ -301,7 +306,12 @@ fun ClassificationInputScreen( // Função Principal
                         mDentado = weightDentado,
                         onMDentado = { weightDentado = it },
                         mSemi = weightSemiduro,
-                        onMSemi = { weightSemiduro = it }
+                        onMSemi = { weightSemiduro = it },
+                        focusBranca = focusBranca,
+                        focusCores = focusCores,
+                        focusDuro = focusDuro,
+                        focusSemi = focusSemi,
+                        focusDentado = focusDentado
                     )
                 }
             }
@@ -542,12 +552,12 @@ fun DefectsTab2(
     // Novos parâmetros Milho
     milhoClasse: Boolean, onMilhoClasseToggle: (Boolean) -> Unit,
     mAmarela: String, onMAmarela: (String) -> Unit,
-    mBranca: String, onMBranca: (String) -> Unit,
-    mCores: String, onMCores: (String) -> Unit,
+    mBranca: String, onMBranca: (String) -> Unit, focusBranca: FocusRequester,
+    mCores: String, onMCores: (String) -> Unit, focusCores: FocusRequester,
     milhoGrupo: Boolean, onMilhoGrupoToggle: (Boolean) -> Unit,
-    mDuro: String, onMDuro: (String) -> Unit,
-    mDentado: String, onMDentado: (String) -> Unit,
-    mSemi: String, onMSemi: (String) -> Unit
+    mDuro: String, onMDuro: (String) -> Unit, focusDuro: FocusRequester,
+    mDentado: String, onMDentado: (String) -> Unit, focusDentado: FocusRequester,
+    mSemi: String, onMSemi: (String) -> Unit, focusSemi: FocusRequester
 ) {
     val focusManager = LocalFocusManager.current
 
@@ -592,9 +602,11 @@ fun DefectsTab2(
                 Text(" Definir Classe (Cor) do Milho", fontWeight = FontWeight.Bold)
             }
             if (milhoClasse) {
-                NumberInputField(mAmarela, onMAmarela, "Peso Amarela (g)", remember { FocusRequester() }, null)
-                NumberInputField(mBranca, onMBranca, "Peso Branca (g)", remember { FocusRequester() }, null)
-                NumberInputField(mCores, onMCores, "Peso Cores (Misturada) (g)", remember { FocusRequester() }, null)
+                NumberInputField(mAmarela, onMAmarela, "Peso Amarela (g)", focusRequester = FocusRequester(), nextFocus = focusBranca)
+                NumberInputField(mBranca, onMBranca, "Peso Branca (g)", focusRequester = focusBranca, nextFocus = focusCores)
+                NumberInputField(mCores, onMCores, "Peso Cores (Misturada) (g)", focusRequester = focusCores, nextFocus = null)
+
+                // --- Seção de Grupo ---
                 val totalC = mAmarela.toFloatOrZero() + mBranca.toFloatOrZero() + mCores.toFloatOrZero()
                 if (totalC > 0) {
                     val pA = (mAmarela.toFloatOrZero() / totalC) * 100
@@ -617,9 +629,9 @@ fun DefectsTab2(
                 Text(" Definir Grupo (Forma) do Milho", fontWeight = FontWeight.Bold)
             }
             if (milhoGrupo) {
-                NumberInputField(mDuro, onMDuro, "Peso Duro (g)", remember { FocusRequester() }, null)
-                NumberInputField(mDentado, onMDentado, "Peso Dentado (g)", remember { FocusRequester() }, null)
-                NumberInputField(mSemi, onMSemi, "Peso Semiduro (g)", remember { FocusRequester() }, null)
+                NumberInputField(mDuro, onMDuro, "Peso Duro (g)", focusRequester = focusDuro, nextFocus = focusDentado)
+                NumberInputField(mDentado, onMDentado, "Peso Dentado (g)", focusRequester = focusDentado, nextFocus = focusSemi)
+                NumberInputField(mSemi, onMSemi, "Peso Semiduro (g)", focusRequester = focusSemi, nextFocus = null)
                 val totalG = mDuro.toFloatOrZero() + mDentado.toFloatOrZero() + mSemi.toFloatOrZero()
                 if (totalG > 0) {
                     val pD = (mDuro.toFloatOrZero() / totalG) * 100

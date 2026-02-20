@@ -52,7 +52,7 @@ class PDFExporterSoja @Inject constructor(
 
         // Página 3: classificação (se existir)
         classification?.let { classObj ->
-            val classPage = createClassificationPage(document, pageWidth, pageHeight, classObj)
+            val classPage = createClassificationPage(document, pageWidth, pageHeight, classObj, sampleClassification ?: SampleSoja())
             document.finishPage(classPage)
         }
 
@@ -108,27 +108,24 @@ class PDFExporterSoja @Inject constructor(
         y += 65f
 
         // Tabela de Resultados
-        val formatType = { typeCode: Int ->
-            if (typeCode == 0) "--" else getFinalTypeLabel(typeCode)
-        }
+        val translate = { typeCode: Int -> getFinalTypeLabel(typeCode, sample.group) }
 
         val tableData = listOf(
-            listOf("Matéria Estranha/Imp (%)", "%.2f".format(classification.impuritiesPercentage), getFinalTypeLabel(classification.impuritiesType)),
+            listOf("Matéria Estranha/Imp (%)", "%.2f".format(classification.impuritiesPercentage), translate(classification.impuritiesType)),
             listOf("Ardidos (%)", "%.2f".format(classification.sourPercentage), "--"),
-            listOf("Queimados (%)", "%.2f".format(classification.burntPercentage), getFinalTypeLabel(classification.burntType)),
-            listOf("Total Ardidos + Queimados (%)", "%.2f".format(classification.burntOrSourPercentage), getFinalTypeLabel(classification.burntOrSourType)),
-            listOf("Mofados (%)", "%.2f".format(classification.moldyPercentage), getFinalTypeLabel(classification.moldyType)),
+            listOf("Queimados (%)", "%.2f".format(classification.burntPercentage), translate(classification.burntType)),
+            listOf("Total Ardidos + Queimados (%)", "%.2f".format(classification.burntOrSourPercentage), translate(classification.burntOrSourType)),
+            listOf("Mofados (%)", "%.2f".format(classification.moldyPercentage), translate(classification.moldyType)),
             listOf("Fermentados (%)", "%.2f".format(classification.fermentedPercentage), "--"),
             listOf("Germinados (%)", "%.2f".format(classification.germinatedPercentage), "--"),
             listOf("Imaturos (%)", "%.2f".format(classification.immaturePercentage), "--"),
             listOf("Chochos (%)", "%.2f".format(classification.shriveledPercentage), "--"),
             listOf("Danificados (%)", "%.2f".format(classification.damagedPercentage), "--"),
-            listOf("Total de Avariados (%)", "%.2f".format(classification.spoiledPercentage), getFinalTypeLabel(classification.spoiledType)),
-            listOf("Esverdeados (%)", "%.2f".format(classification.greenishPercentage), getFinalTypeLabel(classification.greenishType)),
-            listOf("Partidos/Quebrados (%)", "%.2f".format(classification.brokenCrackedDamagedPercentage), getFinalTypeLabel(classification.brokenCrackedDamagedType)),
-            // Linha de destaque para o Tipo Final
+            listOf("Total de Avariados (%)", "%.2f".format(classification.spoiledPercentage), translate(classification.spoiledType)),
+            listOf("Esverdeados (%)", "%.2f".format(classification.greenishPercentage), translate(classification.greenishType)),
+            listOf("Partidos/Quebrados (%)", "%.2f".format(classification.brokenCrackedDamagedPercentage), translate(classification.brokenCrackedDamagedType)),
             listOf(" ", " ", " "),
-            listOf("TIPO FINAL", "---", getFinalTypeLabel(classification.finalType))
+            listOf("TIPO FINAL", "---", translate(classification.finalType))
         )
 
         y = drawClassificationTable(canvas1, y, pageWidth, listOf("PARÂMETRO", "PERCENTUAL", "TIPO"), tableData, paints)
@@ -254,7 +251,7 @@ class PDFExporterSoja @Inject constructor(
     }
 
     // Funções de Criação de Página (Com Tabela)
-    private fun createClassificationPage(document: PdfDocument, pageWidth: Int, pageHeight: Int, classification: ClassificationSoja): PdfDocument.Page {
+    private fun createClassificationPage(document: PdfDocument, pageWidth: Int, pageHeight: Int, classification: ClassificationSoja, sample: SampleSoja): PdfDocument.Page {
         val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, 4).create()
         val page = document.startPage(pageInfo)
         val canvas: Canvas = page.canvas
@@ -266,15 +263,15 @@ class PDFExporterSoja @Inject constructor(
 
         // Dados para a tabela
         val data = listOf(
-            listOf("TIPO FINAL", "---", getFinalTypeLabel(classification.finalType),),
+            listOf("TIPO FINAL", "---", getFinalTypeLabel(classification.finalType, sample.group)),
             listOf("-------------------", "-------------------", "------"),
-            listOf("Impurezas (%)", "%.2f".format(classification.impuritiesPercentage), getFinalTypeLabel(classification.impuritiesType)),
-            listOf("Partidos/Quebrados (%)", "%.2f".format(classification.brokenCrackedDamagedPercentage), getFinalTypeLabel(classification.brokenCrackedDamagedType)),
-            listOf("Esverdeados (%)", "%.2f".format(classification.greenishPercentage), getFinalTypeLabel(classification.greenishType)),
-            listOf("Ardidos + Queimados (%)", "%.2f".format(classification.burntOrSourPercentage), getFinalTypeLabel(classification.burntOrSourType)),
-            listOf("Mofados (%)", "%.2f".format(classification.moldyPercentage), getFinalTypeLabel(classification.moldyType)),
-            listOf("Total Avariados (%)", "%.2f".format(classification.spoiledPercentage), getFinalTypeLabel(classification.spoiledType)),
-            listOf("Queimados Máx (%)", "%.2f".format(classification.burntPercentage), getFinalTypeLabel(classification.burntType)),
+            listOf("Impurezas (%)", "%.2f".format(classification.impuritiesPercentage), getFinalTypeLabel(classification.impuritiesType, sample.group)),
+            listOf("Partidos/Quebrados (%)", "%.2f".format(classification.brokenCrackedDamagedPercentage), getFinalTypeLabel(classification.brokenCrackedDamagedType, sample.group)),
+            listOf("Esverdeados (%)", "%.2f".format(classification.greenishPercentage), getFinalTypeLabel(classification.greenishType, sample.group)),
+            listOf("Ardidos + Queimados (%)", "%.2f".format(classification.burntOrSourPercentage), getFinalTypeLabel(classification.burntOrSourType, sample.group)),
+            listOf("Mofados (%)", "%.2f".format(classification.moldyPercentage), getFinalTypeLabel(classification.moldyType, sample.group)),
+            listOf("Total Avariados (%)", "%.2f".format(classification.spoiledPercentage), getFinalTypeLabel(classification.spoiledType, sample.group)),
+            listOf("Queimados Máx (%)", "%.2f".format(classification.burntPercentage), getFinalTypeLabel(classification.burntType, sample.group)),
         )
 
         // Desenha a tabela de classificação
@@ -473,13 +470,19 @@ class PDFExporterSoja @Inject constructor(
     data class Paints(val titlePaint: Paint, val headerPaint: Paint, val cellPaint: Paint, val borderPaint: Paint)
 }
 
-private fun getFinalTypeLabel(finalType: Int): String {
-    return when (finalType) {
-        0 -> "Desclassificada"
-        1 -> "Tipo 1"
-        2 -> "Tipo 2"
-        7 -> "Fora de Tipo"
-        8 -> "Padrão Básico"
-        else -> "Tipo $finalType"
+private fun getFinalTypeLabel(finalType: Int, group: Int): String {
+    if (finalType == 0) return "Desclassificada"
+    if (finalType == 7) return "Fora de Tipo"
+
+    return if (group == 2) {
+        // No Grupo 2
+        "Padrão Básico"
+    } else {
+        // No Grupo 1
+        when (finalType) {
+            1 -> "Tipo 1"
+            2 -> "Tipo 2"
+            else -> "Tipo $finalType"
+        }
     }
 }
