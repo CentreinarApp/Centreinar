@@ -16,7 +16,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.example.centreinar.data.local.entity.LimitMilho
 import com.example.centreinar.ui.classificationProcess.components.ClassificationTable
+import com.example.centreinar.ui.classificationProcess.components.DisqualificationInfoCard
 import com.example.centreinar.ui.classificationProcess.viewmodel.ClassificationViewModel
+import com.example.centreinar.ui.classificationProcess.components.OfficialReferenceTable
+import com.example.centreinar.ui.classificationProcess.components.MoistureInfoCard
 
 @Composable
 fun MilhoResultadoScreen(
@@ -64,6 +67,9 @@ fun MilhoResultadoScreen(
 
         val safeLimits = limitState ?: mockLimits
         val context = LocalContext.current
+
+        val disqualificationMilho by viewModel.disqualificationMilho.collectAsStateWithLifecycle()
+        val toxicSeedsMilho by viewModel.toxicSeedsMilho.collectAsStateWithLifecycle()
 
         // Carrega os limites padrão assim que a tela abre
         LaunchedEffect(Unit) {
@@ -136,10 +142,26 @@ fun MilhoResultadoScreen(
                     // Tabela de Resultado da Amostra
                     ClassificationTable(
                         classification = safeClass,
+                        disqualificationMilho = disqualificationMilho!!,
                         limits = safeLimits,
                         typeTranslator = viewModel::getFinalTypeLabel,
                         modifier = Modifier.fillMaxWidth()
                     )
+
+                    Spacer(Modifier.height(32.dp))
+
+                    // Card da Desclassificação
+                    disqualificationMilho?.let { disq ->
+                        val toxicSeedsPairs = toxicSeedsMilho.map { it.name to it.quantity }
+
+                        DisqualificationInfoCard(
+                            badConservation = disq.badConservation == 1,
+                            strangeSmell = disq.strangeSmell == 1,
+                            insects = disq.insects == 1,
+                            toxicGrains = disq.toxicGrains == 1,
+                            toxicSeeds = toxicSeedsPairs
+                        )
+                    }
 
                     // Se for Oficial, exibe a tabela de limites do MAPA
                     // Caso contrário, exibe os limites do usuário

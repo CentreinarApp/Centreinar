@@ -1,6 +1,8 @@
 package com.example.centreinar.data.repository
 
 import com.example.centreinar.ClassificationMilho
+import com.example.centreinar.DisqualificationSoja
+import com.example.centreinar.data.local.entity.DisqualificationMilho
 import com.example.centreinar.data.local.entity.LimitMilho
 import com.example.centreinar.data.local.entity.SampleMilho
 
@@ -9,7 +11,7 @@ interface ClassificationRepositoryMilho {
     /**
      * Classifica uma amostra e retorna o ID da nova classificação.
      */
-    suspend fun classifySample(sample: SampleMilho, limitSource: Int): Long
+    suspend fun classifySample(sample: SampleMilho, limitSource: Int, lastDisq: DisqualificationMilho): Long
 
     /**
      * Obtém uma amostra de milho pelo ID.

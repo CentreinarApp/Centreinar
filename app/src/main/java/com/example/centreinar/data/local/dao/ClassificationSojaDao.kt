@@ -38,7 +38,7 @@ interface ClassificationSojaDao {
     @Query("SELECT * FROM classification_soja WHERE id = :id")
     suspend fun getById(id: Int): ClassificationSoja?
 
-    @Query("SELECT * FROM classification_soja WHERE sample = :sampleId")
+    @Query("SELECT * FROM classification_soja WHERE sampleId = :sampleId")
     fun getBySampleId(sampleId: Int): Flow<List<ClassificationSoja>>
 
     @Query("SELECT * FROM classification_soja WHERE `group` = :group")

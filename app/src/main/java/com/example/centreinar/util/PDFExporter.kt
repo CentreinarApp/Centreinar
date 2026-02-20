@@ -146,13 +146,13 @@ class PDFExporterSoja @Inject constructor(
         val data = listOf(
             listOf("Tipo Final", classification.finalType.toString(), ""),
             listOf("-------------------", "-------------------", "------"),
-            listOf("Impurezas (%)", "%.2f".format(classification.foreignMattersPercentage), classification.foreignMatters.toString()),
-            listOf("Partidos/Quebrados (%)", "%.2f".format(classification.brokenCrackedDamagedPercentage), classification.brokenCrackedDamaged.toString()),
-            listOf("Esverdeados (%)", "%.2f".format(classification.greenishPercentage), classification.greenish.toString()),
-            listOf("Ardidos + Queimados (%)", "%.2f".format(classification.burntOrSourPercentage), classification.burntOrSour.toString()),
-            listOf("Mofados (%)", "%.2f".format(classification.moldyPercentage), classification.moldy.toString()),
-            listOf("Total Avariados (%)", "%.2f".format(classification.spoiledPercentage), classification.spoiled.toString()),
-            listOf("Queimados Máx (%)", "%.2f".format(classification.burntPercentage), classification.burnt.toString()),
+            listOf("Impurezas (%)", "%.2f".format(classification.impuritiesPercentage), classification.impuritiesType.toString()),
+            listOf("Partidos/Quebrados (%)", "%.2f".format(classification.brokenCrackedDamagedPercentage), classification.brokenCrackedDamagedType.toString()),
+            listOf("Esverdeados (%)", "%.2f".format(classification.greenishPercentage), classification.greenishType.toString()),
+            listOf("Ardidos + Queimados (%)", "%.2f".format(classification.burntOrSourPercentage), classification.burntOrSourType.toString()),
+            listOf("Mofados (%)", "%.2f".format(classification.moldyPercentage), classification.moldyType.toString()),
+            listOf("Total Avariados (%)", "%.2f".format(classification.spoiledPercentage), classification.spoiledType.toString()),
+            listOf("Queimados Máx (%)", "%.2f".format(classification.burntPercentage), classification.burntType.toString()),
         )
 
         // Desenha a tabela de classificação

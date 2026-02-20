@@ -84,6 +84,12 @@ class ClassificationViewModel @Inject constructor(
     private val _lastUsedLimit = MutableStateFlow<LimitSoja?>(null)
     val lastUsedLimit: StateFlow<LimitSoja?> = _lastUsedLimit.asStateFlow()
 
+    private val _disqualificationSoja = MutableStateFlow<DisqualificationSoja?>(null)
+    val disqualificationSoja: StateFlow<DisqualificationSoja?> = _disqualificationSoja.asStateFlow()
+
+    private val _toxicSeedsSoja = MutableStateFlow<List<ToxicSeedSoja>>(emptyList())
+    val toxicSeedsSoja: StateFlow<List<ToxicSeedSoja>> = _toxicSeedsSoja.asStateFlow()
+
     // =========================================================================
     // ESTADOS MILHO
     // =========================================================================
@@ -93,6 +99,12 @@ class ClassificationViewModel @Inject constructor(
 
     private val _limitMilho = MutableStateFlow<LimitMilho?>(null)
     val limitMilho: StateFlow<LimitMilho?> = _limitMilho.asStateFlow()
+
+    private val _disqualificationMilho = MutableStateFlow<DisqualificationMilho?>(null)
+    val disqualificationMilho: StateFlow<DisqualificationMilho?> = _disqualificationMilho.asStateFlow()
+
+    private val _toxicSeedsMilho = MutableStateFlow<List<ToxicSeedMilho>>(emptyList())
+    val toxicSeedsMilho: StateFlow<List<ToxicSeedMilho>> = _toxicSeedsMilho.asStateFlow()
 
     // =========================================================================
     // GESTÃO DE ESTADO E LIMPEZA
@@ -189,14 +201,30 @@ class ClassificationViewModel @Inject constructor(
                 val limitUtilizado = repositorySoja.getLimit(sample.grain, sample.group, 1, source)
                 _lastUsedLimit.value = limitUtilizado
 
-                // Gera o id da classificação
-                val resultId = repositorySoja.classifySample(sample, source)
                 // Pega o id da desclassificação
                 val lastDisqId = disqualificationSojaDao.getLastDisqualificationId()
+
+                // Pega a desclassificação do lote
+                val lastDisq = disqualificationSojaDao.getById(lastDisqId)
+
+                // Gera o id da classificação
+                val resultId = repositorySoja.classifySample(sample, source, lastDisq!!)
+
                 // Atualiza para o id da classificação
                 disqualificationSojaDao.updateClassificationId(lastDisqId, resultId.toInt())
 
                 _classificationSoja.value = repositorySoja.getClassification(resultId.toInt())
+
+                // Busca a desclassificação e as sementes da Soja recém-salvas
+                val disqSoja = disqualificationSojaDao.getByClassificationId(resultId.toInt())
+                _disqualificationSoja.value = disqSoja
+
+                if (disqSoja != null) {
+                    _toxicSeedsSoja.value = toxicSeedSojaDao.getSeedsByDisqualificationId(disqSoja.id)
+                } else {
+                    _toxicSeedsSoja.value = emptyList()
+                }
+
             } catch (e: Exception) {
                 _error.value = e.message
             } finally {
@@ -213,10 +241,14 @@ class ClassificationViewModel @Inject constructor(
                 val limitUsed = repositoryMilho.getLimit(sample.grain, sample.group, 1, limitSource)
                 _limitMilho.value = limitUsed
 
-                // Gera o id da classificação
-                val resultId = repositoryMilho.classifySample(sample, limitSource)
                 // Pega o id da desclassificação
                 val lastDisqId = disqualificationMilhoDao.getLastDisqualificationId()
+
+                // Pega a desclassificação do lote
+                val lastDisq = disqualificationMilhoDao.getLastDisqualification()
+
+                // Gera o id da classificação
+                val resultId = repositoryMilho.classifySample(sample, limitSource, lastDisq!!)
 
                 // Usamos o let para só executar o update se lastDisqId NÃO for nulo
                 lastDisqId?.let { disqId ->
@@ -224,6 +256,16 @@ class ClassificationViewModel @Inject constructor(
                 }
 
                 _classificationMilho.value = repositoryMilho.getClassification(resultId.toInt())
+
+                val disqMilho = disqualificationMilhoDao.getByClassificationId(resultId.toInt())
+                _disqualificationMilho.value = disqMilho
+
+                if (disqMilho != null) {
+                    _toxicSeedsMilho.value = toxicSeedMilhoDao.getToxicSeedsByDisqualificationId(disqMilho.id)
+                } else {
+                    _toxicSeedsMilho.value = emptyList()
+                }
+
             } catch (e: Exception) {
                 _error.value = e.message
             } finally {

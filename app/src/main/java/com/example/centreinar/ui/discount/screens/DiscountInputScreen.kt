@@ -99,7 +99,7 @@ fun DiscountInputScreen(
             }
             // Preenche dados da Classificação (Impurezas e Defeitos)
             loadedClassif?.let { classif ->
-                impurities = classif.foreignMattersPercentage.toString()
+                impurities = classif.impuritiesPercentage.toString()
                 burnt = classif.burntPercentage.toString()
                 burntOrSour = classif.burntOrSourPercentage.toString()
                 moldy = classif.moldyPercentage.toString()

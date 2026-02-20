@@ -20,7 +20,7 @@ import com.example.centreinar.LimitSoja
 import com.example.centreinar.ui.discount.components.DiscountResultsTable
 import com.example.centreinar.ui.discount.components.DiscountSimplifiedResultsTable
 import com.example.centreinar.ui.discount.viewmodel.DiscountViewModel
-import com.example.centreinar.ui.classificationProcess.screens.OfficialReferenceTable
+import com.example.centreinar.ui.classificationProcess.components.OfficialReferenceTable
 
 @Composable
 fun DiscountResultScreen(

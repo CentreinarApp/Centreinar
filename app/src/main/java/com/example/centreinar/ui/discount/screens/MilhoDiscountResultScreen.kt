@@ -16,7 +16,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.example.centreinar.data.local.entity.LimitMilho
-import com.example.centreinar.ui.classificationProcess.screens.OfficialReferenceTable
+import com.example.centreinar.ui.classificationProcess.components.OfficialReferenceTable
 import com.example.centreinar.ui.discount.viewmodel.DiscountViewModel
 import com.example.centreinar.ui.milho.components.MilhoDiscountResultsTable
 

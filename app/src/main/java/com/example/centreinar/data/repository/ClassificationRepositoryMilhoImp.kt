@@ -5,6 +5,7 @@ import com.example.centreinar.ClassificationMilho
 import com.example.centreinar.data.local.dao.ClassificationMilhoDao
 import com.example.centreinar.data.local.dao.LimitMilhoDao
 import com.example.centreinar.data.local.dao.SampleMilhoDao
+import com.example.centreinar.data.local.entity.DisqualificationMilho
 import com.example.centreinar.data.local.entity.LimitMilho
 import com.example.centreinar.data.local.entity.SampleMilho
 import com.example.centreinar.util.Utilities
@@ -18,7 +19,7 @@ class ClassificationRepositoryMilhoImpl @Inject constructor(
     private val sampleDao: SampleMilhoDao,
     private val tools: Utilities
 ) : ClassificationRepositoryMilho {
-    override suspend fun classifySample(sample: SampleMilho, limitSource: Int): Long {
+    override suspend fun classifySample(sample: SampleMilho, limitSource: Int, lastDisq: DisqualificationMilho): Long {
         // Busca os limites no banco (Retorna uma lista com Limite Tipo 1, Tipo 2 e Tipo 3)
         val limitsList = limitDao.getLimitsBySource(
             grain = sample.grain,
@@ -78,6 +79,15 @@ class ClassificationRepositoryMilhoImpl @Inject constructor(
         // Define o Tipo Final (O maior entre eles)
         val allTypes = listOf(typeImpurities, typeBroken, typeArdido, typeCarunchado, typeSpoiledTotal)
         var finalType = allTypes.maxOrNull() ?: 1
+
+        var isDisqualify = false
+        if (lastDisq.badConservation == 1 ||
+            lastDisq.strangeSmell == 1 ||
+            lastDisq.insects == 1 ||
+            lastDisq.toxicGrains == 1) {
+            isDisqualify = true
+        }
+        if (isDisqualify) finalType = 0
 
         // Salva no Banco
         val sampleId = sampleDao.insert(sample) // Long

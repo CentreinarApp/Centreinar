@@ -18,7 +18,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.centreinar.ClassificationSoja
 import com.example.centreinar.ClassificationMilho
+import com.example.centreinar.DisqualificationSoja
 import com.example.centreinar.LimitSoja
+import com.example.centreinar.data.local.dao.DisqualificationMilhoDao
+import com.example.centreinar.data.local.entity.DisqualificationMilho
 import com.example.centreinar.data.local.entity.LimitMilho
 
 // Classe auxiliar para padronizar os dados antes de enviar para o layout compartilhado
@@ -30,21 +33,48 @@ private data class ClassificationRowData(
     val shouldHighlight: Boolean = true // Por padrão, todos destacam
 )
 
+// Função auxiliar para pegar a desclassificação
+private fun getDisqualificationMotives(
+    badConservation: Int,
+    strangeSmell: Int,
+    insects: Int,
+    toxicGrains: Int,
+    graveDefectSum: Int = 0
+): List<String> {
+    return buildList {
+        if (badConservation == 1) add("Mau estado de conservação")
+        if (strangeSmell == 1) add("Odor estranho / impróprio")
+        if (insects == 1) add("Presença de insetos vivos")
+        if (toxicGrains == 1) add("Sementes tóxicas ou prejudiciais")
+        if (graveDefectSum == 1) add("Excesso de defeitos graves")
+    }
+}
+
 // VERSÃO PÚBLICA PARA SOJA
 @Composable
 fun ClassificationTable(
     classification: ClassificationSoja,
+    disqualificationSoja: DisqualificationSoja,
     typeTranslator: (Int) -> String,
     limits: LimitSoja,
     modifier: Modifier = Modifier
 ) {
+    // --- Lista de Desclassificação ---
+    val disqualificationReasons = getDisqualificationMotives(
+        badConservation = disqualificationSoja.badConservation,
+        strangeSmell = disqualificationSoja.strangeSmell,
+        insects = disqualificationSoja.insects,
+        toxicGrains = disqualificationSoja.toxicGrains,
+        graveDefectSum = disqualificationSoja.graveDefectSum
+    )
+
     // --- LISTA DE DEFEITOS ---
     val rows = listOf(
         ClassificationRowData(
             "Matéria Estranha/Imp",
             limits.impuritiesUpLim,
-            classification.foreignMattersPercentage,
-            classification.foreignMatters
+            classification.impuritiesPercentage,
+            classification.impuritiesType
         ),
         ClassificationRowData( // Não classifica => --
             "Ardidos",
@@ -56,19 +86,19 @@ fun ClassificationTable(
             "Queimados",
             limits.burntUpLim,
             classification.burntPercentage,
-            classification.burnt
+            classification.burntType
         ),
         ClassificationRowData(
             "Total de Ardidos + Queimados",
             limits.burntOrSourUpLim,
             classification.burntOrSourPercentage,
-            classification.burntOrSour
+            classification.burntOrSourType
         ),
         ClassificationRowData(
             "Mofados",
             limits.moldyUpLim,
             classification.moldyPercentage,
-            classification.moldy
+            classification.moldyType
         ),
         ClassificationRowData( // Não classifica => --
             "Fermentados",
@@ -104,19 +134,19 @@ fun ClassificationTable(
             "Total de Avariados",
             limits.spoiledTotalUpLim,
             classification.spoiledPercentage,
-            classification.spoiled
+            classification.spoiledType
         ),
         ClassificationRowData(
             "Esverdeados",
             limits.greenishUpLim,
             classification.greenishPercentage,
-            classification.greenish
+            classification.greenishType
         ),
         ClassificationRowData(
             "Partidos/Quebrados",
             limits.brokenCrackedDamagedUpLim,
             classification.brokenCrackedDamagedPercentage,
-            classification.brokenCrackedDamaged
+            classification.brokenCrackedDamagedType
         )
     )
 
@@ -124,6 +154,7 @@ fun ClassificationTable(
         title = "RESULTADO SOJA",
         rows = rows,
         finalTypeLabel = typeTranslator(classification.finalType),
+        disqualificationReasons = disqualificationReasons,
         typeTranslator = typeTranslator,
         modifier = modifier
     )
@@ -133,6 +164,7 @@ fun ClassificationTable(
 @Composable
 fun ClassificationTable(
     classification: ClassificationMilho,
+    disqualificationMilho: DisqualificationMilho,
     limits: LimitMilho,
     typeTranslator: (Int) -> String,
     modifier: Modifier = Modifier
@@ -142,6 +174,13 @@ fun ClassificationTable(
             classification.carunchadoPercentage + classification.fermentedPercentage +
             classification.germinatedPercentage + classification.immaturePercentage +
             classification.gessadoPercentage
+
+    val disqualificationReasons = getDisqualificationMotives(
+        badConservation = disqualificationMilho.badConservation,
+        strangeSmell = disqualificationMilho.strangeSmell,
+        insects = disqualificationMilho.insects,
+        toxicGrains = disqualificationMilho.toxicGrains,
+    )
 
     val rows = listOf(
         ClassificationRowData(
@@ -211,6 +250,7 @@ fun ClassificationTable(
         title = "RESULTADO MILHO",
         rows = rows,
         finalTypeLabel = typeTranslator(classification.finalType),
+        disqualificationReasons = disqualificationReasons,
         typeTranslator = typeTranslator,
         modifier = modifier
     )
@@ -222,11 +262,15 @@ private fun SharedTableLayout(
     title: String,
     rows: List<ClassificationRowData>,
     finalTypeLabel: String,
+    disqualificationReasons: List<String>,
     typeTranslator: (Int) -> String,
     modifier: Modifier
 ) {
+    // Gerar a observação: filtrar itens onde typeCode == 7
+    val outOfTypeItems = rows.filter { it.typeCode == 7 }
+
     Card(
-        modifier = modifier.padding(16.dp).fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.medium
     ) {
         Column(
@@ -260,7 +304,12 @@ private fun SharedTableLayout(
                 }
             }
             Spacer(Modifier.height(16.dp))
-            FinalTypeRow(value = finalTypeLabel)
+
+            FinalTypeRow(
+                finalType = finalTypeLabel,
+                outOfTypeItems = outOfTypeItems,
+                disqualificationReasons = disqualificationReasons
+            )
         }
     }
 }
@@ -282,9 +331,56 @@ private fun TableRow(label: String, limit: Float, percentage: Float, quantity: S
 }
 
 @Composable
-private fun FinalTypeRow(value: String) {
-    Row(modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.secondaryContainer).padding(12.dp), horizontalArrangement = Arrangement.Center) {
-        Text(text = "Tipo Final: $value", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = MaterialTheme.colorScheme.onSecondaryContainer)
+private fun FinalTypeRow(
+    finalType: String,
+    outOfTypeItems: List<ClassificationRowData>,
+    disqualificationReasons: List<String>
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.secondaryContainer)
+            .padding(12.dp),
+        horizontalAlignment = Alignment.Start // Alinhado à esquerda para listas
+    ) {
+        Text(
+            text = "Tipo Final: $finalType",
+            fontWeight = FontWeight.ExtraBold,
+            fontSize = 18.sp,
+            color = MaterialTheme.colorScheme.onSecondaryContainer,
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = TextAlign.Center
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        when (finalType) {
+            "Fora de Tipo" -> {
+                if (outOfTypeItems.isNotEmpty()) {
+                    Text("Fora de Tipo por:", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    outOfTypeItems.forEach { item ->
+                        Text("• ${item.label}: %.2f%%".format(item.percentage), color = MaterialTheme.colorScheme.error)
+                    }
+                }
+            }
+            "Desclassificada" -> {
+                if (disqualificationReasons.isNotEmpty()) {
+                    Text("Motivos da Desclassificação:", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSecondaryContainer, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
+                    disqualificationReasons.forEach { reason ->
+                        Text("• $reason", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Medium)
+                    }
+                } else {
+                    Text("• Critérios de desclassificação atingidos.", color = MaterialTheme.colorScheme.error)
+                }
+            }
+            else -> {
+                Text(
+                    text = "Padrão atendido conforme limites.",
+                    fontSize = 13.sp,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
+                )
+            }
+        }
     }
 }
 

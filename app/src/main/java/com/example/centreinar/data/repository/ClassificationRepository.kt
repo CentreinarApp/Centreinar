@@ -9,7 +9,7 @@ import com.example.centreinar.domain.model.LimitCategory
 
 interface ClassificationRepository {
 
-    suspend fun classifySample(sample: SampleSoja, limitSource: Int): Long
+    suspend fun classifySample(sample: SampleSoja, limitSource: Int, lastDisq: DisqualificationSoja): Long
 
     suspend fun getSample(id: Int): SampleSoja?
 

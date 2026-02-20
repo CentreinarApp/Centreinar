@@ -22,6 +22,10 @@ import com.example.centreinar.ui.classificationProcess.components.Classification
 import com.example.centreinar.LimitSoja
 import com.example.centreinar.data.local.entity.LimitMilho
 import com.example.centreinar.ui.classificationProcess.viewmodel.ClassificationViewModel
+import com.example.centreinar.ui.classificationProcess.components.DisqualificationInfoCard
+import com.example.centreinar.ui.classificationProcess.components.OfficialReferenceTable
+import com.example.centreinar.ui.classificationProcess.components.MoistureInfoCard
+
 
 @Composable
 fun ClassificationResult(
@@ -50,6 +54,9 @@ fun ClassificationResult(
         val classification by viewModel.classification.collectAsStateWithLifecycle()
         val allOfficialLimits by viewModel.allOfficialLimits.collectAsStateWithLifecycle()
         val lastUsedLimitState by viewModel.lastUsedLimit.collectAsStateWithLifecycle()
+
+        val disqualificationSoja by viewModel.disqualificationSoja.collectAsStateWithLifecycle()
+        val toxicSeedsSoja by viewModel.toxicSeedsSoja.collectAsStateWithLifecycle()
 
         // Se for o grupo 1 => utiliza os valores de limite do grupo 1
         // Caso contrário, é o grupo 2 => utiliza os valores de limite do grupo 2
@@ -151,10 +158,26 @@ fun ClassificationResult(
                 // Tabela de Resultado
                 ClassificationTable(
                     classification = classification!!,
+                    disqualificationSoja = disqualificationSoja!!,
                     typeTranslator = viewModel::getFinalTypeLabel,
                     limits = safeLimits,
                     modifier = Modifier.fillMaxWidth()
                 )
+
+                Spacer(Modifier.height(32.dp))
+
+                // Card da Desclassificação
+                disqualificationSoja?.let { disq ->
+                    val toxicSeedsPairs = toxicSeedsSoja.map { it.name to it.quantity }
+
+                    DisqualificationInfoCard(
+                        badConservation = disq.badConservation == 1,
+                        strangeSmell = disq.strangeSmell == 1,
+                        insects = disq.insects == 1,
+                        toxicGrains = disq.toxicGrains == 1,
+                        toxicSeeds = toxicSeedsPairs
+                    )
+                }
 
                 // Campo dos limites
                 Spacer(Modifier.height(32.dp))
@@ -222,138 +245,6 @@ fun ClassificationResult(
                 ) {
                     Text("Exportar PDF")
                 }
-            }
-        }
-    }
-}
-
-@Composable
-fun OfficialReferenceTable(grain: String, group: Int, isOfficial: Boolean, data: List<Any>) {
-    val labels = if (grain == "Soja") {
-        listOf("Ardidos e Queimados", "Queimados", "Mofados", "Avariados Total", "Esverdeados", "Partidos/Quebrados e Amassados", "Matérias Estranhas e Impurezas")
-    } else {
-        listOf("Ardidos", "Avariados Total", "Quebrados", "Matérias Estranhas e Impurezas", "Carunchados",)
-    }
-
-    val columnWeightLabel = 1.0f
-    val columnWeightValue = 1f
-
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
-    ) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = "Defeito",
-                    modifier = Modifier.weight(columnWeightLabel), // Espaço maior para o nome
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Start
-                )
-
-                data.forEachIndexed { index, _ ->
-                    val textoCabecalho = if (group == 2 && isOfficial) {
-                        "Padrão Básico"
-                    } else if (group == 1 && ((index + 1) == 4)) {
-                        "Fora de Tipo"
-                    } else {
-                        "Tipo ${index + 1}"
-                    }
-
-                    Text(
-                        text = textoCabecalho,
-                        modifier = Modifier.weight(1f),
-                        textAlign = TextAlign.Center,
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
-
-            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-
-
-            labels.forEachIndexed { rowIndex, label ->
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = label,
-                        modifier = Modifier.weight(columnWeightLabel),
-                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    data.forEach { item ->
-                        val value = when (item) {
-                            is LimitSoja -> listOf(item.burntOrSourUpLim, item.burntUpLim, item.moldyUpLim, item.spoiledTotalUpLim, item.greenishUpLim, item.brokenCrackedDamagedUpLim, item.impuritiesUpLim)
-                            is LimitMilho -> listOf(item.ardidoUpLim, item.spoiledTotalUpLim, item.brokenUpLim, item.impuritiesUpLim, item.carunchadoUpLim)
-                            else -> emptyList()
-                        }.getOrNull(rowIndex) ?: 0f
-
-                        Text(
-                            text = "$value%",
-                            modifier = Modifier.weight(columnWeightLabel),
-                            textAlign = TextAlign.Center,
-                            style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp),
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
-                if (rowIndex < labels.lastIndex) {
-                    HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun MoistureInfoCard(moisture: Float, limit: Float) {
-    val exceeded = moisture > limit
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-        )
-    ) {
-        Row(
-            modifier = Modifier
-                .padding(16.dp)
-                .fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column {
-                Text(
-                    text = "Umidade da Amostra",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = "%.2f%%".format(moisture),
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = if (exceeded) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
-                )
-            }
-
-            Column(horizontalAlignment = Alignment.End) {
-                Text(
-                    text = "Limite Permitido",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = "%.1f%%".format(limit),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
             }
         }
     }

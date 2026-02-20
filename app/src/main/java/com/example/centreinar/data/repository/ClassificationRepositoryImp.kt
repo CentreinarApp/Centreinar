@@ -23,7 +23,7 @@ class ClassificationRepositoryImpl @Inject constructor(
     private val disqualificationDao: DisqualificationSojaDao
 ) : ClassificationRepository {
 
-    override suspend fun classifySample(sample: SampleSoja, limitSource: Int): Long {
+    override suspend fun classifySample(sample: SampleSoja, limitSource: Int, lastDisq: DisqualificationSoja): Long {
         val limitMap = getLimitsForGrain(sample.grain, sample.group, limitSource)
         val sampleId = setSample(sample)
 
@@ -68,21 +68,50 @@ class ClassificationRepositoryImpl @Inject constructor(
         var isDisqualify = false
         if (sample.group == 1 && graveDefectsSum > 12f) isDisqualify = true
         if (sample.group == 2 && graveDefectsSum > 40f) isDisqualify = true
+        if (lastDisq.badConservation == 1 ||
+            lastDisq.strangeSmell == 1 ||
+            lastDisq.insects == 1 ||
+            lastDisq.toxicGrains == 1) {
+            isDisqualify = true
+        }
         if (isDisqualify) finalType = 0
 
         val classification = ClassificationSoja(
             grain = sample.grain, group = sample.group, sampleId = sampleId.toInt(),
-            moisturePercentage = sample.moisture, foreignMattersPercentage = percentageImpurities,
-            brokenCrackedDamagedPercentage = percentageBroken, greenishPercentage = percentageGreenish,
-            moldyPercentage = percentageMoldy, burntPercentage = percentageBurnt,
-            burntOrSourPercentage = percentageBurntOrSour, spoiledPercentage = percentageSpoiled,
-            damagedPercentage = percentageDamaged, sourPercentage = percentageSour,
-            fermentedPercentage = percentageFermented, germinatedPercentage = percentageGerminated,
-            immaturePercentage = percentageImmature, shriveledPercentage = percentageShriveled,
-            foreignMatters = impuritiesType, brokenCrackedDamaged = brokenType,
-            greenish = greenishType, moldy = moldyType, burnt = burntType,
-            burntOrSour = burntOrSourType, spoiled = spoiledType,
-            fermented = 0, germinated = 0, immature = 0, shriveled = 0, sour = 0, finalType = finalType,
+
+            // Valores Float
+            moisturePercentage = sample.moisture,
+
+            impuritiesPercentage = percentageImpurities,
+            brokenCrackedDamagedPercentage = percentageBroken,
+            greenishPercentage = percentageGreenish,
+            moldyPercentage = percentageMoldy,
+            burntPercentage = percentageBurnt,
+            burntOrSourPercentage = percentageBurntOrSour,
+            spoiledPercentage = percentageSpoiled,
+            damagedPercentage = percentageDamaged,
+            sourPercentage = percentageSour,
+            fermentedPercentage = percentageFermented,
+            germinatedPercentage = percentageGerminated,
+            immaturePercentage = percentageImmature,
+            shriveledPercentage = percentageShriveled,
+
+            // --- Salvando os valores dos tipos de defeito ---
+            impuritiesType = impuritiesType,
+            brokenCrackedDamagedType = brokenType,
+            greenishType = greenishType,
+            moldyType = moldyType,
+            burntType = burntType,
+            burntOrSourType = burntOrSourType,
+            spoiledType = spoiledType,
+            // Não definem tipo...
+            fermented = 0,
+            germinated = 0,
+            immature = 0,
+            shriveled = 0,
+            sour = 0,
+
+            finalType = finalType,
         )
 
         return classificationDao.insert(classification)

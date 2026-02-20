@@ -352,7 +352,7 @@ class DiscountRepositoryImpl @Inject constructor(
             deductionValue = deductionValue,
             lotWeight = lotWeight,
             lotPrice = lotWeight * priceBySack / 60,
-            foreignMattersAndImpurities = classification.foreignMattersPercentage,
+            foreignMattersAndImpurities = classification.impuritiesPercentage,
             humidity = sample?.humidity ?: 0f,
             burnt = classification.burntPercentage,
             burntOrSour = classification.burntOrSourPercentage,
