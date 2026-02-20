@@ -350,7 +350,12 @@ fun ClassificationInputScreen( // Função Principal
                                     immature = immature.toFloatOrZero(),
                                     shriveled = shriveled.toFloatOrZero()
                                 )
-                                viewModel.classifySample(sample)
+                                viewModel.classifySample(
+                                    sample = sample,
+                                    otherColorsWeight = otherColorsGrainsWeight.toFloatOrZero(),
+                                    baseWeightCor = baseCleanWeightForColor,
+                                    isColorDefined = doesDefineColorClass
+                                )
 
                                 // Navega para resultado de SOJA
                                 navController.navigate("classificationResult")
@@ -376,7 +381,17 @@ fun ClassificationInputScreen( // Função Principal
                                 )
 
                                 // Chama a função de calcular no ViewModel
-                                viewModel.classifySample(sample)
+                                viewModel.classifySample(
+                                    sample = sample,
+                                    shouldDefineClass = defineClasseMilho,
+                                    weightYellow = weightAmarela.toFloatOrZero(),
+                                    weightWhite = weightBranca.toFloatOrZero(),
+                                    weightMixedColors = weightCores.toFloatOrZero(),
+                                    shouldDefineGroup = defineGrupoMilho,
+                                    weightHard = weightDuro.toFloatOrZero(),
+                                    weightDent = weightDentado.toFloatOrZero(),
+                                    weightSemiHard = weightSemiduro.toFloatOrZero()
+                                )
 
                                 Log.d("ClassificationInput", "Milho Enviado para cálculo.")
 

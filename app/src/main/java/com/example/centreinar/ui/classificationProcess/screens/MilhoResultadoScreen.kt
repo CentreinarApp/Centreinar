@@ -8,6 +8,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -20,6 +21,7 @@ import com.example.centreinar.ui.classificationProcess.components.Disqualificati
 import com.example.centreinar.ui.classificationProcess.viewmodel.ClassificationViewModel
 import com.example.centreinar.ui.classificationProcess.components.OfficialReferenceTable
 import com.example.centreinar.ui.classificationProcess.components.MoistureInfoCard
+import com.example.centreinar.ui.classificationProcess.components.ColorAndGroupCard
 
 @Composable
 fun MilhoResultadoScreen(
@@ -70,6 +72,9 @@ fun MilhoResultadoScreen(
 
         val disqualificationMilho by viewModel.disqualificationMilho.collectAsStateWithLifecycle()
         val toxicSeedsMilho by viewModel.toxicSeedsMilho.collectAsStateWithLifecycle()
+
+        // Coletar os dados de Cor e Grupo salvos
+        val complementaryData by viewModel.complementaryMilho.collectAsStateWithLifecycle(initialValue = null)
 
         // Carrega os limites padrão assim que a tela abre
         LaunchedEffect(Unit) {
@@ -148,7 +153,31 @@ fun MilhoResultadoScreen(
                         modifier = Modifier.fillMaxWidth()
                     )
 
-                    Spacer(Modifier.height(32.dp))
+                    // --- INSERÇÃO DOS CARDS DE CLASSE E GRUPO ---
+                    Spacer(Modifier.height(8.dp))
+                    complementaryData?.let { data ->
+                        // Classe do Milho
+                        if (data.framingClass.isNotEmpty()) {
+                            ColorAndGroupCard(
+                                title = "Classe: ${data.framingClass}",
+                                subtitle = "Amarela: %.2f%% | Outras: %.2f%%".format(data.yellowPercentage, data.otherColorPercentage),
+                                containerColor = MaterialTheme.colorScheme.tertiaryContainer
+                            )
+                        }
+
+                        // Grupo do Milho
+                        if (data.framingGroup.isNotEmpty()) {
+                            ColorAndGroupCard(
+                                title = "Grupo: ${data.framingGroup}",
+                                subtitle = "Duro: %.1f%% | Dentado: %.1f%% | Semi: %.1f%%".format(
+                                    data.duroPercentage, data.dentadoPercentage, data.semiDuroPercentage
+                                ),
+                                containerColor = MaterialTheme.colorScheme.secondaryContainer
+                            )
+                        }
+                    }
+
+                    Spacer(Modifier.height(26.dp))
 
                     // Card da Desclassificação
                     disqualificationMilho?.let { disq ->

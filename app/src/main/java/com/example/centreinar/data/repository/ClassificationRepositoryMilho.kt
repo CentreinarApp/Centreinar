@@ -2,6 +2,7 @@ package com.example.centreinar.data.repository
 
 import com.example.centreinar.ClassificationMilho
 import com.example.centreinar.DisqualificationSoja
+import com.example.centreinar.data.local.entity.ColorClassificationMilho
 import com.example.centreinar.data.local.entity.DisqualificationMilho
 import com.example.centreinar.data.local.entity.LimitMilho
 import com.example.centreinar.data.local.entity.SampleMilho
@@ -83,4 +84,7 @@ interface ClassificationRepositoryMilho {
     )
 
     suspend fun deleteCustomLimits()
+
+    suspend fun insertColorClassificationMilho(colorEntity: ColorClassificationMilho)
+    suspend fun getLastColorClassMilho(): ColorClassificationMilho?
 }

@@ -21,10 +21,12 @@ import androidx.navigation.NavController
 import com.example.centreinar.ui.classificationProcess.components.ClassificationTable
 import com.example.centreinar.LimitSoja
 import com.example.centreinar.data.local.entity.LimitMilho
+import com.example.centreinar.ui.classificationProcess.components.ColorAndGroupCard
 import com.example.centreinar.ui.classificationProcess.viewmodel.ClassificationViewModel
 import com.example.centreinar.ui.classificationProcess.components.DisqualificationInfoCard
 import com.example.centreinar.ui.classificationProcess.components.OfficialReferenceTable
 import com.example.centreinar.ui.classificationProcess.components.MoistureInfoCard
+import com.example.centreinar.ui.classificationProcess.components.ColorAndGroupCard
 
 
 @Composable
@@ -57,6 +59,7 @@ fun ClassificationResult(
 
         val disqualificationSoja by viewModel.disqualificationSoja.collectAsStateWithLifecycle()
         val toxicSeedsSoja by viewModel.toxicSeedsSoja.collectAsStateWithLifecycle()
+        val colorClassificationSoja by viewModel.colorClassificationSoja.collectAsStateWithLifecycle()
 
         // Se for o grupo 1 => utiliza os valores de limite do grupo 1
         // Caso contrário, é o grupo 2 => utiliza os valores de limite do grupo 2
@@ -164,7 +167,18 @@ fun ClassificationResult(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                Spacer(Modifier.height(32.dp))
+                Spacer(Modifier.height(8.dp))
+                colorClassificationSoja?.let { sojaData ->
+                    ColorAndGroupCard(
+                        title = sojaData.framingClass,
+                        subtitle = "Amarela: %.2f%% | Outras Cores: %.2f%%".format(
+                            sojaData.yellowPercentage, sojaData.otherColorPercentage
+                        ),
+                        containerColor = MaterialTheme.colorScheme.tertiaryContainer
+                    )
+                }
+
+                Spacer(Modifier.height(26.dp))
 
                 // Card da Desclassificação
                 disqualificationSoja?.let { disq ->

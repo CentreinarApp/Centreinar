@@ -20,6 +20,7 @@ import com.example.centreinar.data.local.dao.LimitMilhoDao
 import com.example.centreinar.data.local.dao.LimitSojaDao
 import com.example.centreinar.data.local.dao.ToxicSeedMilhoDao
 import com.example.centreinar.data.local.entities.ToxicSeedSoja
+import com.example.centreinar.data.local.entity.ColorClassificationMilho
 import com.example.centreinar.data.local.entity.DisqualificationMilho
 import com.example.centreinar.data.local.entity.LimitMilho
 import com.example.centreinar.data.local.entity.SampleMilho
@@ -34,6 +35,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.math.RoundingMode
 import javax.inject.Inject
 
 @HiltViewModel
@@ -90,6 +92,9 @@ class ClassificationViewModel @Inject constructor(
     private val _toxicSeedsSoja = MutableStateFlow<List<ToxicSeedSoja>>(emptyList())
     val toxicSeedsSoja: StateFlow<List<ToxicSeedSoja>> = _toxicSeedsSoja.asStateFlow()
 
+    private val _colorClassificationSoja = MutableStateFlow<ColorClassificationSoja?>(null)
+    val colorClassificationSoja: StateFlow<ColorClassificationSoja?> = _colorClassificationSoja.asStateFlow()
+
     // =========================================================================
     // ESTADOS MILHO
     // =========================================================================
@@ -105,6 +110,9 @@ class ClassificationViewModel @Inject constructor(
 
     private val _toxicSeedsMilho = MutableStateFlow<List<ToxicSeedMilho>>(emptyList())
     val toxicSeedsMilho: StateFlow<List<ToxicSeedMilho>> = _toxicSeedsMilho.asStateFlow()
+
+    private val _complementaryMilho = MutableStateFlow<ColorClassificationMilho?>(null)
+    val complementaryMilho: StateFlow<ColorClassificationMilho?> = _complementaryMilho.asStateFlow()
 
     // =========================================================================
     // GESTÃO DE ESTADO E LIMPEZA
@@ -123,6 +131,11 @@ class ClassificationViewModel @Inject constructor(
         isOfficial = null
         observation = null
         doesDefineColorClass = null
+        _classificationMilho.value = null
+        _complementaryMilho.value = null
+        _disqualificationMilho.value = null
+        _colorClassificationSoja.value = null
+        _toxicSeedsMilho.value = emptyList()
     }
 
     // =========================================================================
@@ -187,7 +200,7 @@ class ClassificationViewModel @Inject constructor(
     // LÓGICA DE CLASSIFICAÇÃO (SOJA E MILHO)
     // =========================================================================
 
-    fun classifySample(sample: SampleSoja) {
+    fun classifySample(sample: SampleSoja, otherColorsWeight: Float, baseWeightCor: Float, isColorDefined: Boolean) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 _isLoading.value = true
@@ -225,6 +238,28 @@ class ClassificationViewModel @Inject constructor(
                     _toxicSeedsSoja.value = emptyList()
                 }
 
+                if (isColorDefined && baseWeightCor > 0f) {
+                    val otherColorPct = (otherColorsWeight / baseWeightCor * 100f)
+                        .toBigDecimal().setScale(2, RoundingMode.HALF_UP).toFloat()
+
+                    val yellowPct = (100f - otherColorPct)
+                        .toBigDecimal().setScale(2, RoundingMode.HALF_UP).toFloat()
+
+                    // Se arredondado for <= 10, é Amarela.
+                    val framingClass = if (otherColorPct <= 10.00f) "Classe Amarela" else "Classe Misturada"
+
+                    val colorEntity = ColorClassificationSoja(
+                        grain = "Soja",
+                        classificationId = resultId.toInt(),
+                        yellowPercentage = yellowPct,
+                        otherColorPercentage = otherColorPct,
+                        framingClass = framingClass
+                    )
+
+                    repositorySoja.insertColorClassification(colorEntity)
+                    _colorClassificationSoja.value = colorEntity
+                }
+
             } catch (e: Exception) {
                 _error.value = e.message
             } finally {
@@ -233,7 +268,7 @@ class ClassificationViewModel @Inject constructor(
         }
     }
 
-    fun classifySample(sample: SampleMilho) {
+    fun classifySample(sample: SampleMilho, shouldDefineClass: Boolean, shouldDefineGroup: Boolean, weightYellow: Float, weightWhite: Float, weightMixedColors: Float, weightHard: Float, weightDent: Float, weightSemiHard: Float) {
         viewModelScope.launch(Dispatchers.IO) {
             _isLoading.value = true
             try {
@@ -264,6 +299,61 @@ class ClassificationViewModel @Inject constructor(
                     _toxicSeedsMilho.value = toxicSeedMilhoDao.getToxicSeedsByDisqualificationId(disqMilho.id)
                 } else {
                     _toxicSeedsMilho.value = emptyList()
+                }
+
+                // Processamento da Classe de Cor
+                var calculatedYellowPct = 0f
+                var finalClassResult = ""
+
+                if (shouldDefineClass) {
+                    val totalClassWeight = weightYellow + weightWhite + weightMixedColors
+                    if (totalClassWeight > 0f) {
+                        calculatedYellowPct = (weightYellow / totalClassWeight) * 100f
+                        val whitePct = (weightWhite / totalClassWeight) * 100f
+
+                        finalClassResult = when {
+                            calculatedYellowPct >= 95f -> "AMARELA"
+                            whitePct >= 95f -> "BRANCA"
+                            else -> "CORES"
+                        }
+                    }
+                }
+
+                // Processamento do Grupo (Forma)
+                var calculatedHardPct = 0f
+                var calculatedDentPct = 0f
+                var calculatedSemiDuroPct = 0f
+                var finalGroupResult = ""
+
+                if (shouldDefineGroup) {
+                    val totalGroupWeight = weightHard + weightDent + weightSemiHard
+                    if (totalGroupWeight > 0f) {
+                        calculatedHardPct = (weightHard / totalGroupWeight) * 100f
+                        calculatedDentPct = (weightDent / totalGroupWeight) * 100f
+                        calculatedSemiDuroPct = (weightSemiHard / totalGroupWeight) * 100f
+
+                        finalGroupResult = when {
+                            calculatedHardPct >= 85f -> "DURO"
+                            calculatedDentPct >= 85f -> "DENTADO"
+                            else -> "SEMIDURO"
+                        }
+                    }
+                }
+
+                // Persistência dos dados complementares
+                if (shouldDefineClass || shouldDefineGroup) {
+                    val complementaryData = ColorClassificationMilho(
+                        classificationId = resultId,
+                        yellowPercentage = calculatedYellowPct,
+                        otherColorPercentage = 100f - calculatedYellowPct,
+                        framingClass = finalClassResult,
+                        duroPercentage = calculatedHardPct,
+                        dentadoPercentage = calculatedDentPct,
+                        semiDuroPercentage = calculatedSemiDuroPct,
+                        framingGroup = finalGroupResult
+                    )
+                    repositoryMilho.insertColorClassificationMilho(complementaryData)
+                    _complementaryMilho.value = complementaryData
                 }
 
             } catch (e: Exception) {
@@ -309,16 +399,6 @@ class ClassificationViewModel @Inject constructor(
     // =========================================================================
     // DESCLASSIFICAÇÃO E COR
     // =========================================================================
-
-    fun setDisqualification(badConservation: Int, strangeSmell: Int, insects: Int, toxicGrains: Int) {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                repositorySoja.setDisqualification(null, badConservation, 0, strangeSmell, toxicGrains, insects)
-            } catch (e: Exception) {
-                _error.value = e.message
-            }
-        }
-    }
 
     fun saveDisqualificationDataSoja(
         badConservation: Int,

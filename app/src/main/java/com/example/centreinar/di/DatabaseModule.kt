@@ -195,5 +195,9 @@ object DatabaseModule {
 
     @Provides fun provideDisqualificationMilhoDao(db: AppDatabase): DisqualificationMilhoDao = db.disqualificationMilhoDao()
 
+    @Provides
+    fun provideColorClassificationMilhoDao(database: AppDatabase): ColorClassificationMilhoDao {
+        return database.colorClassificationMilhoDao()
+    }
     @Provides fun provideToxicSeedMilhoDao(db: AppDatabase): ToxicSeedMilhoDao = db.toxicSeedMilhoDao()
 }

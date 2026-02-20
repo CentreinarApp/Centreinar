@@ -86,4 +86,8 @@ interface ClassificationRepository {
     suspend fun getObservations(idClassification: Int, colorClass: ColorClassificationSoja? = null): String
 
     suspend fun deleteCustomLimits()
+
+    suspend fun insertColorClassification(colorEntity: ColorClassificationSoja)
+
+    suspend fun getColorClassificationBySample(classificationId: Int): ColorClassificationSoja?
 }

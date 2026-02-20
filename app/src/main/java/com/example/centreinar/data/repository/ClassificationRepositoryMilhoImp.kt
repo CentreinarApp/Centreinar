@@ -3,8 +3,10 @@ package com.example.centreinar.data.repository
 import android.util.Log
 import com.example.centreinar.ClassificationMilho
 import com.example.centreinar.data.local.dao.ClassificationMilhoDao
+import com.example.centreinar.data.local.dao.ColorClassificationMilhoDao
 import com.example.centreinar.data.local.dao.LimitMilhoDao
 import com.example.centreinar.data.local.dao.SampleMilhoDao
+import com.example.centreinar.data.local.entity.ColorClassificationMilho
 import com.example.centreinar.data.local.entity.DisqualificationMilho
 import com.example.centreinar.data.local.entity.LimitMilho
 import com.example.centreinar.data.local.entity.SampleMilho
@@ -16,6 +18,7 @@ import javax.inject.Singleton
 class ClassificationRepositoryMilhoImpl @Inject constructor(
     private val limitDao: LimitMilhoDao,
     private val classificationDao: ClassificationMilhoDao,
+    private val colorClassificationDao: ColorClassificationMilhoDao,
     private val sampleDao: SampleMilhoDao,
     private val tools: Utilities
 ) : ClassificationRepositoryMilho {
@@ -253,5 +256,13 @@ class ClassificationRepositoryMilhoImpl @Inject constructor(
 
     override suspend fun deleteCustomLimits() {
         limitDao.deleteCustomLimits()
+    }
+
+    override suspend fun insertColorClassificationMilho(colorEntity: ColorClassificationMilho) {
+        colorClassificationDao.insert(colorEntity)
+    }
+
+    override suspend fun getLastColorClassMilho(): ColorClassificationMilho? {
+        return colorClassificationDao.getLastColorClass()
     }
 }

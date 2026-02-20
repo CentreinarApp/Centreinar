@@ -192,7 +192,17 @@ class ClassificationRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getLastLimitSource(): Int = limitDao.getLastSource()
+
     override suspend fun getLastColorClass(): ColorClassificationSoja? = colorClassificationDao.getLastColorClass()
+
+    override suspend fun insertColorClassification(colorEntity: ColorClassificationSoja) {
+        colorClassificationDao.insert(colorEntity)
+    }
+
+    override suspend fun getColorClassificationBySample(classificationId: Int): ColorClassificationSoja? {
+        return colorClassificationDao.getByClassificationId(classificationId)
+    }
+
     override suspend fun getDisqualificationByClassificationId(idClassification: Int): DisqualificationSoja? = disqualificationDao.getByClassificationId(classificationId = idClassification)
 
     override suspend fun updateDisqualification(classificationId: Int, finalType: Int) {

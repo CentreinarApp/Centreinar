@@ -46,6 +46,16 @@ fun MilhoClassificationInputScreen(
         val impuritiesFocus = remember { FocusRequester() }
         val brokenFocus = remember { FocusRequester() }
 
+        var defineClasseMilho by remember { mutableStateOf(false) }
+        var weightAmarela by remember { mutableStateOf("") }
+        var weightBranca by remember { mutableStateOf("") }
+        var weightCores by remember { mutableStateOf("") }
+
+        var defineGrupoMilho by remember { mutableStateOf(false) }
+        var weightDuro by remember { mutableStateOf("") }
+        var weightDentado by remember { mutableStateOf("") }
+        var weightSemiduro by remember { mutableStateOf("") }
+
         val keyboardController = LocalSoftwareKeyboardController.current
 
         Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
@@ -144,13 +154,28 @@ fun MilhoClassificationInputScreen(
                 )
 
                 // classify using repository via ViewModel
-                viewModel.classifySample(sample)
+                viewModel.classifySample(
+                    sample = sample,
+                    shouldDefineClass = defineClasseMilho,
+                    weightYellow = weightAmarela.toFloatOrZero(),
+                    weightWhite = weightBranca.toFloatOrZero(),
+                    weightMixedColors = weightCores.toFloatOrZero(),
+                    shouldDefineGroup = defineGrupoMilho,
+                    weightHard = weightDuro.toFloatOrZero(),
+                    weightDent = weightDentado.toFloatOrZero(),
+                    weightSemiHard = weightSemiduro.toFloatOrZero()
+                )
                 navController.navigate("milhoClassificationResult")
             }, modifier = Modifier.fillMaxWidth().padding(16.dp)) {
                 Text("Classificar")
             }
         }
     }
+}
+
+
+private fun String.toFloatOrZero(): Float {
+    return this.toBigDecimalOrNull()?.setScale(2, RoundingMode.HALF_UP)?.toFloat() ?: 0f
 }
 
 @Composable

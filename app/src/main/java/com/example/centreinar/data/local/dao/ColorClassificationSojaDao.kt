@@ -44,5 +44,5 @@ interface ColorClassificationSojaDao {
     suspend fun getByFramingClass(framingClass: String): List<ColorClassificationSoja>
 
     @Query("SELECT * FROM ColorClassificationSoja ORDER BY id DESC LIMIT 1")
-    suspend fun getLastColorClass(): ColorClassificationSoja
+    suspend fun getLastColorClass(): ColorClassificationSoja?
 }
