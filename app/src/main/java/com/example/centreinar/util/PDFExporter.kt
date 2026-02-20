@@ -22,6 +22,8 @@ import java.io.File
 import java.io.FileOutputStream
 import javax.inject.Inject
 import javax.inject.Singleton
+import com.example.centreinar.DisqualificationSoja
+import com.example.centreinar.data.local.entities.ToxicSeedSoja
 
 @Singleton
 class PDFExporterSoja @Inject constructor(
@@ -76,62 +78,182 @@ class PDFExporterSoja @Inject constructor(
         classification: ClassificationSoja,
         sample: SampleSoja,
         colorClassification: ColorClassificationSoja?,
+        disqualification: DisqualificationSoja?,
+        toxicSeeds: List<ToxicSeedSoja>?,
         observation: String?,
-        limit: LimitSoja?
+        limits: List<LimitSoja>?
     ) {
         val document = PdfDocument()
         val pageWidth = 595
         val pageHeight = 842
+        val paints = setupPaints()
 
-        // Página 1 - Dados da classificação (Com Tabela)
-        val classPage = createClassificationPage(document, pageWidth, pageHeight, classification)
-        document.finishPage(classPage)
+        // --- PÁGINA 1: RESULTADO PRINCIPAL (UMIDADE + TABELA + COR) ---
+        val pageInfo1 = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, 1).create()
+        val page1 = document.startPage(pageInfo1)
+        val canvas1 = page1.canvas
+        var y = 60f
 
-        // Página 2 - Dados da amostra (Sem alteração)
-        val samplePage = createSampleClassificationPage(document, pageWidth, pageHeight, sample)
-        document.finishPage(samplePage)
+        canvas1.drawText("RESULTADO DA CLASSIFICAÇÃO (SOJA)", pageWidth / 2f, y, paints.titlePaint)
+        y += 40f
 
-        // Página 3 - Limites (Com Tabela)
-        limit?.let { limitData ->
-            val limitPage = createDefectLimitsPage(document, pageWidth, pageHeight, limitData)
-            document.finishPage(limitPage)
+        // Box de Umidade (Comparação com Limite)
+        val moistureLimit = limits?.firstOrNull()?.moistureUpLim ?: 14.0f
+        canvas1.drawRect(50f, y, pageWidth - 50f, y + 45f, paints.borderPaint)
+        canvas1.drawText("DADOS DE UMIDADE", 60f, y + 18f, paints.headerPaint)
+        canvas1.drawText(
+            "Umidade da Amostra: %.1f%% | Limite de Referência: %.1f%%".format(classification.moisturePercentage, moistureLimit),
+            60f, y + 36f, paints.cellPaint
+        )
+        y += 65f
+
+        // Tabela de Resultados
+        val formatType = { typeCode: Int ->
+            if (typeCode == 0) "--" else getFinalTypeLabel(typeCode)
         }
 
-        // Página 4 - Classificação de cor (se houver)
-        colorClassification?.let { colorClass ->
-            val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, 4).create()
-            val page = document.startPage(pageInfo)
-            val canvas = page.canvas
-            val paints = setupPaints()
+        val tableData = listOf(
+            listOf("Matéria Estranha/Imp (%)", "%.2f".format(classification.impuritiesPercentage), getFinalTypeLabel(classification.impuritiesType)),
+            listOf("Ardidos (%)", "%.2f".format(classification.sourPercentage), "--"),
+            listOf("Queimados (%)", "%.2f".format(classification.burntPercentage), getFinalTypeLabel(classification.burntType)),
+            listOf("Total Ardidos + Queimados (%)", "%.2f".format(classification.burntOrSourPercentage), getFinalTypeLabel(classification.burntOrSourType)),
+            listOf("Mofados (%)", "%.2f".format(classification.moldyPercentage), getFinalTypeLabel(classification.moldyType)),
+            listOf("Fermentados (%)", "%.2f".format(classification.fermentedPercentage), "--"),
+            listOf("Germinados (%)", "%.2f".format(classification.germinatedPercentage), "--"),
+            listOf("Imaturos (%)", "%.2f".format(classification.immaturePercentage), "--"),
+            listOf("Chochos (%)", "%.2f".format(classification.shriveledPercentage), "--"),
+            listOf("Danificados (%)", "%.2f".format(classification.damagedPercentage), "--"),
+            listOf("Total de Avariados (%)", "%.2f".format(classification.spoiledPercentage), getFinalTypeLabel(classification.spoiledType)),
+            listOf("Esverdeados (%)", "%.2f".format(classification.greenishPercentage), getFinalTypeLabel(classification.greenishType)),
+            listOf("Partidos/Quebrados (%)", "%.2f".format(classification.brokenCrackedDamagedPercentage), getFinalTypeLabel(classification.brokenCrackedDamagedType)),
+            // Linha de destaque para o Tipo Final
+            listOf(" ", " ", " "),
+            listOf("TIPO FINAL", "---", getFinalTypeLabel(classification.finalType))
+        )
 
-            var yStart = 60f
-            canvas.drawText("CLASSIFICAÇÃO DE COR", pageWidth / 2f, yStart, paints.titlePaint)
-            yStart += 36f
-            drawMultilineText(canvas, colorClass.toString(), 50f, yStart, paints.cellPaint, pageWidth - 100)
+        y = drawClassificationTable(canvas1, y, pageWidth, listOf("PARÂMETRO", "PERCENTUAL", "TIPO"), tableData, paints)
+        y += 20f
 
-            document.finishPage(page)
+        // Card de Cor (Se houver)
+        colorClassification?.let { color ->
+            canvas1.drawRect(50f, y, pageWidth - 50f, y + 45f, paints.borderPaint)
+            canvas1.drawText(color.framingClass.uppercase(), 60f, y + 18f, paints.headerPaint)
+            canvas1.drawText(
+                "Amarela: %.2f%% | Outras Cores: %.2f%%".format(color.yellowPercentage, color.otherColorPercentage),
+                60f, y + 36f, paints.cellPaint
+            )
+        }
+        document.finishPage(page1)
+
+        // --- PÁGINA 2: AMOSTRA E DESCLASSIFICAÇÃO ---
+        val pageInfo2 = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, 2).create()
+        val page2 = document.startPage(pageInfo2)
+        val canvas2 = page2.canvas
+        y = 60f
+
+        canvas2.drawText("DADOS COMPLEMENTARES", pageWidth / 2f, y, paints.titlePaint)
+        y += 40f
+
+        // Dados da Amostra
+        canvas2.drawText("AMOSTRA:", 50f, y, paints.headerPaint); y += 20f
+        canvas2.drawText("Peso da Amostra: ${sample.sampleWeight}g", 60f, y, paints.cellPaint); y += 15f
+        canvas2.drawText("Peso do Lote: ${sample.lotWeight}kg", 60f, y, paints.cellPaint); y += 30f
+
+        // Desclassificação
+        disqualification?.let { disq ->
+            canvas2.drawText("MOTIVOS DE DESCLASSIFICAÇÃO:", 50f, y, paints.headerPaint); y += 20f
+            val status = { v: Int -> if (v == 1) "SIM" else "NÃO" }
+            canvas2.drawText("- Mau estado: ${status(disq.badConservation)}", 60f, y, paints.cellPaint); y += 15f
+            canvas2.drawText("- Odor estranho: ${status(disq.strangeSmell)}", 60f, y, paints.cellPaint); y += 15f
+            canvas2.drawText("- Insetos vivos: ${status(disq.insects)}", 60f, y, paints.cellPaint); y += 15f
+
+            if (disq.toxicGrains == 1) {
+                canvas2.drawText("- Sementes Tóxicas: SIM", 60f, y, paints.cellPaint); y += 15f
+                toxicSeeds?.forEach { seed ->
+                    canvas2.drawText("  • ${seed.name}: ${seed.quantity}", 75f, y, paints.cellPaint); y += 15f
+                }
+            }
+        }
+        document.finishPage(page2)
+
+        // --- PÁGINA 3: LIMITES DE REFERÊNCIA ---
+        val pageInfo3 = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, 3).create()
+        val page3 = document.startPage(pageInfo3)
+        val canvas3 = page3.canvas
+        y = 60f
+
+        limits?.takeIf { it.isNotEmpty() }?.let { dataList ->
+            canvas3.drawText("LIMITES DE REFERÊNCIA UTILIZADOS", pageWidth / 2f, y, paints.titlePaint)
+            y += 40f
+
+            val labels = listOf(
+                "Ardidos e Queimados",
+                "Queimados",
+                "Mofados",
+                "Avariados Total",
+                "Esverdeados",
+                "Partidos/Quebrados",
+                "Matérias Estranhas"
+            )
+
+            // Criar o cabeçalho dinâmico (Tipo 1, Tipo 2, Tipo 3, Fora de Tipo...)
+            val headers = mutableListOf("Defeito")
+            dataList.forEachIndexed { index, item ->
+                val headerText = if (item.group == 2) {
+                    "Padrão Básico"
+                } else if (item.group == 1 && (index + 1) == 4) {
+                    "Fora de Tipo"
+                } else {
+                    "Tipo ${index + 1}"
+                }
+                headers.add(headerText)
+            }
+
+            // Mapear as linhas de dados cruzando labels com os valores de cada limite na lista
+            val tableData = labels.mapIndexed { rowIndex, label ->
+                val row = mutableListOf(label)
+                dataList.forEach { item ->
+                    val value = when (rowIndex) {
+                        0 -> item.burntOrSourUpLim
+                        1 -> item.burntUpLim
+                        2 -> item.moldyUpLim
+                        3 -> item.spoiledTotalUpLim
+                        4 -> item.greenishUpLim
+                        5 -> item.brokenCrackedDamagedUpLim
+                        6 -> item.impuritiesUpLim
+                        else -> 0f
+                    }
+                    row.add("%.2f%%".format(value))
+                }
+                row
+            }
+
+            // Desenha a tabela com colunas dinâmicas
+            y = drawClassificationTable(
+                canvas = canvas3,
+                yStart = y,
+                pageWidth = pageWidth,
+                headers = headers,
+                data = tableData,
+                paints = paints
+            )
+
+            y += 40f
         }
 
-        // Página 5 - Observações (se houver)
+        // Observações logo abaixo da tabela de limites
         observation?.takeIf { it.isNotBlank() }?.let { obs ->
-            val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, 5).create()
-            val page = document.startPage(pageInfo)
-            val canvas = page.canvas
-            val paints = setupPaints()
-
-            var yStart = 60f
-            canvas.drawText("OBSERVAÇÕES", pageWidth / 2f, yStart, paints.titlePaint)
-            yStart += 36f
-            drawMultilineText(canvas, obs, 50f, yStart, paints.cellPaint, pageWidth - 100)
-
-            document.finishPage(page)
+            canvas3.drawText("OBSERVAÇÕES", 50f, y, paints.headerPaint)
+            y += 15f
+            drawMultilineText(canvas3, obs, 50f, y, paints.cellPaint, pageWidth - 100)
         }
+
+        document.finishPage(page3)
 
         saveAndShareDocument(context, document)
     }
 
     // Funções de Criação de Página (Com Tabela)
-
     private fun createClassificationPage(document: PdfDocument, pageWidth: Int, pageHeight: Int, classification: ClassificationSoja): PdfDocument.Page {
         val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, 4).create()
         val page = document.startPage(pageInfo)
@@ -142,17 +264,17 @@ class PDFExporterSoja @Inject constructor(
         canvas.drawText("RESULTADO DA CLASSIFICAÇÃO", pageWidth / 2f, yStart, paints.titlePaint)
         yStart += 40f
 
-        // Dados para a tabela (Parameter, Percentage, Type Code)
+        // Dados para a tabela
         val data = listOf(
-            listOf("Tipo Final", classification.finalType.toString(), ""),
+            listOf("TIPO FINAL", "---", getFinalTypeLabel(classification.finalType),),
             listOf("-------------------", "-------------------", "------"),
-            listOf("Impurezas (%)", "%.2f".format(classification.impuritiesPercentage), classification.impuritiesType.toString()),
-            listOf("Partidos/Quebrados (%)", "%.2f".format(classification.brokenCrackedDamagedPercentage), classification.brokenCrackedDamagedType.toString()),
-            listOf("Esverdeados (%)", "%.2f".format(classification.greenishPercentage), classification.greenishType.toString()),
-            listOf("Ardidos + Queimados (%)", "%.2f".format(classification.burntOrSourPercentage), classification.burntOrSourType.toString()),
-            listOf("Mofados (%)", "%.2f".format(classification.moldyPercentage), classification.moldyType.toString()),
-            listOf("Total Avariados (%)", "%.2f".format(classification.spoiledPercentage), classification.spoiledType.toString()),
-            listOf("Queimados Máx (%)", "%.2f".format(classification.burntPercentage), classification.burntType.toString()),
+            listOf("Impurezas (%)", "%.2f".format(classification.impuritiesPercentage), getFinalTypeLabel(classification.impuritiesType)),
+            listOf("Partidos/Quebrados (%)", "%.2f".format(classification.brokenCrackedDamagedPercentage), getFinalTypeLabel(classification.brokenCrackedDamagedType)),
+            listOf("Esverdeados (%)", "%.2f".format(classification.greenishPercentage), getFinalTypeLabel(classification.greenishType)),
+            listOf("Ardidos + Queimados (%)", "%.2f".format(classification.burntOrSourPercentage), getFinalTypeLabel(classification.burntOrSourType)),
+            listOf("Mofados (%)", "%.2f".format(classification.moldyPercentage), getFinalTypeLabel(classification.moldyType)),
+            listOf("Total Avariados (%)", "%.2f".format(classification.spoiledPercentage), getFinalTypeLabel(classification.spoiledType)),
+            listOf("Queimados Máx (%)", "%.2f".format(classification.burntPercentage), getFinalTypeLabel(classification.burntType)),
         )
 
         // Desenha a tabela de classificação
@@ -203,35 +325,21 @@ class PDFExporterSoja @Inject constructor(
     }
 
     // --- FUNÇÃO AUXILIAR PARA DESENHAR TABELA (NOVO) ---
-    private fun drawClassificationTable(
-        canvas: Canvas,
-        yStart: Float,
-        pageWidth: Int,
-        headers: List<String>,
-        data: List<List<String>>,
-        paints: Paints
-    ): Float {
+    private fun drawClassificationTable(canvas: Canvas, yStart: Float, pageWidth: Int, headers: List<String>, data: List<List<String>>, paints: Paints): Float {
         val margin = 50f
         val columnWidth = (pageWidth - 2 * margin) / headers.size.toFloat()
-        val rowHeight = 30f
+        val rowHeight = 25f
         var y = yStart
-        var x = margin
 
-        // Desenhar Cabeçalhos
-        canvas.drawRect(x, y, x + columnWidth * headers.size, y + rowHeight, paints.borderPaint)
-        for ((index, header) in headers.withIndex()) {
-            val cellX = x + index * columnWidth
-            canvas.drawText(header, cellX + 5f, y + rowHeight / 2f + 5f, paints.headerPaint)
-        }
+        // Headers
+        canvas.drawRect(margin, y, margin + columnWidth * headers.size, y + rowHeight, paints.borderPaint)
+        headers.forEachIndexed { i, h -> canvas.drawText(h, margin + (i * columnWidth) + 5f, y + 17f, paints.headerPaint) }
         y += rowHeight
 
-        // Desenhar Dados
-        for (row in data) {
-            canvas.drawRect(x, y, x + columnWidth * headers.size, y + rowHeight, paints.borderPaint)
-            for ((index, cell) in row.withIndex()) {
-                val cellX = x + index * columnWidth
-                canvas.drawText(cell, cellX + 5f, y + rowHeight / 2f + 5f, paints.cellPaint)
-            }
+        // Rows
+        data.forEach { row ->
+            canvas.drawRect(margin, y, margin + columnWidth * headers.size, y + rowHeight, paints.borderPaint)
+            row.forEachIndexed { i, cell -> canvas.drawText(cell, margin + (i * columnWidth) + 5f, y + 17f, paints.cellPaint) }
             y += rowHeight
         }
         return y
@@ -325,14 +433,12 @@ class PDFExporterSoja @Inject constructor(
         }
     }
 
-    private fun setupPaints(): Paints {
-        return Paints(
-            Paint().apply { textSize = 18f; isFakeBoldText = true; color = Color.BLACK; textAlign = Paint.Align.CENTER },
-            Paint().apply { textSize = 14f; isFakeBoldText = true; color = Color.DKGRAY; textAlign = Paint.Align.LEFT },
-            Paint().apply { textSize = 12f; color = Color.BLACK; textAlign = Paint.Align.LEFT },
-            Paint().apply { style = Paint.Style.STROKE; strokeWidth = 1f; color = Color.LTGRAY }
-        )
-    }
+    private fun setupPaints() = Paints(
+        titlePaint = Paint().apply { textSize = 18f; isFakeBoldText = true; textAlign = Paint.Align.CENTER },
+        headerPaint = Paint().apply { textSize = 12f; isFakeBoldText = true; color = Color.DKGRAY },
+        cellPaint = Paint().apply { textSize = 11f; color = Color.BLACK },
+        borderPaint = Paint().apply { style = Paint.Style.STROKE; strokeWidth = 1f; color = Color.LTGRAY }
+    )
 
     private fun saveAndShareDocument(context: Context, document: PdfDocument) {
         try {
@@ -365,4 +471,15 @@ class PDFExporterSoja @Inject constructor(
     }
 
     data class Paints(val titlePaint: Paint, val headerPaint: Paint, val cellPaint: Paint, val borderPaint: Paint)
+}
+
+private fun getFinalTypeLabel(finalType: Int): String {
+    return when (finalType) {
+        0 -> "Desclassificada"
+        1 -> "Tipo 1"
+        2 -> "Tipo 2"
+        7 -> "Fora de Tipo"
+        8 -> "Padrão Básico"
+        else -> "Tipo $finalType"
+    }
 }

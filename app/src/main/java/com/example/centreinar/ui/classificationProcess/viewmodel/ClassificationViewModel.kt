@@ -497,17 +497,91 @@ class ClassificationViewModel @Inject constructor(
 
     fun exportClassification(context: Context, classification: ClassificationSoja, limit: LimitSoja) {
         viewModelScope.launch(Dispatchers.IO) {
-            val sample = repositorySoja.getSample(classification.sampleId) ?: return@launch
-            val colorClass = repositorySoja.getLastColorClass()
-            val obs = getObservations(colorClass)
-            pdfExporterSoja.exportClassificationToPdf(context, classification, sample, colorClass, obs, limit)
+            try {
+                // Busca a amostra vinculada
+                val sample = repositorySoja.getSample(classification.sampleId) ?: return@launch
+
+                // Busca os dados de cor (se houver)
+                val colorClass = repositorySoja.getLastColorClass()
+
+                // Busca a desclassificação vinculada a este resultado
+                val disqSoja = disqualificationSojaDao.getByClassificationId(classification.id)
+
+                // Busca as sementes tóxicas relacionadas
+                val toxicSeeds = disqSoja?.let {
+                    toxicSeedSojaDao.getSeedsByDisqualificationId(it.id)
+                }
+
+                // Gera as observações
+                val obs = getObservations(colorClass)
+
+                // PREPARAÇÃO DOS LIMITES
+                // Se for oficial, enviamos a lista completa (T1, T2, T3...).
+                // Se for manual, enviamos apenas o limite que foi usado.
+                val limitesParaPdf = if (isOfficial == true) {
+                    // Filtramos para garantir que a lista contenha apenas objetos LimitSoja
+                    allOfficialLimits.value.filterIsInstance<LimitSoja>()
+                } else {
+                    listOf(limit)
+                }
+
+                // Chama o exportador atualizado
+                pdfExporterSoja.exportClassificationToPdf(
+                    context = context,
+                    classification = classification,
+                    sample = sample,
+                    colorClassification = colorClass,
+                    disqualification = disqSoja,
+                    toxicSeeds = toxicSeeds,
+                    observation = obs,
+                    limits = limitesParaPdf
+                )
+            } catch (e: Exception) {
+                _error.value = "Erro ao exportar PDF: ${e.message}"
+                Log.e("PDF_EXPORT", "Erro: ${e.message}", e)
+            }
         }
     }
 
     fun exportClassificationMilho(context: Context, classification: ClassificationMilho, limit: LimitMilho) {
         viewModelScope.launch(Dispatchers.IO) {
-            val sample = repositoryMilho.getSample(classification.sampleId) ?: return@launch
-            pdfExporterMilho.exportClassificationToPdf(context, classification, sample, limit)
+            try {
+                // Amostra
+                val sample = repositoryMilho.getSample(classification.sampleId) ?: return@launch
+
+                // Dados Complementares (Cor e Grupo)
+                val compMilho = repositoryMilho.getLastColorClassMilho()
+
+                // Desclassificação e Sementes
+                val disqMilho = disqualificationMilhoDao.getByClassificationId(classification.id)
+                val toxicSeeds = disqMilho?.let {
+                    toxicSeedMilhoDao.getToxicSeedsByDisqualificationId(it.id)
+                }
+
+                // Observações
+                val obs = observation // Pega a observação salva no StateHandle do ViewModel
+
+                // Preparação dos Limites (Lista para Tabela Comparativa)
+                val limitesParaPdf = if (isOfficial == true) {
+                    allOfficialLimits.value.filterIsInstance<LimitMilho>()
+                } else {
+                    listOf(limit)
+                }
+
+                // Chamada do Exportador
+                pdfExporterMilho.exportClassificationToPdf(
+                    context = context,
+                    classification = classification,
+                    sample = sample,
+                    colorClassification = compMilho,
+                    disqualification = disqMilho,
+                    toxicSeeds = toxicSeeds,
+                    observation = obs,
+                    limits = limitesParaPdf
+                )
+            } catch (e: Exception) {
+                _error.value = "Erro ao exportar PDF Milho: ${e.message}"
+            }
         }
     }
 
