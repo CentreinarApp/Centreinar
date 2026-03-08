@@ -30,7 +30,7 @@ fun UsedLimitTable(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 8.dp),  // Reduced horizontal padding
+            .padding(horizontal = 8.dp),
         shape = MaterialTheme.shapes.medium
     ) {
         Column(
@@ -38,24 +38,24 @@ fun UsedLimitTable(
                 .fillMaxWidth()
                 .border(1.dp, MaterialTheme.colorScheme.outline)
         ) {
-            // Table Headers with increased vertical padding
+            // Table Headers
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(MaterialTheme.colorScheme.primaryContainer)
-                    .padding(vertical = 16.dp, horizontal = 16.dp),  // Increased vertical padding
+                    .padding(vertical = 16.dp, horizontal = 16.dp),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
                     "Defeito",
-                    style = MaterialTheme.typography.titleMedium,  // Larger font
+                    style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onPrimaryContainer,
                     modifier = Modifier.weight(1.5f)
                 )
                 Text(
                     "Limite de Tolerância (%)",
-                    style = MaterialTheme.typography.titleMedium,  // Larger font
+                    style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onPrimaryContainer,
                     modifier = Modifier.weight(1f),
@@ -97,7 +97,7 @@ private fun DefectLimitsTableRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 16.dp, horizontal = 16.dp),  // Increased vertical padding
+            .padding(vertical = 16.dp, horizontal = 16.dp),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Text(

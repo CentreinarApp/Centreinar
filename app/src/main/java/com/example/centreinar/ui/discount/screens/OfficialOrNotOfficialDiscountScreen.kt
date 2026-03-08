@@ -1,7 +1,6 @@
 package com.example.centreinar.ui.discount.screens
 
 import androidx.compose.foundation.layout.Arrangement
-import com.example.centreinar.ui.discount.viewmodel.DiscountViewModel
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -19,18 +18,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-
+import com.example.centreinar.ui.discount.viewmodel.DiscountViewModel
 
 @Composable
 fun OfficialOrNotOfficialDiscountScreen(
     navController: NavController,
     viewModel: DiscountViewModel = hiltViewModel()
 ) {
-    // 1. O Scaffold envolve toda a tela
-    Scaffold(
-        modifier = Modifier.fillMaxSize()
-    ) { innerPadding -> // Esse innerPadding contém as medidas da barra de status e navegação
-
+    Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()

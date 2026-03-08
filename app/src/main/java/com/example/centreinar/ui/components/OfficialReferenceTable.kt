@@ -1,4 +1,4 @@
-package com.example.centreinar.ui.classificationProcess.components
+package com.example.centreinar.ui.components
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row

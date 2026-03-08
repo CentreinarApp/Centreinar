@@ -25,11 +25,9 @@ fun HomeScreen(
     navController: NavController,
     viewModel: ClassificationViewModel = hiltViewModel()
 ) {
-    // 1. O Scaffold envolve toda a tela
     Scaffold(
         modifier = Modifier.fillMaxSize()
-    ) { innerPadding -> // Esse innerPadding contém as medidas da barra de status e navegação
-
+    ) { innerPadding -> // Esse innerPadding contém as medidas da barra de status e navegação para responsividade em diferentes telas
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -58,7 +56,7 @@ fun HomeScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Discount Calculation Button
+            // Botão de Cálculo de Descontos
             Button(
                 onClick = { navController.navigate("grainSelectionDiscount") },
                 modifier = Modifier

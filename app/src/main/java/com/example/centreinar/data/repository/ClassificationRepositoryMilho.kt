@@ -1,27 +1,20 @@
 package com.example.centreinar.data.repository
 
 import com.example.centreinar.ClassificationMilho
-import com.example.centreinar.DisqualificationSoja
 import com.example.centreinar.data.local.entity.ColorClassificationMilho
 import com.example.centreinar.data.local.entity.DisqualificationMilho
 import com.example.centreinar.data.local.entity.LimitMilho
 import com.example.centreinar.data.local.entity.SampleMilho
+import com.example.centreinar.data.local.entity.ToxicSeedMilho
 
 interface ClassificationRepositoryMilho {
 
-    /**
-     * Classifica uma amostra e retorna o ID da nova classificação.
-     */
     suspend fun classifySample(sample: SampleMilho, limitSource: Int, lastDisq: DisqualificationMilho): Long
 
-    /**
-     * Obtém uma amostra de milho pelo ID.
-     */
     suspend fun getSample(id: Int): SampleMilho?
 
-    /**
-     * Cria e salva uma nova amostra com os parâmetros fornecidos.
-     */
+    suspend fun getLastClassificationId(grain: String): Int?
+
     suspend fun setSample(
         grain: String,
         group: Int,
@@ -37,38 +30,40 @@ interface ClassificationRepositoryMilho {
         gessado: Float
     ): SampleMilho
 
-    /**
-     * Insere uma amostra já criada e retorna o ID gerado.
-     */
     suspend fun setSample(sample: SampleMilho): Long
 
-    /**
-     * Retorna a classificação pelo ID (para o ViewModel usar após inserir)
-     */
     suspend fun getClassification(id: Int): ClassificationMilho?
 
-    /**
-     * Retorna o último valor de limitSource salvo na tabela de limites.
-     */
+    suspend fun getLastDisqualification(): DisqualificationMilho?
+
+    suspend fun updateClassificationIdOnDisqualification(
+        disqualificationId: Int,
+        classificationId: Int
+    )
+
+    suspend fun getLastDisqualificationId(): Int?
+
+    suspend fun insertDisqualification(disqualification: DisqualificationMilho): Long
+
+    suspend fun getDisqualificationByClassificationId(classificationId: Int): DisqualificationMilho?
+
+    suspend fun getToxicSeedsByDisqualificationId(disqualificationId: Int): List<ToxicSeedMilho>
+
+    suspend fun insertToxicSeeds(seeds: List<ToxicSeedMilho>)
+
     suspend fun getLastLimitSource(): Int
 
-    /**
-     * Retorna um limite de milho específico pelo ID, grupo e source.
-     */
     suspend fun getLimit(
         grain: String,
         group: Int,
         tipo: Int,
         source: Int
-    ): LimitMilho? // <-- NOVO MÉTODO NECESSÁRIO
+    ): LimitMilho?
 
-    /**
-     * Retorna os limites oficiais (Type 1, Source 0) em formato de mapa.
-     */
     suspend fun getLimitOfType1Official(
         group: Int,
         grain: String
-    ): Map<String, Float> // <-- NOVO MÉTODO NECESSÁRIO
+    ): Map<String, Float>
 
     suspend fun setLimit(
         grain: String,
@@ -83,8 +78,13 @@ interface ClassificationRepositoryMilho {
         carunchado: Float
     )
 
+    suspend fun getLimitsByGroup(grain: String, group: Int, source: Int): List<LimitMilho>
+
     suspend fun deleteCustomLimits()
 
     suspend fun insertColorClassificationMilho(colorEntity: ColorClassificationMilho)
+
     suspend fun getLastColorClassMilho(): ColorClassificationMilho?
+
+    suspend fun getColorClassification(classifId: Long): ColorClassificationMilho?
 }

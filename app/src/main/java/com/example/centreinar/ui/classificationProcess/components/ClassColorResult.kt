@@ -36,7 +36,7 @@ fun ClassColorResult(
         Column(modifier = Modifier.padding(16.dp)) {
             TableHeader("Classe")
 
-            // Two-column table
+            // Tabela de duas colunas
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -50,7 +50,7 @@ fun ClassColorResult(
                         .padding(vertical = 12.dp, horizontal = 16.dp),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    // Empty header for first column
+                    // Header vazio para alinhar com a primeira coluna
                     Spacer(Modifier.weight(2f))
                     Text(
                         "%",
@@ -75,7 +75,7 @@ fun ClassColorResult(
                 }
             }
 
-            // Final Class Row
+            // Linha de classe final
             Spacer(Modifier.height(16.dp))
             FinalClassRow(value = classification.framingClass)
         }
@@ -136,7 +136,6 @@ private fun FinalClassRow(value: String) {
     }
 }
 
-// Reuse your existing TableHeader composable
 @Composable
 private fun TableHeader(title: String) {
     Box(

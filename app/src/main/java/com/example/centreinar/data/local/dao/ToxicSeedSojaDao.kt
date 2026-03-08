@@ -13,7 +13,7 @@ interface ToxicSeedSojaDao {
     suspend fun insertAll(seeds: List<ToxicSeedSoja>)
 
     @Query("SELECT * FROM toxic_seed_soja WHERE disqualificationId = :disqualificationId")
-    suspend fun getSeedsByDisqualificationId(disqualificationId: Int): List<ToxicSeedSoja>
+    suspend fun getToxicSeedsByDisqualificationId(disqualificationId: Int): List<ToxicSeedSoja>
 
     @Query("DELETE FROM toxic_seed_soja WHERE disqualificationId = :disqualificationId")
     suspend fun deleteSeedsByDisqualificationId(disqualificationId: Int)

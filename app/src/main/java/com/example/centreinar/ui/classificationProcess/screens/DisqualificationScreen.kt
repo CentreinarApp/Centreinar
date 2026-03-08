@@ -38,13 +38,13 @@ typealias ToxicSeedDetail = Pair<String, String> // Pair<Nome, Quantidade>
 @Composable
 public fun DisqualificationScreen(
     navController: NavController,
+    classificationId: Int,
     viewModel: ClassificationViewModel = hiltViewModel()
 ) {
-    // 1. O Scaffold envolve toda a tela
     Scaffold(
         modifier = Modifier.fillMaxSize()
-    ) { innerPadding -> // Esse innerPadding contém as medidas da barra de status e navegação
-
+    ) { innerPadding -> // Esse innerPadding contém as medidas da barra de status e navegação para responsividade em diferentes telas
+        // Variáveis de Estado
         var badConservation by remember { mutableStateOf(false) }
         var strangeSmell by remember { mutableStateOf(false) }
         var insects by remember { mutableStateOf(false) }
@@ -55,13 +55,12 @@ public fun DisqualificationScreen(
 
         // Campo para a quantidade de TIPOS de sementes (que define o tamanho da lista)
         var toxicTypesQuantity by remember { mutableStateOf("0") }
+        var toxicSeedError by remember { mutableStateOf<String?>(null) }
 
         // Converte a quantidade de TIPOS para Int, usando 0 se for inválido
         val typesQuantity = toxicTypesQuantity.toIntOrNull() ?: 0
 
-        /**
-         * Função local para atualizar um par específico na lista com segurança.
-         */
+        // Função local para atualizar um par específico na lista com segurança.
         fun updateSeedDetail(index: Int, newName: String? = null, newQuantity: String? = null) {
             // Ignora se o índice não for válido
             if (index < 0 || index >= toxicSeedDetails.size) return
@@ -223,44 +222,44 @@ public fun DisqualificationScreen(
                     Spacer(modifier = Modifier.height(16.dp))
                 }
 
-                // O botão é fixado na parte inferior graças ao Arrangement.SpaceBetween
                 Button(
                     onClick = {
+                        // Valida sementes tóxicas com quantidade 0 ou menor
+                        if (toxicGrains && toxicSeedDetails.any { (it.second.toIntOrNull() ?: 0) <= 0 }) {
+                            toxicSeedError = "Informe a quantidade de cada semente tóxica (Campo de quantidade de sementes com 0 unidades)."
+                            return@Button
+                        }
+                        toxicSeedError = null
+
                         val badConservationInt = if (badConservation) 1 else 0
                         val strangeSmellInt = if (strangeSmell) 1 else 0
                         val insectsInt = if (insects) 1 else 0
                         val toxicGrainInt = if (toxicGrains) 1 else 0
 
-                        // VERIFICA QUAL É O GRÃO SELECIONADO NO VIEWMODEL
-                        if (viewModel.selectedGrain == "Milho") {
-                            // Salva na tabela de MILHO
-                            viewModel.saveDisqualificationDataMilho(
-                                badConservation = badConservationInt,
-                                strangeSmell = strangeSmellInt,
-                                insects = insectsInt,
-                                toxicGrains = toxicGrainInt,
-                                toxicSeeds = toxicSeedDetails,
-                                onSuccess = {
-                                    navController.navigate("classification")
-                                }
-                            )
-                        } else {
-                            // Salva na tabela de SOJA (Caso não seja milho)
-                            viewModel.saveDisqualificationDataSoja(
-                                badConservation = badConservationInt,
-                                strangeSmell = strangeSmellInt,
-                                insects = insectsInt,
-                                toxicGrains = toxicGrainInt,
-                                toxicSeeds = toxicSeedDetails,
-                                onSuccess = {
-                                    navController.navigate("classification")
-                                }
-                            )
-                        }
+                        viewModel.saveDisqualificationData(
+                            classificationId = classificationId,
+                            badConservation = badConservationInt,
+                            strangeSmell = strangeSmellInt,
+                            insects = insectsInt,
+                            toxicGrains = toxicGrainInt,
+                            toxicSeeds = toxicSeedDetails,
+                            onSuccess = {
+                                navController.navigate("classification")
+                            }
+                        )
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text("Confirmar")
+                }
+
+                toxicSeedError?.let {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = it,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall
+                    )
                 }
             }
         }

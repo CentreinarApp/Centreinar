@@ -3,10 +3,11 @@ package com.example.centreinar
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.example.centreinar.ui.classificationProcess.strategy.BaseClassification
 
 @Entity(tableName = "classification_milho")
 data class ClassificationMilho(
-    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    @PrimaryKey(autoGenerate = true) override val id: Int = 0,
 
     @ColumnInfo(name = "grain") val grain: String = "milho",
     @ColumnInfo(name = "group") val group: Int = 0, // duro, dentado, semiduro, misturado
@@ -14,7 +15,7 @@ data class ClassificationMilho(
 
     // --- Defeitos (% Porcentagens) ---
     @ColumnInfo(name = "brokenPercentage") val brokenPercentage: Float = 0.0f,
-    @ColumnInfo(name = "moisturePercentage") val moisturePercentage: Float = 0.0f,
+    @ColumnInfo(name = "moisturePercentage") override val moisturePercentage: Float = 0.0f,
     @ColumnInfo(name = "impuritiesPercentage") val impuritiesPercentage: Float = 0.0f,
     @ColumnInfo(name = "carunchadoPercentage") val carunchadoPercentage: Float = 0.0f,
     @ColumnInfo(name = "ardidoPercentage") val ardidoPercentage: Float = 0.0f,
@@ -33,9 +34,14 @@ data class ClassificationMilho(
     @ColumnInfo(name = "brokenType") val brokenType: Int = 0,
     @ColumnInfo(name = "ardidoType") val ardidoType: Int = 0,
     @ColumnInfo(name = "mofadoType") val mofadoType: Int = 0,
+    @ColumnInfo(name = "fermentedType") val fermentedType: Int = 0,
+    @ColumnInfo(name = "germinatedType") val germinatedType: Int = 0,
+    @ColumnInfo(name = "immatureType") val immatureType: Int = 0,
+    @ColumnInfo(name = "gessadoType") val gessadoType: Int = 0,
     @ColumnInfo(name = "carunchadoType") val carunchadoType: Int = 0,
     @ColumnInfo(name = "spoiledTotalType") val spoiledTotalType: Int = 0,
 
     // --- Resultado Final ---
-    @ColumnInfo(name = "finalType") val finalType: Int = 0
-)
+    @ColumnInfo(name = "finalType") override val finalType: Int = 0,
+    @ColumnInfo(name = "isDisqualified") val isDisqualified: Boolean = false // Guarda se a classificação foi desclassificada ou não...
+) : BaseClassification

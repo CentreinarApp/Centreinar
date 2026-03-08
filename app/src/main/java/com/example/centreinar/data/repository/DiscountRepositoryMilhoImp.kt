@@ -1,6 +1,5 @@
 package com.example.centreinar.data.repository
 
-import android.util.Log
 import com.example.centreinar.ClassificationMilho
 import com.example.centreinar.data.local.dao.*
 import com.example.centreinar.data.local.entity.*
@@ -8,7 +7,6 @@ import com.example.centreinar.domain.repository.DiscountRepositoryMilho
 import com.example.centreinar.util.Utilities
 import javax.inject.Inject
 import javax.inject.Singleton
-import kotlin.math.roundToInt
 
 fun calculateClassificationLossMilho(difValue: Float, endValue: Float) : Float {
     if (endValue >= 100f) return 0f
@@ -30,7 +28,6 @@ class DiscountRepositoryMilhoImpl @Inject constructor(
     private val inputDiscountDao: InputDiscountMilhoDao,
     private val tools: Utilities
 ) : DiscountRepositoryMilho {
-
     override suspend fun getClassificationById(id: Int): ClassificationMilho? {
         return classificationDao.getById(id)
     }
@@ -75,88 +72,116 @@ class DiscountRepositoryMilhoImpl @Inject constructor(
         val limCarunchado = limit["carunchado"] ?: 2.0f
         val limSpoiledTotal = limit["spoiledTotal"] ?: 6.0f
 
-        // --- CÁLCULO DAS DIFERENÇAS ---
-        val impuritiesDiff = tools.calculateDifference(sample.impurities, limImpurities)
-        val moistureDiff = round(tools.calculateDifference(sample.moisture, limMoisture))
-        val brokenDiff = tools.calculateDifference(sample.broken, limBroken)
-        val ardidoDiff = tools.calculateDifference(sample.ardidos, limArdido) // Corrigido: Declarado no topo
-        val carunchadoDiff = tools.calculateDifference(sample.carunchado, limCarunchado)
-        val spoiledDiffRaw = tools.calculateDifference(sample.spoiled, limSpoiledTotal)
+        // ==========================================================
+        // CÁLCULO DE IMPUREZAS, QUEBRADOS E UMIDADE
+        // ==========================================================
 
         // --- IMPUREZAS ---
-        val impuritiesPerc = calculateClassificationLossMilho(impuritiesDiff, limImpurities)
+        var impuritiesPerc = 0f
+        if (sample.impurities > limImpurities) {
+            val diff = sample.impurities - limImpurities
+            impuritiesPerc = round(calculateClassificationLossMilho(diff, limImpurities))
+        }
         val impuritiesLossKg = (impuritiesPerc / 100) * lotWeight
 
         // --- QUEBRADOS ---
-        // Regra atual: Abate a impureza do peso base
-        val brokenPerc = if (sample.broken > limBroken)
-                calculateClassificationLossMilho(brokenDiff, limBroken)
-        else 0f
-        val brokenLossKg = round((brokenPerc / 100) * (lotWeight - impuritiesLossKg))
+        var brokenPerc = 0f
+        if (sample.broken > limBroken) {
+            val diff = sample.broken - limBroken
+            brokenPerc = round(calculateClassificationLossMilho(diff, limBroken))
+        }
+        val brokenLossKg = (brokenPerc / 100) * (lotWeight - impuritiesLossKg)
 
         // --- UMIDADE ---
-        val moisturePerc = calculateClassificationLossMilho(moistureDiff, limMoisture)
-        // Corrigido: Adicionado parêntese que faltava no final
-        val moistureLossKg = round((moisturePerc / 100) * (lotWeight - impuritiesLossKg - brokenLossKg))
+        var moisturePerc = 0f
+        if (sample.moisture > limMoisture) {
+            val diff = sample.moisture - limMoisture
+            moisturePerc = round(calculateClassificationLossMilho(diff, limMoisture))
+        }
+        val moistureLossKg = (moisturePerc / 100) * (lotWeight - impuritiesLossKg - brokenLossKg)
 
-        // --- DEFEITOS (Classificação) ---
 
-        // ARDIDOS
-        val ardidoPerc = if (sample.ardidos > limArdido)
-            calculateClassificationLossMilho(ardidoDiff, limArdido)
-        else 0f
-        val ardidoLossKg = round((ardidoPerc / 100) * lotWeight)
+        // ==========================================================
+        // CÁLCULO DE DEFEITOS
+        // ==========================================================
 
-        // CARUNCHADOS
-        val carunchadoPerc = if (sample.carunchado > limCarunchado)
-            calculateClassificationLossMilho(carunchadoDiff, limCarunchado)
-        else 0f
-        val carunchadoLossKg = round((carunchadoPerc / 100) * lotWeight)
+        // 1. Ardidos
+        var ardidoLoss = 0f
+        if (sample.ardidos > limArdido) {
+            val diffArdido = sample.ardidos - limArdido
+            ardidoLoss = round(calculateClassificationLossMilho(diffArdido, limArdido))
+        }
 
-        // AVARIADOS (SPOILED)
-        val spoiledPercNet = if (sample.spoiled > limSpoiledTotal) {
-            calculateClassificationLossMilho(round(spoiledDiffRaw - ardidoPerc), limSpoiledTotal)
-        } else 0f
+        // 2. Carunchados
+        var carunchadoLoss = 0f
+        if (sample.carunchado > limCarunchado) {
+            val diffCarunchado = sample.carunchado - limCarunchado
+            carunchadoLoss = round(calculateClassificationLossMilho(diffCarunchado, limCarunchado))
+        }
 
-        val spoiledLossKg = round((spoiledPercNet / 100) * lotWeight)
+        // 3. Total de Avariados (Spoiled)
+        // Regra: "Total avariados inicial - Quebra Ardidos"
+        var spoiledLoss = 0f
+        val spoiledAfterArdido = sample.spoiled - ardidoLoss  // desconta o que já foi cobrado nos ardidos
+        if (spoiledAfterArdido > limSpoiledTotal) {
+            val diffSpoiled = spoiledAfterArdido - limSpoiledTotal
+            spoiledLoss = round(calculateClassificationLossMilho(diffSpoiled, limSpoiledTotal))
+        }
 
-        // Falha Técnica (KG)
+        // Converter as porcentagens finais para Kg baseando no peso inicial
+        val ardidoLossKg = (ardidoLoss / 100) * lotWeight
+        val carunchadoLossKg = (carunchadoLoss / 100) * lotWeight
+        val spoiledLossKg = (spoiledLoss / 100) * lotWeight
+
+        // ==========================================================
+        // FALHA TÉCNICA E DESCONTOS TOTAIS
+        // ==========================================================
+
         val technicalLossKg = if (doesTechnicalLoss && storageDays > 0) {
-            val techVal = calculateTechnicalLoss(storageDays, (impuritiesLossKg + moistureLossKg), lotWeight)
-            round(techVal)
+            round(calculateTechnicalLoss(storageDays, (impuritiesLossKg + moistureLossKg), lotWeight))
         } else 0f
 
-        // Desconto de Classificação Total (KG)
         val classificationDiscountKg = if (doesClassificationLoss) {
             brokenLossKg + ardidoLossKg + carunchadoLossKg + spoiledLossKg
         } else 0f
 
-        // Cálculo de Preços Individuais
+        var finalLossKg = impuritiesLossKg + moistureLossKg + technicalLossKg + classificationDiscountKg
+        var deductionKg = 0f
+
+        // Dedução
+        if (doesDeduction && deductionValue > 0) {
+            deductionKg = calculateDeduction(deductionValue, classificationDiscountKg)
+            finalLossKg = finalLossKg - classificationDiscountKg + deductionKg
+        }
+
+        val finalWeight = lotWeight - finalLossKg
+
+        // ==========================================================
+        // CÁLCULO DE PREÇOS (R$)
+        // ==========================================================
+
         val impuritiesLossPrice = (impuritiesLossKg / 60) * pricePerSack
         val humidityLossPrice = (moistureLossKg / 60) * pricePerSack
         val technicalLossPrice = (technicalLossKg / 60) * pricePerSack
+        val classificationDiscountPrice = (classificationDiscountKg / 60) * pricePerSack
         val brokenLossPrice = (brokenLossKg / 60) * pricePerSack
         val ardidoLossPrice = (ardidoLossKg / 60) * pricePerSack
         val carunchadoLossPrice = (carunchadoLossKg / 60) * pricePerSack
         val spoiledLossPrice = (spoiledLossKg / 60) * pricePerSack
 
-        var finalLossKg = impuritiesLossKg + moistureLossKg + technicalLossKg + classificationDiscountKg
-
-        // Dedução
-        if (doesDeduction && deductionValue > 0) {
-            val deductionKg = calculateDeduction(deductionValue, classificationDiscountKg)
-            finalLossKg = finalLossKg - classificationDiscountKg + deductionKg
-        }
-
-        val finalWeight = lotWeight - finalLossKg
         val finalDiscountPrice = (finalLossKg / 60) * pricePerSack
         val finalWeightPrice = lotPrice - finalDiscountPrice
+
+        // ==========================================================
+        // SALVAMENTO NO BANCO
+        // ==========================================================
 
         val discount = DiscountMilho(
             inputDiscountId = sample.id,
             impuritiesLoss = impuritiesLossKg,
             humidityLoss = moistureLossKg,
             technicalLoss = technicalLossKg,
+            classificationDiscount = classificationDiscountKg,
             brokenLoss = brokenLossKg,
             ardidoLoss = ardidoLossKg,
             carunchadoLoss = carunchadoLossKg,
@@ -164,10 +189,12 @@ class DiscountRepositoryMilhoImpl @Inject constructor(
             impuritiesLossPrice = impuritiesLossPrice,
             humidityLossPrice = humidityLossPrice,
             technicalLossPrice = technicalLossPrice,
+            classificationDiscountPrice = classificationDiscountPrice,
             brokenLossPrice = brokenLossPrice,
             ardidoLossPrice = ardidoLossPrice,
             carunchadoLossPrice = carunchadoLossPrice,
             spoiledLossPrice = spoiledLossPrice,
+            deduction = deductionKg,
             finalDiscount = finalLossKg,
             finalWeight = finalWeight,
             finalDiscountPrice = finalDiscountPrice,

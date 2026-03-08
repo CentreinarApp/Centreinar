@@ -2,37 +2,31 @@ package com.example.centreinar.ui.classificationProcess.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
-import com.example.centreinar.LimitSoja
-import com.example.centreinar.data.local.entity.LimitMilho
+import com.example.centreinar.ui.classificationProcess.strategy.CustomLimitPayload
 import com.example.centreinar.ui.classificationProcess.viewmodel.ClassificationViewModel
+import com.example.centreinar.ui.components.EditableFields
+import com.example.centreinar.ui.components.NumberInputField
+import com.example.centreinar.ui.components.OfficialLimitsTable
+import com.example.centreinar.util.toFloatOrDefault
+
 
 @Composable
 fun LimitInputScreen(
     navController: NavController,
     viewModel: ClassificationViewModel = hiltViewModel()
 ) {
-    // 1. O Scaffold envolve toda a tela
     Scaffold(
         modifier = Modifier.fillMaxSize()
-    ) { innerPadding -> // Esse innerPadding contém as medidas da barra de status e navegação
+    ) { innerPadding ->
 
         val defaultLimits by viewModel.defaultLimits.collectAsStateWithLifecycle()
         val allOfficialLimits by viewModel.allOfficialLimits.collectAsStateWithLifecycle()
@@ -64,19 +58,25 @@ fun LimitInputScreen(
 
         LaunchedEffect(defaultLimits) {
             defaultLimits?.let { limits ->
+                // Voltamos para as chaves originais que o seu banco de dados usa
                 moisture = limits["moistureUpLim"]?.toString() ?: ""
+
                 if (!isOfficial) {
                     impurities = limits["impuritiesUpLim"]?.toString() ?: ""
-                    brokenCrackedDamaged = limits["brokenUpLim"]?.toString() ?: ""
                     moldy = limits["moldyUpLim"]?.toString() ?: ""
                     spoiled = limits["spoiledTotalUpLim"]?.toString() ?: ""
-                    burnt = limits["burntUpLim"]?.toString() ?: ""
-                    carunchado = limits["carunchadoUpLim"]?.toString() ?: ""
+
+                    // Tratamos os nomes específicos de Soja e Milho com segurança
                     if (isSoja) {
+                        brokenCrackedDamaged = limits["brokenCrackedDamagedUpLim"]?.toString() ?: limits["brokenUpLim"]?.toString() ?: ""
+                        burnt = limits["burntUpLim"]?.toString() ?: ""
                         greenish = limits["greenishUpLim"]?.toString() ?: ""
                         burntOrSour = limits["burntOrSourUpLim"]?.toString() ?: ""
                     } else {
-                        burntOrSour = limits["ardidosUpLim"]?.toString() ?: ""
+                        // Milho
+                        brokenCrackedDamaged = limits["brokenUpLim"]?.toString() ?: ""
+                        burntOrSour = limits["ardidoUpLim"]?.toString() ?: limits["ardidosUpLim"]?.toString() ?: ""
+                        carunchado = limits["carunchadoUpLim"]?.toString() ?: ""
                     }
                 }
             }
@@ -110,7 +110,6 @@ fun LimitInputScreen(
             )
 
             Spacer(modifier = Modifier.height(16.dp))
-
 
             Box(modifier = Modifier.weight(1f)) {
                 if (isOfficial) {
@@ -163,15 +162,22 @@ fun LimitInputScreen(
                     }
 
                     if (!isOfficial) {
-                        viewModel.setLimit(
-                            impurities.toFloatOrDefault(), moisture.toFloatOrDefault(),
-                            brokenCrackedDamaged.toFloatOrDefault(), greenish.toFloatOrDefault(),
-                            burnt.toFloatOrDefault(), burntOrSour.toFloatOrDefault(),
-                            moldy.toFloatOrDefault(), spoiled.toFloatOrDefault(),
-                            carunchado.toFloatOrDefault()
+                        // Criamos o Payload e passamos para a ViewModel
+                        val payload = CustomLimitPayload(
+                            group = currentGroup ?: 1,
+                            moisture = moisture.toFloatOrDefault(),
+                            impurities = impurities.toFloatOrDefault(),
+                            brokenCrackedDamaged = brokenCrackedDamaged.toFloatOrDefault(),
+                            greenish = greenish.toFloatOrDefault(),
+                            burnt = burnt.toFloatOrDefault(),
+                            burntOrSour = burntOrSour.toFloatOrDefault(),
+                            moldy = moldy.toFloatOrDefault(),
+                            spoiled = spoiled.toFloatOrDefault(),
+                            carunchado = carunchado.toFloatOrDefault()
                         )
+                        viewModel.setLimit(payload)
                     }
-                    navController.navigate("disqualification")
+                    navController.navigate("disqualification?classificationId=-1")
                 },
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
             ) {
@@ -180,160 +186,3 @@ fun LimitInputScreen(
         }
     }
 }
-
-@Composable
-fun OfficialLimitsTable(grain: String, group: Int, data: List<Any>) {
-    val labels = if (grain == "Soja") {
-        listOf("Ardidos/Queim.", "Queimados", "Mofados", "Avariados Total", "Esverdeados", "Partidos/Quebr./Amassados", "Matérias Estranhas e Impurezas")
-    } else {
-        listOf("Ardidos", "Avariados Total", "Quebrados", "Matérias Estranhas e Impurezas", "Carunchados")
-    }
-
-    val columnWeightLabel = 1.0f
-    val columnWeightValue = 1f
-
-    Card(
-        modifier = Modifier.fillMaxSize(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(12.dp),
-            verticalArrangement = Arrangement.SpaceEvenly
-        ) {
-            // CABEÇALHO
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                Text(
-                    text = "Defeito",
-                    modifier = Modifier.weight(columnWeightLabel), // Espaço maior para o nome
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Start
-                )
-
-                data.forEachIndexed { index, _ ->
-                    val textoCabecalho = if (group == 2) {
-                        "Padrão Básico"
-                    } else if (group == 1 && ((index + 1) == 4)) {
-                        "Fora de Tipo"
-                    } else {
-                        "Tipo ${index + 1}"
-                    }
-
-                    Text(
-                        text = textoCabecalho,
-                        modifier = Modifier.weight(1f),
-                        textAlign = TextAlign.Center,
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
-
-            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-
-            labels.forEachIndexed { rowIndex, label ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceEvenly
-                ) {
-                    Text(
-                        text = label,
-                        modifier = Modifier.weight(columnWeightLabel),
-                        style = MaterialTheme.typography.bodyMedium.copy(fontSize = 12.sp),
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    data.forEach { item ->
-                        val value = when (item) {
-                            is LimitSoja -> listOf(item.burntOrSourUpLim, item.burntUpLim, item.moldyUpLim, item.spoiledTotalUpLim, item.greenishUpLim, item.brokenCrackedDamagedUpLim, item.impuritiesUpLim)
-                            is LimitMilho -> listOf(item.ardidoUpLim, item.spoiledTotalUpLim, item.brokenUpLim, item.impuritiesUpLim, item.carunchadoUpLim)
-                            else -> emptyList()
-                        }.getOrNull(rowIndex) ?: 0f
-
-                        Text(
-                            text = "$value%",
-                            modifier = Modifier.weight(columnWeightLabel),
-                            textAlign = TextAlign.Center,
-                            style = MaterialTheme.typography.bodyLarge.copy(fontSize = 14.sp),
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
-                if (rowIndex < labels.lastIndex) {
-                    HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun EditableFields(
-    isSoja: Boolean,
-    impurities: String, onImpuritiesChange: (String) -> Unit,
-    burnt: String, onBurntChange: (String) -> Unit,
-    burntOrSour: String, onBurntOrSourChange: (String) -> Unit,
-    moldy: String, onMoldyChange: (String) -> Unit,
-    spoiled: String, onSpoiledChange: (String) -> Unit,
-    greenish: String, onGreenishChange: (String) -> Unit,
-    broken: String, onBrokenChange: (String) -> Unit,
-    carunchados: String, onCarunchadoChange: (String) -> Unit
-) {
-    Column {
-        NumberInputField("Matérias Estranhas e Impurezas (%)", impurities, onImpuritiesChange, FocusRequester(), null, true)
-        Spacer(Modifier.height(8.dp))
-        if (isSoja) {
-            NumberInputField("Queimados (%)", burnt, onBurntChange, FocusRequester(), null, true)
-            Spacer(Modifier.height(8.dp))
-        }
-        NumberInputField(if (isSoja) "Ardidos e Queimados (%)" else "Ardidos (%)", burntOrSour, onBurntOrSourChange, FocusRequester(), null, true)
-        Spacer(Modifier.height(8.dp))
-        NumberInputField("Mofados (%)", moldy, onMoldyChange, FocusRequester(), null, true)
-        Spacer(Modifier.height(8.dp))
-        NumberInputField("Total Avariados (%)", spoiled, onSpoiledChange, FocusRequester(), null, true)
-        Spacer(Modifier.height(8.dp))
-        if (isSoja) {
-            NumberInputField("Esverdeados (%)", greenish, onGreenishChange, FocusRequester(), null, true)
-            Spacer(Modifier.height(8.dp))
-        }
-        NumberInputField("Quebrados (%)", broken, onBrokenChange, FocusRequester(), null, true)
-        if (!isSoja) {
-            Spacer(Modifier.height(8.dp))
-            NumberInputField("Carunchados (%)", carunchados, onCarunchadoChange, FocusRequester(), null, true)
-        }
-    }
-}
-
-@Composable
-private fun NumberInputField(
-    label: String,
-    value: String,
-    onValueChange: (String) -> Unit,
-    focusRequester: FocusRequester,
-    nextFocus: FocusRequester?,
-    enabled: Boolean,
-    readOnly: Boolean = false
-) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = { if (it.isEmpty() || it.matches(Regex("^(\\d*\\.?\\d*)$"))) onValueChange(it) },
-        label = { Text(label) },
-        modifier = Modifier.fillMaxWidth().focusRequester(focusRequester),
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = if (nextFocus != null) ImeAction.Next else ImeAction.Done),
-        singleLine = true,
-        enabled = enabled,
-        readOnly = readOnly
-    )
-}
-
-private fun String.toFloatOrDefault(): Float = this.toFloatOrNull()?.takeIf { it >= 0f } ?: 0f

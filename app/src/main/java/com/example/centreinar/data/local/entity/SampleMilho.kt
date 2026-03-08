@@ -4,14 +4,13 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
-
 @Entity(tableName = "sample_milho")
 data class SampleMilho(
-    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    @PrimaryKey(autoGenerate = true) override val id: Int = 0,
     @ColumnInfo(name = "grain") val grain: String = "milho",
     @ColumnInfo(name = "group") val group: Int = 0,
     @ColumnInfo(name = "moisture") val moisture: Float = 0.0f,
-    @ColumnInfo(name = "lotWeight") val lotWeight: Float = 0.0f,
+    @ColumnInfo(name = "lotWeight") override val lotWeight: Float = 0.0f,
     @ColumnInfo(name = "sampleWeight") val sampleWeight: Float = 0.0f,
     @ColumnInfo(name = "cleanWeight") val cleanWeight: Float = 0.0f,
 
@@ -27,6 +26,4 @@ data class SampleMilho(
     @ColumnInfo(name = "germinated") val germinated: Float = 0.0f,
     @ColumnInfo(name = "immature") val immature: Float = 0.0f,
     @ColumnInfo(name = "gessado") val gessado: Float = 0.0f
-
-    // Removido: Atributos de Soja (danificado, piercing/picado)
-)
+) : BaseSample

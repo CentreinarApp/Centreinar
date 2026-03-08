@@ -1,15 +1,15 @@
 package com.example.centreinar.data.repository
 
-import android.util.Log
 import com.example.centreinar.ClassificationSoja
 import com.example.centreinar.ColorClassificationSoja
 import com.example.centreinar.DisqualificationSoja
 import com.example.centreinar.LimitSoja
 import com.example.centreinar.SampleSoja
+import com.example.centreinar.data.local.entities.ToxicSeedSoja
 import com.example.centreinar.data.local.dao.*
-import com.example.centreinar.domain.model.LimitCategory
 import com.example.centreinar.util.Utilities
-import java.math.RoundingMode
+import com.example.centreinar.domain.model.LimitCategory
+import com.example.centreinar.util.roundToTwoDecimals
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -20,38 +20,46 @@ class ClassificationRepositoryImpl @Inject constructor(
     private val sampleDao: SampleSojaDao,
     private val tools: Utilities,
     private val colorClassificationDao: ColorClassificationSojaDao,
-    private val disqualificationDao: DisqualificationSojaDao
+    private val disqualificationDao: DisqualificationSojaDao,
+    private val toxicSeedDao: ToxicSeedSojaDao,
+    private val colorClassificationSojaDao: ColorClassificationSojaDao
 ) : ClassificationRepository {
 
     override suspend fun classifySample(sample: SampleSoja, limitSource: Int, lastDisq: DisqualificationSoja): Long {
         val limitMap = getLimitsForGrain(sample.grain, sample.group, limitSource)
         val sampleId = setSample(sample)
 
+        // Cálculos de PESO (mantendo os valores crus, sem arredondar)
         val cleanWeightGrams = if (sample.cleanWeight > 0f) sample.cleanWeight
         else sample.sampleWeight - sample.foreignMattersAndImpurities
 
         val safeCleanWeight = if (cleanWeightGrams > 0f) cleanWeightGrams else sample.sampleWeight
 
-        val percentageImpurities = tools.calculateDefectPercentage(sample.foreignMattersAndImpurities, sample.sampleWeight)
-        val percentageBroken = tools.calculateDefectPercentage(sample.brokenCrackedDamaged, safeCleanWeight)
-        val percentageGreenish = tools.calculateDefectPercentage(sample.greenish, safeCleanWeight)
-        val percentageMoldy = tools.calculateDefectPercentage(sample.moldy, safeCleanWeight)
-        val percentageBurnt = tools.calculateDefectPercentage(sample.burnt, safeCleanWeight)
-        val percentageSour = tools.calculateDefectPercentage(sample.sour, safeCleanWeight)
-        val percentageBurntOrSourRaw = percentageBurnt + percentageSour
-        val percentageBurntOrSour = percentageBurntOrSourRaw.toBigDecimal()
-            .setScale(2, RoundingMode.HALF_UP).toFloat()
-
+        // Soma dos pesos puros (em gramas) para os totais de avariados e graves
         val sumDefectWeights = sample.moldy + sample.fermented + sample.sour + sample.burnt +
                 sample.germinated + sample.immature + sample.shriveled + sample.damaged
 
-        val percentageSpoiled = tools.calculateDefectPercentage(sumDefectWeights, safeCleanWeight)
-        val percentageDamaged = tools.calculateDefectPercentage(sample.damaged, safeCleanWeight)
-        val percentageFermented = tools.calculateDefectPercentage(sample.fermented, safeCleanWeight)
-        val percentageGerminated = tools.calculateDefectPercentage(sample.germinated, safeCleanWeight)
-        val percentageImmature = tools.calculateDefectPercentage(sample.immature, safeCleanWeight)
-        val percentageShriveled = tools.calculateDefectPercentage(sample.shriveled, safeCleanWeight)
+        val sumBurntOrSourWeights = sample.burnt + sample.sour
 
+        // Cálculo das PORCENTAGENS (Usa o peso cru para o cálculo exato, e ARREDONDA o resultado final)
+        val percentageImpurities = tools.calculateDefectPercentage(sample.foreignMattersAndImpurities, sample.sampleWeight).roundToTwoDecimals()
+        val percentageBroken = tools.calculateDefectPercentage(sample.brokenCrackedDamaged, safeCleanWeight).roundToTwoDecimals()
+        val percentageGreenish = tools.calculateDefectPercentage(sample.greenish, safeCleanWeight).roundToTwoDecimals()
+        val percentageMoldy = tools.calculateDefectPercentage(sample.moldy, safeCleanWeight).roundToTwoDecimals()
+        val percentageBurnt = tools.calculateDefectPercentage(sample.burnt, safeCleanWeight).roundToTwoDecimals()
+        val percentageSour = tools.calculateDefectPercentage(sample.sour, safeCleanWeight).roundToTwoDecimals()
+
+        // Porcentagens de somas: calculadas a partir da soma dos pesos crus
+        val percentageBurntOrSour = tools.calculateDefectPercentage(sumBurntOrSourWeights, safeCleanWeight).roundToTwoDecimals()
+        val percentageSpoiled = tools.calculateDefectPercentage(sumDefectWeights, safeCleanWeight).roundToTwoDecimals()
+
+        val percentageDamaged = tools.calculateDefectPercentage(sample.damaged, safeCleanWeight).roundToTwoDecimals()
+        val percentageFermented = tools.calculateDefectPercentage(sample.fermented, safeCleanWeight).roundToTwoDecimals()
+        val percentageGerminated = tools.calculateDefectPercentage(sample.germinated, safeCleanWeight).roundToTwoDecimals()
+        val percentageImmature = tools.calculateDefectPercentage(sample.immature, safeCleanWeight).roundToTwoDecimals()
+        val percentageShriveled = tools.calculateDefectPercentage(sample.shriveled, safeCleanWeight).roundToTwoDecimals()
+
+        // Tipificação: Agora usa as porcentagens arredondadas para comparar com os limites
         val impuritiesType = tools.findCategoryForValue(limitMap["impurities"]?.map { it.lowerL to it.upperL } ?: emptyList(), percentageImpurities)
         val brokenType = tools.findCategoryForValue(limitMap["broken"]?.map { it.lowerL to it.upperL } ?: emptyList(), percentageBroken)
         val greenishType = tools.findCategoryForValue(limitMap["greenish"]?.map { it.lowerL to it.upperL } ?: emptyList(), percentageGreenish)
@@ -62,20 +70,22 @@ class ClassificationRepositoryImpl @Inject constructor(
 
         var finalType = listOf(brokenType, greenishType, moldyType, burntType, burntOrSourType, spoiledType, impuritiesType).maxOrNull() ?: 1
 
-        val graveDefectsSumRaw = percentageBurntOrSour + percentageMoldy
-        val graveDefectsSum = graveDefectsSumRaw.toBigDecimal()
-            .setScale(2, RoundingMode.HALF_UP).toFloat()
+        // Regras de Desclassificação
+        // Somamos as porcentagens já arredondadas e usamos o round novamente apenas por segurança do Float
+        val graveDefectsSum = (percentageBurntOrSour + percentageMoldy).roundToTwoDecimals()
+
         var isDisqualify = false
         if (sample.group == 1 && graveDefectsSum > 12f) isDisqualify = true
         if (sample.group == 2 && graveDefectsSum > 40f) isDisqualify = true
+
         if (lastDisq.badConservation == 1 ||
             lastDisq.strangeSmell == 1 ||
             lastDisq.insects == 1 ||
             lastDisq.toxicGrains == 1) {
             isDisqualify = true
         }
-        if (isDisqualify) finalType = 0
 
+        // Salva no Banco de Dados
         val classification = ClassificationSoja(
             grain = sample.grain, group = sample.group, sampleId = sampleId.toInt(),
 
@@ -104,14 +114,15 @@ class ClassificationRepositoryImpl @Inject constructor(
             burntType = burntType,
             burntOrSourType = burntOrSourType,
             spoiledType = spoiledType,
-            // Não definem tipo...
-            fermented = 0,
-            germinated = 0,
-            immature = 0,
-            shriveled = 0,
-            sour = 0,
+            // Não definem tipo na Soja...
+            fermentedType = -1,
+            germinatedType = -1,
+            immatureType = -1,
+            shriveledType = -1,
+            sourType = -1,
 
             finalType = finalType,
+            isDisqualified = isDisqualify
         )
 
         return classificationDao.insert(classification)
@@ -134,7 +145,20 @@ class ClassificationRepositoryImpl @Inject constructor(
     )
 
     override suspend fun setSample(sample: SampleSoja): Long = sampleDao.insert(sample)
+
     override suspend fun getClassification(id: Int): ClassificationSoja? = classificationDao.getById(id)
+
+    override suspend fun getLastDisqualificationId(): Int? {
+        return disqualificationDao.getLastDisqualificationId()
+    }
+
+    override suspend fun getLastDisqualification(): DisqualificationSoja? {
+        return disqualificationDao.getLastDisqualification()
+    }
+
+    override suspend fun updateClassificationIdOnDisqualification(disqualificationId: Int, classificationId: Int) {
+        disqualificationDao.updateClassificationId(disqualificationId, classificationId)
+    }
 
     override suspend fun getLimitsForGrain(grain: String, group: Int, limitSource: Int): Map<String, List<LimitCategory>> {
         return mapOf(
@@ -162,6 +186,10 @@ class ClassificationRepositoryImpl @Inject constructor(
 
     override suspend fun setDisqualification(classificationId: Int?, badConservation: Int, graveDefectSum: Int, strangeSmell: Int, toxicGrains: Int, insects: Int): Long {
         return disqualificationDao.insert(DisqualificationSoja(classificationId = classificationId, badConservation = badConservation, graveDefectSum = graveDefectSum, strangeSmell = strangeSmell, toxicGrains = toxicGrains, insects = insects))
+    }
+
+    override suspend fun getColorClassification(classificationId: Int): ColorClassificationSoja? {
+        return colorClassificationSojaDao.getByClassificationId(classificationId)
     }
 
     override suspend fun setLimit(
@@ -205,6 +233,10 @@ class ClassificationRepositoryImpl @Inject constructor(
 
     override suspend fun getDisqualificationByClassificationId(idClassification: Int): DisqualificationSoja? = disqualificationDao.getByClassificationId(classificationId = idClassification)
 
+    override suspend fun insertDisqualification(disqualification: DisqualificationSoja): Long {
+        return disqualificationDao.insert(disqualification)
+    }
+
     override suspend fun updateDisqualification(classificationId: Int, finalType: Int) {
         val disqualificationId = disqualificationDao.getLastDisqualificationId()
         val defectSum = if (finalType == 0) 1 else 0
@@ -223,6 +255,10 @@ class ClassificationRepositoryImpl @Inject constructor(
         return try { limitDao.getLimitsByType(grain, group, tipo, source) } catch (e: Exception) { null }
     }
 
+    override suspend fun getLimitsByGroup(grain: String, group: Int, source: Int): List<LimitSoja> {
+        return limitDao.getLimitsByGroup(grain, group, source)
+    }
+
     override suspend fun getObservations(idClassification: Int, colorClass: ColorClassificationSoja?): String {
         val classification = classificationDao.getById(idClassification)
         return if (classification?.finalType == 0) "Desclassificada: excesso de defeitos graves." else " "
@@ -230,5 +266,13 @@ class ClassificationRepositoryImpl @Inject constructor(
 
     override suspend fun deleteCustomLimits() {
         limitDao.deleteCustomLimits()
+    }
+
+    override suspend fun getToxicSeedsByDisqualificationId(disqualificationId: Int): List<ToxicSeedSoja> {
+        return toxicSeedDao.getToxicSeedsByDisqualificationId(disqualificationId)
+    }
+
+    override suspend fun insertToxicSeeds(seeds: List<ToxicSeedSoja>) {
+        toxicSeedDao.insertAll(seeds)
     }
 }

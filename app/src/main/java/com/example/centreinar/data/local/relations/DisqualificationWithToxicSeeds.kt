@@ -9,7 +9,7 @@ data class DisqualificationWithToxicSeeds(
     @Embedded val disqualification: DisqualificationSoja,
 
     @Relation(
-        parentColumn = "id", // O ID da DisqualificationSoja
+        parentColumn = "id",                 // O ID da DisqualificationSoja
         entityColumn = "disqualificationId" // O ID na ToxicSeedSoja que aponta para o pai
     )
     val toxicSeeds: List<ToxicSeedSoja>

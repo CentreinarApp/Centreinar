@@ -37,7 +37,7 @@ interface SampleSojaDao {
     @Query("SELECT * FROM sample_soja WHERE id = :id")
     suspend fun getById(id: Int): SampleSoja?
 
-    // Example filter queries
+    // Queries de filtro
     @Query("SELECT * FROM sample_soja WHERE sampleWeight BETWEEN :minWeight AND :maxWeight")
     fun getByWeightRange(minWeight: Float, maxWeight: Float): Flow<List<SampleSoja>>
 

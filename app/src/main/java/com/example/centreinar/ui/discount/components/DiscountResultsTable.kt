@@ -35,7 +35,7 @@ fun DiscountResultsTable(
         Column(modifier = Modifier.padding(6.dp)) {
             TableHeader("DESCONTOS")
 
-            // Main table with 3 columns
+            // Tabela com 3 colunas: Defeito, Quantia (kg), Valor (R$)
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -73,8 +73,8 @@ fun DiscountResultsTable(
                         textAlign = TextAlign.End
                     )
                 }
-                // Table Rows
 
+                // Table Rows
                 listOf(
                     Triple("Matéria Estranha e Impurezas", discounts.impuritiesLoss,discounts.impuritiesLossPrice),
                     Triple("Umidade", discounts.humidityLoss,discounts.humidityLossPrice),

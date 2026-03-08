@@ -35,7 +35,7 @@ fun SimplifiedResultsTable(
         Column(modifier = Modifier.padding(16.dp)) {
             TableHeader("Resultados da Classificação")
 
-            // Two-column table
+            // Tabela de duas colunas
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -49,7 +49,7 @@ fun SimplifiedResultsTable(
                         .padding(vertical = 12.dp, horizontal = 16.dp),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    // Empty header for first column
+                    // Header vazio para alinhar com a primeira coluna
                     Spacer(Modifier.weight(2f))
                     Text(
                         " ",

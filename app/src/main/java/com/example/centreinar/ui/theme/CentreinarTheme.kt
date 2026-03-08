@@ -42,8 +42,8 @@ fun CentreinarTheme(
 
     MaterialTheme(
         colorScheme = colorScheme,
-        typography = Typography(), // Pode usar a tipografia padrão por enquanto
-        shapes = Shapes(),         // Formas padrão também
+        typography = Typography(),
+        shapes = Shapes(),
         content = content
     )
 }

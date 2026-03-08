@@ -20,34 +20,27 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.centreinar.ui.classificationProcess.viewmodel.ClassificationViewModel
 
-
 @Composable
-public fun GroupSelectionScreen(
+fun GroupSelectionScreen(
     navController: NavController,
     viewModel: ClassificationViewModel = hiltViewModel()
 ) {
-    // 1. O Scaffold envolve toda a tela
     Scaffold(
         modifier = Modifier.fillMaxSize()
-    ) { innerPadding -> // Esse innerPadding contém as medidas da barra de status e navegação
-
+    ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
                 .padding(32.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center // <-- Centralização mantida
+            verticalArrangement = Arrangement.Center
         ) {
             Button(
                 onClick = {
-                    // Limpa os limites
+                    // A ViewModel cuida do reset
                     viewModel.resetLimits()
-
-                    // Seleciona o grupo
                     viewModel.selectedGroup = 1
-
-                    // Navega para a rota da seleção da referência de limite
                     navController.navigate("officialOrNot")
                 },
                 modifier = Modifier
@@ -66,13 +59,9 @@ public fun GroupSelectionScreen(
 
             Button(
                 onClick = {
-                    // Limpa os limites
+                    // A ViewModel cuida do reset
                     viewModel.resetLimits()
-
-                    // Seleciona o grupo
                     viewModel.selectedGroup = 2
-
-                    // Navega para a rota da seleção da referência de limite
                     navController.navigate("officialOrNot")
                 },
                 modifier = Modifier

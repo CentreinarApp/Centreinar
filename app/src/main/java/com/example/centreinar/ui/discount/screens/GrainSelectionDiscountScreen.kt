@@ -26,11 +26,9 @@ fun GrainSelectionDiscountScreen(
     navController: NavController,
     viewModel: DiscountViewModel = hiltViewModel()
 ) {
-    // 1. O Scaffold envolve toda a tela
     Scaffold(
         modifier = Modifier.fillMaxSize()
-    ) { innerPadding -> // Esse innerPadding contém as medidas da barra de status e navegação
-
+    ) { innerPadding -> // Esse innerPadding contém as medidas da barra de status e navegação para responsividade em diferentes telas
         Column(
             modifier = Modifier
                 .fillMaxSize()

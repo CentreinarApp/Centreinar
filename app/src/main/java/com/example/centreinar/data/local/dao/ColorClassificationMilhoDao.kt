@@ -19,5 +19,7 @@ interface ColorClassificationMilhoDao {
 
     @Query("SELECT * FROM color_group_classification_milho ORDER BY id DESC LIMIT 1")
     suspend fun getLastColorClass(): ColorClassificationMilho?
-}
 
+    @Query("SELECT * FROM color_group_classification_milho WHERE classificationId = :classifId LIMIT 1")
+    suspend fun getByClassificationId(classifId: Long): ColorClassificationMilho?
+}

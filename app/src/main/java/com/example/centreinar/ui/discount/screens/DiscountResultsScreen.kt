@@ -1,6 +1,7 @@
 package com.example.centreinar.ui.discount.screens
 
-import android.util.Log
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -12,42 +13,33 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
-import com.example.centreinar.LimitSoja
-import com.example.centreinar.ui.discount.components.DiscountResultsTable
-import com.example.centreinar.ui.discount.components.DiscountSimplifiedResultsTable
+import com.example.centreinar.ui.components.ActionButtons
+import com.example.centreinar.ui.components.OfficialReferenceTable
+import com.example.centreinar.ui.discount.strategy.DiscountResultRow
 import com.example.centreinar.ui.discount.viewmodel.DiscountViewModel
-import com.example.centreinar.ui.classificationProcess.components.OfficialReferenceTable
 
 @Composable
 fun DiscountResultScreen(
     navController: NavController,
     viewModel: DiscountViewModel = hiltViewModel()
-){
-    // 1. O Scaffold envolve toda a tela
-    Scaffold(
-        modifier = Modifier.fillMaxSize()
-    ) { innerPadding -> // Esse innerPadding contém as medidas da barra de status e navegação
+) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val discountResult by viewModel.discountResult.collectAsStateWithLifecycle()
 
-        val discounts by viewModel.discounts.collectAsStateWithLifecycle()
-        val lastUsedLimit by viewModel.lastUsedLimit.collectAsStateWithLifecycle()
-        val currentGroup = viewModel.selectedGroup
-        val allOfficialLimits by viewModel.allOfficialLimits.collectAsStateWithLifecycle()
-        var showMoreDetails by remember { mutableStateOf(false) }
-        val context = LocalContext.current
+    // Coletamos os limites brutos da base de dados
+    val allOfficialLimits by viewModel.allOfficialLimits.collectAsStateWithLifecycle()
 
-        // Verificação se é classificação oficial
-        val isOfficial = viewModel.isOfficial == true
+    val context = LocalContext.current
+    var showDetails by remember { mutableStateOf(false) }
 
-        // Carrega os limites utilizados assim que a tela abre
-        LaunchedEffect(Unit) {
-            viewModel.loadLastUsedLimit()
-            viewModel.loadDefaultLimits()
-        }
+    LaunchedEffect(Unit) {
+        viewModel.loadDefaultLimits()
+    }
 
+    Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -61,95 +53,184 @@ fun DiscountResultScreen(
                     .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                if (discounts != null) {
-                    DiscountSimplifiedResultsTable(discounts!!)
-
-                    Spacer(Modifier.height(16.dp))
-
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Switch(
-                            checked = showMoreDetails,
-                            onCheckedChange = { showMoreDetails = it }
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        Text("Mais detalhes")
+                when {
+                    uiState.isLoading -> {
+                        CircularProgressIndicator(modifier = Modifier.padding(32.dp))
                     }
 
-                    if (showMoreDetails) {
-                        Spacer(Modifier.height(8.dp))
-                        DiscountResultsTable(discounts!!)
-                    }
-
-                    // TABELA DE LIMITES
-                    if (lastUsedLimit != null) {
-                        Spacer(Modifier.height(24.dp))
-                        Text(
-                            text = "Limites Utilizados no Cálculo",
-                            style = MaterialTheme.typography.titleMedium,
-                            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-                            textAlign = TextAlign.Center
+                    discountResult != null -> {
+                        GenericDiscountTable(
+                            title = "RESUMO DOS DESCONTOS",
+                            rows  = discountResult!!.summaryRows
                         )
 
-                        // Se não houver limites oficiais carregados, usamos o limite que foi usado no cálculo.
-                        val dadosParaTabela = allOfficialLimits.ifEmpty { listOf(lastUsedLimit!!) }
+                        Spacer(Modifier.height(16.dp))
 
-                        OfficialReferenceTable(
-                            grain = "Soja",
-                            group = currentGroup ?: 1,
-                            isOfficial = isOfficial,
-                            data = dadosParaTabela
-                        )
+                        Row(
+                            verticalAlignment     = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Switch(
+                                checked         = showDetails,
+                                onCheckedChange = { showDetails = it }
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text("Mais detalhes")
+                        }
+
+                        if (showDetails && discountResult!!.detailRows.isNotEmpty()) {
+                            Spacer(Modifier.height(8.dp))
+                            GenericDiscountTable(
+                                title      = "DESCONTOS POR DEFEITO",
+                                headerCol1 = "DEFEITO",
+                                rows       = discountResult!!.detailRows
+                            )
+                        }
+
+                        // Tabela de limites oficiais
+                        if (allOfficialLimits.isNotEmpty()) {
+                            Spacer(Modifier.height(24.dp))
+                            Text(
+                                text      = "Limites Utilizados no Cálculo",
+                                style     = MaterialTheme.typography.titleMedium,
+                                modifier  = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                                textAlign = TextAlign.Center
+                            )
+
+                            OfficialReferenceTable(
+                                grain = viewModel.selectedGrain,
+                                group = viewModel.selectedGroup ?: 1,
+                                isOfficial = viewModel.isOfficial,
+                                data = allOfficialLimits
+                            )
+                        }
                     }
 
-                } else {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("Algo não deu certo")
+                    else -> {
+                        Box(
+                            modifier         = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("Algo não deu certo.")
+                        }
                     }
                 }
 
                 Spacer(Modifier.height(16.dp))
             }
 
-            // Botões de ação
+            ActionButtons(
+                onBack = { navController.popBackStack() },
+                primaryActionText = "Nova Análise",
+                onPrimaryAction = {
+                    navController.navigate("home") {
+                        popUpTo("main_flow") { inclusive = true }
+                    }
+                },
+                onExportPdf = { viewModel.exportPdf(context) }
+            )
+        }
+    }
+}
+
+// =============================================================================
+// Tabela genérica para exibir os resultados de descontos
+// =============================================================================
+
+@Composable
+private fun GenericDiscountTable(
+    title: String,
+    rows: List<DiscountResultRow>,
+    headerCol1: String = "Tipo de Quebra",
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier.padding(6.dp).fillMaxWidth(),
+        shape    = MaterialTheme.shapes.medium
+    ) {
+        Column(modifier = Modifier.padding(6.dp)) {
+
+            Box(
+                modifier         = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text       = title,
+                    style      = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color      = MaterialTheme.colorScheme.primary
+                )
+            }
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
             Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(1.dp, MaterialTheme.colorScheme.outline)
             ) {
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.primaryContainer)
+                        .padding(vertical = 5.dp, horizontal = 6.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Button(
-                        modifier = Modifier.weight(1f),
-                        onClick = { navController.popBackStack() }
-                    ) {
-                        Text("Voltar")
-                    }
-
-                    Button(
-                        modifier = Modifier.weight(1f),
-                        onClick = { navController.navigate("home") }
-                    ) {
-                        Text("Nova Análise")
-                    }
+                    Text(
+                        text       = headerCol1,
+                        style      = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold,
+                        color      = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier   = Modifier.weight(2f)
+                    )
+                    Text(
+                        text       = "Qtd (kg)",
+                        style      = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold,
+                        color      = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier   = Modifier.weight(1f),
+                        textAlign  = TextAlign.End
+                    )
+                    Text(
+                        text       = "Valor (R$)",
+                        style      = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold,
+                        color      = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier   = Modifier.weight(1f),
+                        textAlign  = TextAlign.End
+                    )
                 }
 
-                Button(
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = {
-                        viewModel.loadLastUsedLimit()
-                        val currentLimit = lastUsedLimit
-                        if (currentLimit != null && discounts != null) {
-                            viewModel.exportDiscount(context, discounts!!, currentLimit)
-                        } else {
-                            Log.e("DiscountResultsScreen", "Limit is null, trying to load...")
-                        }
+                rows.forEachIndexed { index, row ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 12.dp, horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text     = row.label,
+                            style    = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier.weight(2f),
+                            color    = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text      = "%.2f".format(row.massKg),
+                            style     = MaterialTheme.typography.bodyLarge,
+                            modifier  = Modifier.weight(1f),
+                            textAlign = TextAlign.End,
+                            color     = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text      = "%.2f".format(row.valueRS),
+                            style     = MaterialTheme.typography.bodyLarge,
+                            modifier  = Modifier.weight(1f),
+                            textAlign = TextAlign.End,
+                            color     = MaterialTheme.colorScheme.onSurface
+                        )
                     }
-                ) {
-                    Text("Exportar PDF")
+                    if (index < rows.lastIndex) {
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                    }
                 }
             }
         }

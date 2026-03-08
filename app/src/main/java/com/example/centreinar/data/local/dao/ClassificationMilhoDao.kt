@@ -19,4 +19,7 @@ interface ClassificationMilhoDao {
 
     @Query("SELECT * FROM classification_milho ORDER BY id DESC LIMIT 1")
     suspend fun getLastClassification(): ClassificationMilho
+
+    @Query("SELECT id FROM classification_milho WHERE grain = :grain ORDER BY id DESC LIMIT 1")
+    suspend fun getLastIdByGrain(grain: String): Int?
 }

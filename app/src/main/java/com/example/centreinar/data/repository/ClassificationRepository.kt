@@ -5,6 +5,7 @@ import com.example.centreinar.ColorClassificationSoja
 import com.example.centreinar.DisqualificationSoja
 import com.example.centreinar.LimitSoja
 import com.example.centreinar.SampleSoja
+import com.example.centreinar.data.local.entities.ToxicSeedSoja
 import com.example.centreinar.domain.model.LimitCategory
 
 interface ClassificationRepository {
@@ -12,7 +13,6 @@ interface ClassificationRepository {
     suspend fun classifySample(sample: SampleSoja, limitSource: Int, lastDisq: DisqualificationSoja): Long
 
     suspend fun getSample(id: Int): SampleSoja?
-
 
     suspend fun setSample(
         grain: String,
@@ -61,6 +61,16 @@ interface ClassificationRepository {
         insects: Int
     ): Long
 
+    suspend fun insertDisqualification(disqualification: DisqualificationSoja): Long
+
+    suspend fun getLastDisqualificationId(): Int?
+
+    suspend fun getLastDisqualification(): DisqualificationSoja?
+
+    suspend fun updateClassificationIdOnDisqualification(disqualificationId: Int, classificationId: Int)
+
+    suspend fun getColorClassification(classificationId: Int): ColorClassificationSoja?
+
     suspend fun setLimit(
         grain: String,
         group: Int,
@@ -76,6 +86,9 @@ interface ClassificationRepository {
     ): Long
 
     suspend fun getLastLimitSource(): Int
+
+    suspend fun getLimitsByGroup(grain: String, group: Int, source: Int): List<LimitSoja>
+
     suspend fun getLastColorClass(): ColorClassificationSoja?
     suspend fun getDisqualificationByClassificationId(idClassification: Int): DisqualificationSoja?
     suspend fun updateDisqualification(classificationId: Int, finalType: Int)
@@ -90,4 +103,8 @@ interface ClassificationRepository {
     suspend fun insertColorClassification(colorEntity: ColorClassificationSoja)
 
     suspend fun getColorClassificationBySample(classificationId: Int): ColorClassificationSoja?
+
+    suspend fun insertToxicSeeds(seeds: List<ToxicSeedSoja>)
+
+    suspend fun getToxicSeedsByDisqualificationId(disqualificationId: Int): List<ToxicSeedSoja>
 }

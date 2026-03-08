@@ -3,6 +3,7 @@ package com.example.centreinar
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.example.centreinar.ui.classificationProcess.strategy.BaseClassification
 import kotlin.collections.map
 
 
@@ -10,14 +11,14 @@ import kotlin.collections.map
     tableName = "classification_soja"
 )
 data class ClassificationSoja(
-    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    @PrimaryKey(autoGenerate = true) override val id: Int = 0,
 
     @ColumnInfo(name = "grain") val grain: String = "",
     @ColumnInfo(name = "group") val group: Int = 0,
     @ColumnInfo(name = "sampleId") val sampleId: Int = 0,
 
     // --- Defeitos (% Porcentagens) ---
-    @ColumnInfo(name = "moisturePercentage") val moisturePercentage: Float = 0.0f,
+    @ColumnInfo(name = "moisturePercentage") override val moisturePercentage: Float = 0.0f,
     @ColumnInfo(name = "impuritiesPercentage") val impuritiesPercentage: Float = 0.0f,
     @ColumnInfo(name = "brokenCrackedDamagedPercentage") val brokenCrackedDamagedPercentage: Float = 0.0f,
     @ColumnInfo(name = "greenishPercentage") val greenishPercentage: Float = 0.0f,
@@ -36,11 +37,11 @@ data class ClassificationSoja(
 
     // Tipos Individuais ---
     // Ex: 1 = Tipo 1, 2 = Tipo 2, 7 = Fora de Tipo, etc.
-    @ColumnInfo(name = "fermented") val fermented: Int = 0,
-    @ColumnInfo(name = "germinated") val germinated: Int = 0,
-    @ColumnInfo(name = "immature") val immature: Int = 0,
-    @ColumnInfo(name = "shriveled") val shriveled: Int = 0,
-    @ColumnInfo(name = "sour") val sour: Int = 0,
+    @ColumnInfo(name = "fermented") val fermentedType: Int = 0,
+    @ColumnInfo(name = "germinated") val germinatedType: Int = 0,
+    @ColumnInfo(name = "immature") val immatureType: Int = 0,
+    @ColumnInfo(name = "shriveled") val shriveledType: Int = 0,
+    @ColumnInfo(name = "sour") val sourType: Int = 0,
     @ColumnInfo(name = "impuritiesType") val impuritiesType: Int = 0,
     @ColumnInfo(name = "brokenCrackedDamagedType") val brokenCrackedDamagedType: Int = 0,
     @ColumnInfo(name = "greenishType") val greenishType: Int = 0,
@@ -50,8 +51,9 @@ data class ClassificationSoja(
     @ColumnInfo(name = "spoiledType") val spoiledType: Int = 0,
 
     // --- Resultado Final ---
-    @ColumnInfo(name = "finalType") val finalType: Int = 0
-)
+    @ColumnInfo(name = "finalType") override val finalType: Int = 0,
+    @ColumnInfo(name = "isDisqualified") val isDisqualified: Boolean = false // Guarda se a classificação foi desclassificada ou não...
+) : BaseClassification
 
 
 

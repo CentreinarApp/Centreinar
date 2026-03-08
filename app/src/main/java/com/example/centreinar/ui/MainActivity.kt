@@ -3,50 +3,39 @@ package com.example.centreinar.ui
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavBackStackEntry
+import androidx.navigation.NavController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.navigation.navigation
-import androidx.activity.enableEdgeToEdge
 
-// Imports SOJA
 import com.example.centreinar.ui.classificationProcess.screens.*
 import com.example.centreinar.ui.discount.screens.*
-
-// Imports MILHO (Certifique-se que os pacotes estão corretos)
-import com.example.centreinar.ui.screens.MilhoClassificationInputScreen
-import com.example.centreinar.ui.screens.MilhoClassificationResultScreen
-import com.example.centreinar.ui.discount.screens.MilhoDiscountInputScreen
-
-// ViewModels
 import com.example.centreinar.ui.classificationProcess.viewmodel.ClassificationViewModel
 import com.example.centreinar.ui.discount.viewmodel.DiscountViewModel
 import com.example.centreinar.ui.theme.CentreinarTheme
 import dagger.hilt.android.AndroidEntryPoint
 
-
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         enableEdgeToEdge()
-
         setContent {
             CentreinarTheme {
-                // Surface é necessário para garantir que o NavHost preencha o espaço
                 Surface(modifier = Modifier.fillMaxSize()) {
                     CentreinarApp()
                 }
@@ -68,316 +57,174 @@ fun CentreinarApp() {
             startDestination = "home",
             route = "main_flow"
         ) {
-            // -----------------------------
-            // Fluxo CLASSIFICAÇÃO (SOJA)
-            // -----------------------------
+
+            // -------------------------------------------------------------------------
+            // Fluxo CLASSIFICAÇÃO
+            // -------------------------------------------------------------------------
+
             composable("home") { backStackEntry ->
-                val parentEntry = remember(backStackEntry) {
-                    navController.getBackStackEntry("main_flow")
-                }
                 HomeScreen(
                     navController,
-                    hiltViewModel<ClassificationViewModel>(parentEntry)
+                    backStackEntry.sharedClassificationViewModel(navController)
                 )
             }
 
             composable("grainSelection") { backStackEntry ->
-                val parentEntry = remember(backStackEntry) {
-                    navController.getBackStackEntry("main_flow")
-                }
                 GrainScreen(
                     navController,
-                    hiltViewModel<ClassificationViewModel>(parentEntry)
+                    backStackEntry.sharedClassificationViewModel(navController)
                 )
             }
 
             composable("groupSelection") { backStackEntry ->
-                val parentEntry = remember(backStackEntry) {
-                    navController.getBackStackEntry("main_flow")
-                }
                 GroupSelectionScreen(
                     navController,
-                    hiltViewModel<ClassificationViewModel>(parentEntry)
+                    backStackEntry.sharedClassificationViewModel(navController)
                 )
             }
 
             composable("officialOrNot") { backStackEntry ->
-                val parentEntry = remember(backStackEntry) {
-                    navController.getBackStackEntry("main_flow")
-                }
                 OfficialOrNotOfficialScreen(
                     navController,
-                    hiltViewModel<ClassificationViewModel>(parentEntry)
+                    backStackEntry.sharedClassificationViewModel(navController)
                 )
             }
 
             composable("limitInput") { backStackEntry ->
-                val parentEntry = remember(backStackEntry) {
-                    navController.getBackStackEntry("main_flow")
-                }
                 LimitInputScreen(
                     navController,
-                    hiltViewModel<ClassificationViewModel>(parentEntry)
+                    backStackEntry.sharedClassificationViewModel(navController)
                 )
             }
 
-            composable("disqualification") { backStackEntry ->
-                val parentEntry = remember(backStackEntry) {
-                    navController.getBackStackEntry("main_flow")
-                }
+            composable(
+                route = "disqualification?classificationId={classificationId}",
+                arguments = listOf(
+                    navArgument("classificationId") {
+                        type = NavType.IntType
+                        defaultValue = -1
+                    }
+                )
+            ) { backStackEntry ->
+                val id = backStackEntry.arguments?.getInt("classificationId") ?: -1
                 DisqualificationScreen(
-                    navController,
-                    hiltViewModel<ClassificationViewModel>(parentEntry)
+                    navController = navController,
+                    classificationId = id,
+                    viewModel = backStackEntry.sharedClassificationViewModel(navController)
                 )
             }
 
             composable("classification") { backStackEntry ->
-                val parentEntry = remember(backStackEntry) {
-                    navController.getBackStackEntry("main_flow")
-                }
                 ClassificationInputScreen(
                     navController,
-                    hiltViewModel<ClassificationViewModel>(parentEntry)
+                    backStackEntry.sharedClassificationViewModel(navController)
                 )
             }
 
             composable("classificationResult") { backStackEntry ->
-                val parentEntry = remember(backStackEntry) {
-                    navController.getBackStackEntry("main_flow")
-                }
-                ClassificationResult(
-                    navController,
-                    hiltViewModel<ClassificationViewModel>(parentEntry)
+                ClassificationResultScreen(
+                    navController     = navController,
+                    classificationViewModel = backStackEntry.sharedClassificationViewModel(navController),
+                    discountViewModel = backStackEntry.sharedDiscountViewModel(navController)
                 )
             }
 
-            composable("colorClassInput") { backStackEntry ->
-                val parentEntry = remember(backStackEntry) {
-                    navController.getBackStackEntry("main_flow")
-                }
-                ColorClassInput(
+            // -------------------------------------------------------------------------
+            // Fluxo DESCONTOS
+            // -------------------------------------------------------------------------
+
+            composable("grainSelectionDiscount") { backStackEntry ->
+                GrainSelectionDiscountScreen(
                     navController,
-                    hiltViewModel<ClassificationViewModel>(parentEntry)
+                    backStackEntry.sharedDiscountViewModel(navController)
                 )
             }
 
-            // -----------------------------
-            // Fluxo DESCONTOS (Soja)
-            // -----------------------------
+            composable("groupSelectionDiscount") { backStackEntry ->
+                DiscountGroupSelectionScreen(
+                    navController,
+                    backStackEntry.sharedDiscountViewModel(navController)
+                )
+            }
+
+            composable("officialOrNotDiscount") { backStackEntry ->
+                OfficialOrNotOfficialDiscountScreen(
+                    navController,
+                    backStackEntry.sharedDiscountViewModel(navController)
+                )
+            }
+
+            composable("discountLimitInput") { backStackEntry ->
+                DiscountLimitInputScreen(
+                    navController,
+                    backStackEntry.sharedDiscountViewModel(navController)
+                )
+            }
+
             composable(
                 route = "discountInputScreen?classificationId={classificationId}",
                 arguments = listOf(
                     navArgument("classificationId") {
                         type = NavType.IntType
-                        defaultValue = -1 // Se não vier ID, o padrão é -1
-                    }
-                )
-            ) { backStackEntry ->
-                val classificationId = backStackEntry.arguments?.getInt("classificationId") ?: -1
-
-                val parentEntry = remember(backStackEntry) {
-                    navController.getBackStackEntry("main_flow")
-                }
-
-                DiscountInputScreen(
-                    navController = navController,
-                    // Passa o ID para o ViewModel apenas se ele for válido
-                    classificationId = if (classificationId != -1) classificationId else null,
-                    viewModel = hiltViewModel<DiscountViewModel>(parentEntry)
-                )
-            }
-
-            composable("grainSelectionDiscount") { backStackEntry ->
-                val parentEntry = remember(backStackEntry) {
-                    navController.getBackStackEntry("main_flow")
-                }
-                GrainSelectionDiscountScreen(
-                    navController,
-                    hiltViewModel<DiscountViewModel>(parentEntry)
-                )
-            }
-
-            composable("groupSelectionDiscount") { backStackEntry ->
-                val parentEntry = remember(backStackEntry) {
-                    navController.getBackStackEntry("main_flow")
-                }
-                DiscountGroupSelectionScreen(
-                    navController,
-                    hiltViewModel<DiscountViewModel>(parentEntry)
-                )
-            }
-
-            composable("officialOrNotDiscount") { backStackEntry ->
-                val parentEntry = remember(backStackEntry) {
-                    navController.getBackStackEntry("main_flow")
-                }
-                OfficialOrNotOfficialDiscountScreen(
-                    navController,
-                    hiltViewModel<DiscountViewModel>(parentEntry)
-                )
-            }
-
-            composable("discountLimitInput") { backStackEntry ->
-                val parentEntry = remember(backStackEntry) {
-                    navController.getBackStackEntry("main_flow")
-                }
-                DiscountLimitInputScreen(
-                    navController,
-                    hiltViewModel<DiscountViewModel>(parentEntry)
-                )
-            }
-
-            composable("discountResultsScreen") { backStackEntry ->
-                val parentEntry = remember(backStackEntry) {
-                    navController.getBackStackEntry("main_flow")
-                }
-                DiscountResultScreen(
-                    navController,
-                    hiltViewModel<DiscountViewModel>(parentEntry)
-                )
-            }
-
-            composable("classificationToDiscount") { backStackEntry ->
-                val parentEntry = remember(backStackEntry) {
-                    navController.getBackStackEntry("main_flow")
-                }
-                ClassificationToDiscountInputScreen(
-                    navController,
-                    hiltViewModel<DiscountViewModel>(parentEntry)
-                )
-            }
-
-            // -----------------------------
-            // Fluxo CLASSIFICAÇÃO (MILHO)
-            // -----------------------------
-            composable("milhoGrainSelection") { backStackEntry ->
-                val parentEntry = remember(backStackEntry) {
-                    navController.getBackStackEntry("main_flow")
-                }
-                MilhoClasseScreen(
-                    navController,
-                    hiltViewModel<ClassificationViewModel>(parentEntry)
-                )
-            }
-
-            composable("milhoGroupSelection") { backStackEntry ->
-                val parentEntry = remember(backStackEntry) {
-                    navController.getBackStackEntry("main_flow")
-                }
-                MilhoDefeitosScreen(
-                    navController,
-                    hiltViewModel<ClassificationViewModel>(parentEntry)
-                )
-            }
-
-            composable("milhoOfficialOrNot") { backStackEntry ->
-                val parentEntry = remember(backStackEntry) {
-                    navController.getBackStackEntry("main_flow")
-                }
-                MilhoDefinirLimitesScreen(
-                    navController,
-                    hiltViewModel<ClassificationViewModel>(parentEntry)
-                )
-            }
-
-            composable("milhoLimitInput") { backStackEntry ->
-                val parentEntry = remember(backStackEntry) {
-                    navController.getBackStackEntry("main_flow")
-                }
-                MilhoImpurezaUmidadeScreen(
-                    navController,
-                    hiltViewModel<ClassificationViewModel>(parentEntry)
-                )
-            }
-
-            composable("milhoDisqualification") { backStackEntry ->
-                val parentEntry = remember(backStackEntry) {
-                    navController.getBackStackEntry("main_flow")
-                }
-                MilhoDescontosScreen(
-                    navController,
-                    hiltViewModel<ClassificationViewModel>(parentEntry)
-                )
-            }
-
-            composable("milhoClassificationInput") { backStackEntry ->
-                val parentEntry = remember(backStackEntry) {
-                    navController.getBackStackEntry("main_flow")
-                }
-                ClassificationInputScreen(
-                    navController,
-                    hiltViewModel<ClassificationViewModel>(parentEntry)
-                )
-            }
-
-            composable("milhoResultado") { backStackEntry ->
-                val parentEntry = remember(backStackEntry) {
-                    navController.getBackStackEntry("main_flow")
-                }
-                MilhoResultadoScreen(
-                    navController,
-                    hiltViewModel<ClassificationViewModel>(parentEntry)
-                )
-            }
-
-            composable("milhoResumoFinal") { backStackEntry ->
-                val parentEntry = remember(backStackEntry) {
-                    navController.getBackStackEntry("main_flow")
-                }
-                ResumoFinalMilhoScreen(
-                    navController,
-                    hiltViewModel<ClassificationViewModel>(parentEntry)
-                )
-            }
-            // =================================================
-            // FLUXO MILHO (DESCONTOS)
-            // =================================================
-
-            composable(
-                // Adicionamos &isOfficial={isOfficial} na rota
-                route = "milhoDiscountInputScreen?classificationId={classificationId}&isOfficial={isOfficial}",
-                arguments = listOf(
-                    navArgument("classificationId") {
-                        type = NavType.IntType
                         defaultValue = -1
-                    },
-                    navArgument("isOfficial") {
-                        type = NavType.BoolType
-                        defaultValue = true // Valor padrão
                     }
                 )
             ) { backStackEntry ->
                 val id = backStackEntry.arguments?.getInt("classificationId") ?: -1
-                val isOfficialArg = backStackEntry.arguments?.getBoolean("isOfficial") ?: true
-
-                val parentEntry = remember(backStackEntry) {
-                    navController.getBackStackEntry("main_flow")
-                }
-                val viewModel = hiltViewModel<DiscountViewModel>(parentEntry)
-
-                // Sincroniza o valor recebido pela rota com o ViewModel
-                LaunchedEffect(isOfficialArg) {
-                    viewModel.isOfficial = isOfficialArg
-                }
-
-                MilhoDiscountInputScreen(
+                DiscountInputScreen(
                     navController = navController,
                     classificationId = if (id != -1) id else null,
-                    viewModel = viewModel
+                    viewModel = backStackEntry.sharedDiscountViewModel(navController)
                 )
             }
 
-            composable("milhoDiscountResult") { backStackEntry ->
-                val parentEntry = remember(backStackEntry) {
-                    navController.getBackStackEntry("main_flow")
-                }
-                MilhoDiscountResultScreen(
+            composable("milhoDiscountInputScreen?isOfficial={isOfficial}",
+                arguments = listOf(
+                    navArgument("isOfficial") {
+                        type = NavType.BoolType
+                        defaultValue = true
+                    }
+                )
+            ) { backStackEntry ->
+                DiscountInputScreen(
+                    navController = navController,
+                    classificationId = null,
+                    viewModel = backStackEntry.sharedDiscountViewModel(navController)
+                )
+            }
+
+            composable("discountResultsScreen") { backStackEntry ->
+                DiscountResultScreen(
                     navController,
-                    hiltViewModel<DiscountViewModel>(parentEntry)
+                    backStackEntry.sharedDiscountViewModel(navController)
                 )
             }
         }
     }
+}
+
+// =============================================================================
+// Funções de Extensão
+// =============================================================================
+
+@Composable
+private fun NavBackStackEntry.sharedClassificationViewModel(
+    navController: NavController
+): ClassificationViewModel {
+    val parentEntry = remember(this) {
+        navController.getBackStackEntry("main_flow")
+    }
+    return hiltViewModel(parentEntry)
+}
+
+@Composable
+private fun NavBackStackEntry.sharedDiscountViewModel(
+    navController: NavController
+): DiscountViewModel {
+    val parentEntry = remember(this) {
+        navController.getBackStackEntry("main_flow")
+    }
+    return hiltViewModel(parentEntry)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

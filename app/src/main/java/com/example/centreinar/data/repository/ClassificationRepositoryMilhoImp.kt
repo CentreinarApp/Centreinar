@@ -2,15 +2,10 @@ package com.example.centreinar.data.repository
 
 import android.util.Log
 import com.example.centreinar.ClassificationMilho
-import com.example.centreinar.data.local.dao.ClassificationMilhoDao
-import com.example.centreinar.data.local.dao.ColorClassificationMilhoDao
-import com.example.centreinar.data.local.dao.LimitMilhoDao
-import com.example.centreinar.data.local.dao.SampleMilhoDao
-import com.example.centreinar.data.local.entity.ColorClassificationMilho
-import com.example.centreinar.data.local.entity.DisqualificationMilho
-import com.example.centreinar.data.local.entity.LimitMilho
-import com.example.centreinar.data.local.entity.SampleMilho
+import com.example.centreinar.data.local.dao.*
+import com.example.centreinar.data.local.entity.*
 import com.example.centreinar.util.Utilities
+import com.example.centreinar.util.roundToTwoDecimals
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -20,10 +15,19 @@ class ClassificationRepositoryMilhoImpl @Inject constructor(
     private val classificationDao: ClassificationMilhoDao,
     private val colorClassificationDao: ColorClassificationMilhoDao,
     private val sampleDao: SampleMilhoDao,
+    private val disqualificationMilhoDao: DisqualificationMilhoDao,
+    private val toxicSeedMilhoDao: ToxicSeedMilhoDao,
     private val tools: Utilities
 ) : ClassificationRepositoryMilho {
+    override suspend fun getLimitsByGroup(grain: String, group: Int, source: Int): List<LimitMilho> {
+        return limitDao.getLimitsBySource(grain, source, group)
+    }
+
+    override suspend fun getLastClassificationId(grain: String): Int? {
+        return classificationDao.getLastIdByGrain(grain)
+    }
+
     override suspend fun classifySample(sample: SampleMilho, limitSource: Int, lastDisq: DisqualificationMilho): Long {
-        // Busca os limites no banco (Retorna uma lista com Limite Tipo 1, Tipo 2 e Tipo 3)
         val limitsList = limitDao.getLimitsBySource(
             grain = sample.grain,
             limitSource = limitSource,
@@ -34,35 +38,37 @@ class ClassificationRepositoryMilhoImpl @Inject constructor(
             throw IllegalStateException("Limites não encontrados para Milho.")
         }
 
-        // Separa os objetos de limite para facilitar a comparação
         val l1 = limitsList.find { it.type == 1 }
         val l2 = limitsList.find { it.type == 2 }
         val l3 = limitsList.find { it.type == 3 }
 
-        // Se faltar algum limite na tabela, usamos o que tem ou padrão alto
         if (l1 == null || l2 == null || l3 == null) {
             throw IllegalStateException("Tabela de limites incompleta (precisa de Tipo 1, 2 e 3).")
         }
 
-        // Cálculos de Porcentagem
+        // Cálculos de PESO (mantendo os valores crus, sem arredondar)
         val cleanWeight = if (sample.cleanWeight > 0f) sample.cleanWeight else (sample.sampleWeight - (sample.impurities + sample.broken))
 
-        val pImpurities = tools.calculateDefectPercentage(sample.impurities, cleanWeight)
-        val pBroken = tools.calculateDefectPercentage(sample.broken, cleanWeight)
-        val pArdido = tools.calculateDefectPercentage(sample.ardido, cleanWeight)
-        val pMofado = tools.calculateDefectPercentage(sample.mofado, cleanWeight)
-        val pCarunchado = tools.calculateDefectPercentage(sample.carunchado, cleanWeight)
+        // Soma dos pesos puros (em gramas) para o Total de Avariados do Milho
+        val sumSpoiledTotalWeights = sample.ardido + sample.mofado + sample.fermented + sample.germinated + sample.immature + sample.gessado
 
-        val pFermented = tools.calculateDefectPercentage(sample.fermented, cleanWeight)
-        val pGerminated = tools.calculateDefectPercentage(sample.germinated, cleanWeight)
-        val pImmature = tools.calculateDefectPercentage(sample.immature, cleanWeight)
-        val pGessado = tools.calculateDefectPercentage(sample.gessado, cleanWeight)
+        // Cálculo das PORCENTAGENS
+        // Impurezas e quebrados usa o peso bruto da amostra
+        val pImpurities = tools.calculateDefectPercentage(sample.impurities, sample.sampleWeight).roundToTwoDecimals()
+        val pBroken = tools.calculateDefectPercentage(sample.broken, sample.sampleWeight).roundToTwoDecimals()
 
-        // Total Avariados
-        val pSpoiledTotal = pArdido + pMofado + pFermented + pGerminated + pImmature + pGessado
+        // Os demais defeitos usa o peso de amostra limpa
+        val pArdido = tools.calculateDefectPercentage(sample.ardido, cleanWeight).roundToTwoDecimals()
+        val pMofado = tools.calculateDefectPercentage(sample.mofado, cleanWeight).roundToTwoDecimals()
+        val pCarunchado = tools.calculateDefectPercentage(sample.carunchado, cleanWeight).roundToTwoDecimals()
+        val pFermented = tools.calculateDefectPercentage(sample.fermented, cleanWeight).roundToTwoDecimals()
+        val pGerminated = tools.calculateDefectPercentage(sample.germinated, cleanWeight).roundToTwoDecimals()
+        val pImmature = tools.calculateDefectPercentage(sample.immature, cleanWeight).roundToTwoDecimals()
+        val pGessado = tools.calculateDefectPercentage(sample.gessado, cleanWeight).roundToTwoDecimals()
 
-        // DEFINIÇÃO DOS TIPOS INDIVIDUAIS ---
-        // Função local para determinar o tipo baseado nos 3 limites
+        // Porcentagem do Total de Avariados calculada pela soma real dos pesos
+        val pSpoiledTotal = tools.calculateDefectPercentage(sumSpoiledTotalWeights, cleanWeight).roundToTwoDecimals()
+
         fun getIndividualType(value: Float, limit1: Float, limit2: Float, limit3: Float): Int {
             return when {
                 value <= limit1 -> 1
@@ -72,36 +78,31 @@ class ClassificationRepositoryMilhoImpl @Inject constructor(
             }
         }
 
-        // Guarda os tipos dos defeitos...
+        // Tipificação: Agora usa as porcentagens arredondadas
         val typeImpurities = getIndividualType(pImpurities, l1.impuritiesUpLim, l2.impuritiesUpLim, l3.impuritiesUpLim)
         val typeBroken = getIndividualType(pBroken, l1.brokenUpLim, l2.brokenUpLim, l3.brokenUpLim)
         val typeArdido = getIndividualType(pArdido, l1.ardidoUpLim, l2.ardidoUpLim, l3.ardidoUpLim)
         val typeCarunchado = getIndividualType(pCarunchado, l1.carunchadoUpLim, l2.carunchadoUpLim, l3.carunchadoUpLim)
         val typeSpoiledTotal = getIndividualType(pSpoiledTotal, l1.spoiledTotalUpLim, l2.spoiledTotalUpLim, l3.spoiledTotalUpLim)
 
-        // Define o Tipo Final (O maior entre eles)
         val allTypes = listOf(typeImpurities, typeBroken, typeArdido, typeCarunchado, typeSpoiledTotal)
         var finalType = allTypes.maxOrNull() ?: 1
 
+        // Regras de Desclassificação
         var isDisqualify = false
-        if (lastDisq.badConservation == 1 ||
-            lastDisq.strangeSmell == 1 ||
-            lastDisq.insects == 1 ||
-            lastDisq.toxicGrains == 1) {
+        if (lastDisq.badConservation == 1 || lastDisq.strangeSmell == 1 || lastDisq.insects == 1 || lastDisq.toxicGrains == 1) {
             isDisqualify = true
         }
-        if (isDisqualify) finalType = 0
 
-        // Salva no Banco
-        val sampleId = sampleDao.insert(sample) // Long
+        val sampleId = sampleDao.insert(sample)
 
+        // Salva no Banco de Dados
         val classification = ClassificationMilho(
             sampleId =  sampleId.toInt(),
             grain = sample.grain,
             group = sample.group,
-
-            // Valores Float
             moisturePercentage = sample.moisture,
+
             impuritiesPercentage = pImpurities,
             brokenPercentage = pBroken,
             ardidoPercentage = pArdido,
@@ -113,14 +114,18 @@ class ClassificationRepositoryMilhoImpl @Inject constructor(
             gessadoPercentage = pGessado,
             spoiledTotalPercentage = pSpoiledTotal,
 
-            // --- Salvando os valores dos tipos de defeito ---
             impuritiesType = typeImpurities,
             brokenType = typeBroken,
             ardidoType = typeArdido,
             carunchadoType = typeCarunchado,
             spoiledTotalType = typeSpoiledTotal,
-
-            finalType = finalType
+            mofadoType = -1,
+            fermentedType = -1,
+            germinatedType = -1,
+            immatureType = -1,
+            gessadoType = -1,
+            finalType = finalType,
+            isDisqualified = isDisqualify
         )
 
         return classificationDao.insert(classification)
@@ -129,34 +134,15 @@ class ClassificationRepositoryMilhoImpl @Inject constructor(
     override suspend fun getSample(id: Int): SampleMilho? = sampleDao.getById(id)
 
     override suspend fun setSample(
-        grain: String,
-        group: Int,
-        sampleWeight: Float,
-        broken: Float,
-        impurities: Float,
-        carunchado: Float,
-        ardido: Float,
-        mofado: Float,
-        fermented: Float,
-        germinated: Float,
-        immature: Float,
-        gessado: Float
+        grain: String, group: Int, sampleWeight: Float, broken: Float, impurities: Float,
+        carunchado: Float, ardido: Float, mofado: Float, fermented: Float,
+        germinated: Float, immature: Float, gessado: Float
     ): SampleMilho {
         val sample = SampleMilho(
-            grain = grain,
-            group = group,
-            lotWeight = 0f,
-            sampleWeight = sampleWeight,
-            cleanWeight = sampleWeight,
-            impurities = impurities,
-            broken = broken,
-            carunchado = carunchado,
-            ardido = ardido,
-            mofado = mofado,
-            fermented = fermented,
-            germinated = germinated,
-            immature = immature,
-            gessado = gessado
+            grain = grain, group = group, lotWeight = 0f, sampleWeight = sampleWeight,
+            cleanWeight = sampleWeight, impurities = impurities, broken = broken,
+            carunchado = carunchado, ardido = ardido, mofado = mofado, fermented = fermented,
+            germinated = germinated, immature = immature, gessado = gessado
         )
         sampleDao.insert(sample)
         return sample
@@ -164,39 +150,18 @@ class ClassificationRepositoryMilhoImpl @Inject constructor(
 
     override suspend fun setSample(sample: SampleMilho): Long = sampleDao.insert(sample)
 
-    override suspend fun getClassification(id: Int): ClassificationMilho? {
-        return classificationDao.getById(id)
-    }
+    override suspend fun getClassification(id: Int): ClassificationMilho? = classificationDao.getById(id)
 
     override suspend fun getLastLimitSource(): Int {
-        return try {
-            limitDao.getLastSource()
-        } catch (e: Exception) {
-            0
-        }
+        return try { limitDao.getLastSource() } catch (e: Exception) { 0 }
     }
 
-    override suspend fun getLimit(
-        grain: String,
-        group: Int,
-        tipo: Int,
-        source: Int
-    ): LimitMilho? {
-        val limits = limitDao.getLimitsByType(grain, group, tipo, source)
-        return limits.firstOrNull()
+    override suspend fun getLimit(grain: String, group: Int, tipo: Int, source: Int): LimitMilho? {
+        return limitDao.getLimitsByType(grain, group, tipo, source).firstOrNull()
     }
 
-    override suspend fun getLimitOfType1Official(
-        group: Int,
-        grain: String
-    ): Map<String, Float> {
-        val limit: LimitMilho? = limitDao.getLimitsByType(
-            grain = grain,
-            group = group,
-            tipo = 1, // Força Tipo 1
-            limitSource = 0 // Força Oficial
-        ).firstOrNull()
-
+    override suspend fun getLimitOfType1Official(group: Int, grain: String): Map<String, Float> {
+        val limit: LimitMilho? = limitDao.getLimitsByType(grain, group, 1, 0).firstOrNull()
         return if (limit != null) {
             mapOf(
                 "impuritiesUpLim" to limit.impuritiesUpLim,
@@ -207,48 +172,25 @@ class ClassificationRepositoryMilhoImpl @Inject constructor(
                 "carunchadoUpLim" to limit.carunchadoUpLim,
                 "spoiledTotalUpLim" to limit.spoiledTotalUpLim
             )
-        } else {
-            Log.w(
-                "RepoMilho",
-                "Limites oficiais Milho (Source 0) não encontrados para Grão: $grain, Grupo: $group."
-            )
-            emptyMap()
-        }
+        } else { emptyMap() }
     }
 
     override suspend fun setLimit(
-        grain: String,
-        group: Int,
-        tipo: Int,
-        impurities: Float,
-        moisture: Float,
-        broken: Float,
-        ardido: Float,
-        mofado: Float,
-        spoiledTotal: Float,
-        carunchado: Float
+        grain: String, group: Int, tipo: Int, impurities: Float, moisture: Float,
+        broken: Float, ardido: Float, mofado: Float, spoiledTotal: Float, carunchado: Float
     ) {
-        // Define um novo source para limites customizados (diferente de 0 que é o oficial)
         val lastSource = getLastLimitSource()
         val newSource = if (lastSource == 0) 1 else lastSource + 1
 
-        // Para o milho, como o seu sistema de classificação busca l1, l2 e l3,
-        // salvaremos o limite informado para os 3 tipos para evitar erros de "Tabela incompleta"
-        val tipos = listOf(1, 2, 3)
+        // Usamos o 'tipo' passado ou salvamos para os 3 tipos se for customizado
+        val tiposParaSalvar = if (tipo != 0) listOf(tipo) else listOf(1, 2, 3)
 
-        tipos.forEach { tipoIterado ->
+        tiposParaSalvar.forEach { t ->
             val limit = LimitMilho(
-                source = newSource,
-                grain = grain,
-                group = group,
-                type = tipoIterado,
-                impuritiesUpLim = impurities,
-                moistureUpLim = moisture,
-                brokenUpLim = broken,
-                ardidoUpLim = ardido,
-                mofadoUpLim = mofado,
-                spoiledTotalUpLim = spoiledTotal,
-                carunchadoUpLim = carunchado
+                source = newSource, grain = grain, group = group, type = t,
+                impuritiesUpLim = impurities, moistureUpLim = moisture,
+                brokenUpLim = broken, ardidoUpLim = ardido, mofadoUpLim = mofado,
+                spoiledTotalUpLim = spoiledTotal, carunchadoUpLim = carunchado
             )
             limitDao.insertLimit(limit)
         }
@@ -264,5 +206,37 @@ class ClassificationRepositoryMilhoImpl @Inject constructor(
 
     override suspend fun getLastColorClassMilho(): ColorClassificationMilho? {
         return colorClassificationDao.getLastColorClass()
+    }
+
+    override suspend fun getLastDisqualificationId(): Int? {
+        return disqualificationMilhoDao.getLastDisqualificationId()
+    }
+
+    override suspend fun insertDisqualification(disqualification: DisqualificationMilho): Long {
+        return disqualificationMilhoDao.insert(disqualification)
+    }
+
+    override suspend fun getLastDisqualification(): DisqualificationMilho? {
+        return disqualificationMilhoDao.getLastDisqualification()
+    }
+
+    override suspend fun updateClassificationIdOnDisqualification(disqualificationId: Int, classificationId: Int) {
+        disqualificationMilhoDao.updateClassificationId(disqualificationId, classificationId)
+    }
+
+    override suspend fun getDisqualificationByClassificationId(classificationId: Int): DisqualificationMilho? {
+        return disqualificationMilhoDao.getByClassificationId(classificationId)
+    }
+
+    override suspend fun getToxicSeedsByDisqualificationId(disqualificationId: Int): List<ToxicSeedMilho> {
+        return toxicSeedMilhoDao.getToxicSeedsByDisqualificationId(disqualificationId)
+    }
+
+    override suspend fun insertToxicSeeds(seeds: List<ToxicSeedMilho>) {
+        toxicSeedMilhoDao.insertAll(seeds)
+    }
+
+    override suspend fun getColorClassification(classifId: Long): ColorClassificationMilho? {
+        return colorClassificationDao.getByClassificationId(classifId)
     }
 }

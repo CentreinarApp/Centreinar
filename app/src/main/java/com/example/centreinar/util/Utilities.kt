@@ -5,10 +5,13 @@ import com.example.centreinar.data.local.entity.LimitMilho
 import javax.inject.Inject
 import javax.inject.Singleton
 import java.math.RoundingMode
+import java.text.DecimalFormat
+import java.text.DecimalFormatSymbols
+import java.util.Locale
 
 @Singleton
 class Utilities @Inject constructor() {
-
+    val universalFormat = DecimalFormat("#.##", DecimalFormatSymbols(Locale.US))
 
     fun findCategoryForValue(intervals: List<Pair<Float, Float>>, value: Float): Int {
         intervals.forEachIndexed { index, interval ->
@@ -107,3 +110,5 @@ class Utilities @Inject constructor() {
         return allTypes.maxOrNull() ?: 3
     }
 }
+
+fun String.toFloatOrDefault(): Float = this.toFloatOrNull()?.takeIf { it >= 0f } ?: 0f

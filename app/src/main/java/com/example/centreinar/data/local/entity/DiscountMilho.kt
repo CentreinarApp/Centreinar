@@ -20,6 +20,9 @@ data class DiscountMilho(
     @ColumnInfo(name = "deduction") val deduction: Float = 0f,
     @ColumnInfo(name = "deductionPrice") val deductionPrice: Float = 0f,
 
+    @ColumnInfo(name = "classificationDiscount") val classificationDiscount: Float,
+    @ColumnInfo(name = "classificationDiscountPrice") val classificationDiscountPrice: Float,
+
     @ColumnInfo(name = "impuritiesLossPrice") val impuritiesLossPrice: Float,
     @ColumnInfo(name = "humidityLossPrice") val humidityLossPrice: Float,
     @ColumnInfo(name = "technicalLossPrice") val technicalLossPrice: Float,

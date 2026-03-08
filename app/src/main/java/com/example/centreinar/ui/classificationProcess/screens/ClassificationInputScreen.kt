@@ -1,6 +1,5 @@
 package com.example.centreinar.ui.classificationProcess.screens
 
-import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -18,13 +17,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.centreinar.SampleSoja
 import com.example.centreinar.data.local.entity.SampleMilho
+import com.example.centreinar.ui.classificationProcess.strategy.ClassificationPayload
 import com.example.centreinar.ui.classificationProcess.viewmodel.ClassificationViewModel
-import java.math.RoundingMode
+import com.example.centreinar.util.roundToOneDecimal
+import com.example.centreinar.util.toFloatOrZero
+import com.example.centreinar.util.toUniversalString
 import kotlin.math.roundToInt
 
 // -------------------------------------------------------------------------------------------------
@@ -32,19 +33,16 @@ import kotlin.math.roundToInt
 // -------------------------------------------------------------------------------------------------
 
 @Composable
-fun ClassificationInputScreen( // Função Principal
+fun ClassificationInputScreen(
     navController: NavController,
     viewModel: ClassificationViewModel = hiltViewModel()
 ) {
-    // 1. O Scaffold envolve toda a tela
     Scaffold(
         modifier = Modifier.fillMaxSize()
-    ) { innerPadding -> // Esse innerPadding contém as medidas da barra de status e navegação
-
+    ) { innerPadding -> // Esse innerPadding contém as medidas da barra de status e navegação para responsividade em diferentes telas
         // Leitura das variáveis 'val' do ViewModel
         val currentGrain = viewModel.selectedGrain
         val currentGroup = viewModel.selectedGroup
-
         val isMilho = currentGrain == "Milho"
         val isSoja = !isMilho
 
@@ -62,7 +60,6 @@ fun ClassificationInputScreen( // Função Principal
         // CAMPOS DEFEITOS GERAIS
         var brokenCrackedDamaged by remember { mutableStateOf("") }
         var greenish by remember { mutableStateOf("") }
-
         var burnt by remember { mutableStateOf("") }
         var sour by remember { mutableStateOf("") }
         var moldy by remember { mutableStateOf("") }
@@ -85,7 +82,7 @@ fun ClassificationInputScreen( // Função Principal
         var colorClassResult by remember { mutableStateOf<String?>(null) }
         var errorMessage by remember { mutableStateOf<String?>(null) }
 
-        // --- NOVOS ESTADOS PARA CLASSE E GRUPO DO MILHO ---
+        // ESTADOS PARA CLASSE E GRUPO DO MILHO
         var defineClasseMilho by remember { mutableStateOf(false) }
         var weightAmarela by remember { mutableStateOf("") }
         var weightBranca by remember { mutableStateOf("") }
@@ -96,19 +93,19 @@ fun ClassificationInputScreen( // Função Principal
         var weightDentado by remember { mutableStateOf("") }
         var weightSemiduro by remember { mutableStateOf("") }
 
-        // CÁLCULO DA AMOSTRA LIMPA (FLUXO NORMAL - AUTOMÁTICO NA TAB 0)
+        // CÁLCULO DA AMOSTRA LIMPA
         val calculatedCleanSampleWeightFloat: Float by remember(sampleWeight, foreignMatters) {
             val sWeight = sampleWeight.toFloatOrZero()
             val fm = foreignMatters.toFloatOrZero()
-            mutableStateOf(sWeight - fm)
+            mutableFloatStateOf((sWeight - fm).roundToOneDecimal())
         }
 
-        // CÁLCULO DA AMOSTRA LIMPA (Para Exibição TAB 0 - String formatada)
+        // CÁLCULO DA AMOSTRA LIMPA (Para Exibição)
         val calculatedCleanSampleWeightDisplay: String =
             remember(calculatedCleanSampleWeightFloat) {
-                if (calculatedCleanSampleWeightFloat > 0) "%.2f".format(
-                    calculatedCleanSampleWeightFloat
-                ) else "0.00"
+                if (calculatedCleanSampleWeightFloat > 0) {
+                    calculatedCleanSampleWeightFloat.toUniversalString()
+                } else "0.00"
             }
 
         // VARIÁVEL BASE PARA CÁLCULOS (USA INPUT MANUAL SE DEFINIR CLASSE DE COR)
@@ -124,7 +121,7 @@ fun ClassificationInputScreen( // Função Principal
             }
         }
 
-        // NOVO CÁLCULO: Peso de Grãos Amarelos (Soja)
+        // Peso de Grãos Amarelos (Soja)
         val yellowGrainsDisplay: String by remember(
             baseCleanWeightForColor,
             otherColorsGrainsWeight
@@ -132,7 +129,7 @@ fun ClassificationInputScreen( // Função Principal
             val cleanWeight = baseCleanWeightForColor
             val otherColors = otherColorsGrainsWeight.toFloatOrZero()
             val yellowGrains = cleanWeight - otherColors
-            mutableStateOf(if (yellowGrains > 0) "%.2f".format(yellowGrains) else "0.00")
+            mutableStateOf(if (yellowGrains > 0) yellowGrains.toUniversalString() else "0.00")
         }
         val yellowGrainsFloat: Float = yellowGrainsDisplay.toFloatOrZero()
 
@@ -171,7 +168,7 @@ fun ClassificationInputScreen( // Função Principal
                     // No Milho, o primeiro campo da Tab 2 é o Carunchado
                     carunchadoFocus.requestFocus()
                 } else {
-                    // Na Soja, o primeiro campo da Tab 2 ainda é o Quebrados (PQA)
+                    // Na Soja, o primeiro campo da Tab 2 é o Quebrados (PQA)
                     brokenFocus.requestFocus()
                 }
             }
@@ -197,7 +194,7 @@ fun ClassificationInputScreen( // Função Principal
 
         Column(
             modifier = Modifier.fillMaxSize()
-            .padding(innerPadding)
+                .padding(innerPadding)
         ) {
             TabRow(selectedTabIndex = selectedTab) {
                 tabTitles.forEachIndexed { index, title ->
@@ -334,13 +331,13 @@ fun ClassificationInputScreen( // Função Principal
 
                             // Validação do peso
                             if (baseCleanWeightForColor <= 0f) {
-                                errorMessage =
-                                    "O Peso da Amostra Limpa não pode ser zero ou negativo."
+                                errorMessage = "O Peso da Amostra Limpa não pode ser zero ou negativo."
                                 return@Button
                             }
 
-                            if (isSoja) {
-                                // --- LÓGICA SOJA ---
+                            // Criamos o payload que será enviado ao ViewModel
+                            val payload = if (isSoja) {
+                                // --- PREPARAÇÃO PAYLOAD SOJA ---
                                 val sample = SampleSoja(
                                     grain = "Soja",
                                     group = group,
@@ -360,18 +357,15 @@ fun ClassificationInputScreen( // Função Principal
                                     immature = immature.toFloatOrZero(),
                                     shriveled = shriveled.toFloatOrZero()
                                 )
-                                viewModel.classifySample(
+
+                                ClassificationPayload.Soja(
                                     sample = sample,
                                     otherColorsWeight = otherColorsGrainsWeight.toFloatOrZero(),
                                     baseWeightCor = baseCleanWeightForColor,
                                     isColorDefined = doesDefineColorClass
                                 )
-
-                                // Navega para resultado de SOJA
-                                navController.navigate("classificationResult")
-
                             } else {
-                                // --- LÓGICA MILHO ---
+                                // --- PREPARAÇÃO PAYLOAD MILHO ---
                                 val sample = SampleMilho(
                                     grain = "Milho",
                                     group = group,
@@ -379,19 +373,18 @@ fun ClassificationInputScreen( // Função Principal
                                     sampleWeight = sampleWeight.toFloatOrZero(),
                                     moisture = moisture.toFloatOrZero(),
                                     cleanWeight = baseCleanWeightForColor,
-                                    impurities = foreignMatters.toFloatOrZero(), // Matéria estranha
-                                    broken = brokenCrackedDamaged.toFloatOrZero(), // Quebrados
+                                    impurities = foreignMatters.toFloatOrZero(),
+                                    broken = brokenCrackedDamaged.toFloatOrZero(),
                                     carunchado = carunchado.toFloatOrZero(),
-                                    ardido = sour.toFloatOrZero(), // Ardidos
+                                    ardido = sour.toFloatOrZero(),
                                     mofado = moldy.toFloatOrZero(),
                                     fermented = fermented.toFloatOrZero(),
                                     germinated = germinated.toFloatOrZero(),
-                                    immature = immature.toFloatOrZero(), // Chochos e Imaturos
+                                    immature = immature.toFloatOrZero(),
                                     gessado = gessado.toFloatOrZero()
                                 )
 
-                                // Chama a função de calcular no ViewModel
-                                viewModel.classifySample(
+                                ClassificationPayload.Milho(
                                     sample = sample,
                                     shouldDefineClass = defineClasseMilho,
                                     weightYellow = weightAmarela.toFloatOrZero(),
@@ -402,12 +395,10 @@ fun ClassificationInputScreen( // Função Principal
                                     weightDent = weightDentado.toFloatOrZero(),
                                     weightSemiHard = weightSemiduro.toFloatOrZero()
                                 )
-
-                                Log.d("ClassificationInput", "Milho Enviado para cálculo.")
-
-                                // Navega para a tela de resultado de MILHO
-                                navController.navigate("milhoResultado")
                             }
+
+                            viewModel.classifySample(payload)
+                            navController.navigate("classificationResult")
                         },
                         modifier = Modifier.fillMaxWidth()
                     ) {
@@ -664,7 +655,10 @@ private fun NumberInputField(
     val focusManager = LocalFocusManager.current
     OutlinedTextField(
         value = value,
-        onValueChange = { if (it.isEmpty() || it.matches(Regex("^(\\d*\\.?\\d*)$"))) onValueChange(it) },
+        onValueChange = { newValue ->
+            val sanitized = newValue.replace(',', '.').filter { it.isDigit() || it == '.' }
+            if (sanitized.count { it == '.' } <= 1) onValueChange(sanitized)
+        },
         label = { Text(label) }, modifier = Modifier.fillMaxWidth().focusRequester(focusRequester),
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = if (nextFocus != null) ImeAction.Next else ImeAction.Done),
         keyboardActions = KeyboardActions(onNext = { nextFocus?.requestFocus() }, onDone = { onDone?.invoke(); keyboardController?.hide(); focusManager.clearFocus() }),
@@ -672,13 +666,10 @@ private fun NumberInputField(
     )
 }
 
-private fun String.toFloatOrZero(): Float {
-    return this.toBigDecimalOrNull()?.setScale(2, RoundingMode.HALF_UP)?.toFloat() ?: 0f
-}
-
 private fun calculateDamagedSum(damagedInput: String, piercingDamaged: String): String {
+    // Pegando o formatador para float #.##
     val dInput = damagedInput.toFloatOrZero()
     val pDamaged = piercingDamaged.toFloatOrZero()
     val sum = dInput + pDamaged
-    return "%.2f".format(sum)
+    return sum.toUniversalString()
 }

@@ -1,163 +1,155 @@
 package com.example.centreinar.ui.discount.screens
 
-import android.util.Log
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Switch
-import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
-import com.example.centreinar.InputDiscountSoja
+import com.example.centreinar.ui.discount.strategy.DiscountInputField
+import com.example.centreinar.ui.discount.strategy.FinancialDiscountPayload
 import com.example.centreinar.ui.discount.viewmodel.DiscountViewModel
-import java.math.RoundingMode
+
+// =============================================================================
+// STATE HOLDER
+// =============================================================================
+
+private class DiscountInputState(
+    val lotWeight:         MutableState<String>  = mutableStateOf(""),
+    val priceBySack:       MutableState<String>  = mutableStateOf(""),
+    val moisture:          MutableState<String>  = mutableStateOf(""),
+    val daysOfStorage:     MutableState<String>  = mutableStateOf("0"),
+    val deductionValue:    MutableState<String>  = mutableStateOf("0"),
+    val doesTechnicalLoss: MutableState<Boolean> = mutableStateOf(false),
+    val doesDeduction:     MutableState<Boolean> = mutableStateOf(false),
+    val errorMessage:      MutableState<String?> = mutableStateOf(null)
+)
+
+@Composable
+private fun rememberDiscountInputState() = remember { DiscountInputState() }
+
+// =============================================================================
+// TELA PRINCIPAL
+// =============================================================================
 
 @Composable
 fun DiscountInputScreen(
     navController: NavController,
-    classificationId: Int? = null, // Recebe o ID opcional da classificação
+    classificationId: Int? = null,
     viewModel: DiscountViewModel = hiltViewModel()
 ) {
-    // 1. O Scaffold envolve toda a tela
-    Scaffold(
-        modifier = Modifier.fillMaxSize()
-    ) { innerPadding -> // Esse innerPadding contém as medidas da barra de status e navegação
+    val uiState               by viewModel.uiState.collectAsStateWithLifecycle()
+    val discountResult        by viewModel.discountResult.collectAsStateWithLifecycle()
+    val classificationPrefill by viewModel.classificationPrefill.collectAsStateWithLifecycle()
+    val grain = viewModel.selectedGrain
 
-        val scrollState = rememberScrollState()
+    val strategy     = viewModel.getStrategy(grain)
+    val defectFields = remember(grain) { strategy?.getDefectInputFields() ?: emptyList() }
 
-        // Estados observados do ViewModel
-        val loadedClassif by viewModel.loadedClassification.collectAsStateWithLifecycle()
-        val loadedSample by viewModel.loadedSample.collectAsStateWithLifecycle()
+    val basicTabExtraFields = remember(defectFields) { defectFields.filter { it.tabGroup == 0 } }
+    val defects1Fields      = remember(defectFields) { defectFields.filter { it.tabGroup == 1 } }
+    val defects2Fields      = remember(defectFields) { defectFields.filter { it.tabGroup == 2 } }
 
-        val grain = viewModel.selectedGrain
-        val group = viewModel.selectedGroup
+    var fieldValues by remember(grain) {
+        val prefill = viewModel.classificationPrefill.value
+        mutableStateOf(defectFields.associate { field ->
+            field.key to (prefill?.defects?.get(field.key)?.toString() ?: "")
+        })
+    }
 
-        // Estados dos Campos de Input
-        var lotWeight by remember { mutableStateOf("") }
-        var priceBySack by remember { mutableStateOf("") }
-        var moisture by remember { mutableStateOf("") }
-        var impurities by remember { mutableStateOf("") }
-        var daysOfStorage by remember { mutableStateOf("0") }
-        var deductionValue by remember { mutableStateOf("0") }
-        var brokenCrackedDamaged by remember { mutableStateOf("") }
-        var greenish by remember { mutableStateOf("") }
-        var burnt by remember { mutableStateOf("") }
-        var burntOrSour by remember { mutableStateOf("") }
-        var moldy by remember { mutableStateOf("") }
-        var spoiled by remember { mutableStateOf("") }
-        var doesTechnicalLoss by remember { mutableStateOf(false) }
-        var doesDeduction by remember { mutableStateOf(false) }
 
-        var errorMessage by remember { mutableStateOf<String?>(null) }
+    val s = rememberDiscountInputState()
 
-        // --- LÓGICA DE PREENCHIMENTO AUTOMÁTICO ---
+    // Pré-preenche TODOS os campos vindos da ClassificationResultScreen
+    var prefillApplied by remember { mutableStateOf(false) }
 
-        // Dispara o carregamento se houver um ID
-        LaunchedEffect(classificationId) {
-            if (classificationId != null && classificationId > 0) {
-                viewModel.loadClassificationData(classificationId)
+    LaunchedEffect(grain) {
+        if (!prefillApplied) {  // só aplica currentDefectsMap se o prefill ainda não rodou
+            val saved = viewModel.currentDefectsMap
+            if (saved.isNotEmpty()) {
+                fieldValues = fieldValues.mapValues { (key, _) -> saved[key]?.toString() ?: "" }
+                saved["umidade"]?.let { s.moisture.value = it.toString() }
             }
         }
+    }
 
-        // Escuta mudanças nos dados carregados e preenche os campos
-        LaunchedEffect(loadedClassif, loadedSample) {
-            // Preenche dados da Amostra (Peso e Umidade)
-            loadedSample?.let { sample ->
-                lotWeight = sample.lotWeight.toString()
-                moisture = sample.humidity.toString()
-            }
-            // Preenche dados da Classificação (Impurezas e Defeitos)
-            loadedClassif?.let { classif ->
-                impurities = classif.impuritiesPercentage.toString()
-                burnt = classif.burntPercentage.toString()
-                burntOrSour = classif.burntOrSourPercentage.toString()
-                moldy = classif.moldyPercentage.toString()
-                spoiled = classif.spoiledPercentage.toString()
-                greenish = classif.greenishPercentage.toString()
-                brokenCrackedDamaged = classif.brokenCrackedDamagedPercentage.toString()
-            }
+    LaunchedEffect(classificationPrefill) {
+        val prefill = classificationPrefill ?: return@LaunchedEffect
+        prefill.lotWeight?.let { s.lotWeight.value = it.toString() }
+        s.moisture.value = prefill.moisture.toString()
+        prefillApplied = true
+    }
+
+    LaunchedEffect(uiState.error) {
+        uiState.error?.let { s.errorMessage.value = it }
+    }
+
+
+    LaunchedEffect(discountResult) {
+        if (discountResult != null) {
+            navController.navigate("discountResultsScreen")
         }
+    }
 
-        // --- CONFIGURAÇÃO DE FOCO ---
-        val lotWeightFocus = remember { FocusRequester() }
-        val priceBySackFocus = remember { FocusRequester() }
-        val moistureFocus = remember { FocusRequester() }
-        val impuritiesFocus = remember { FocusRequester() }
-        val brokenFocus = remember { FocusRequester() }
-        val greenishFocus = remember { FocusRequester() }
-        val burntFocus = remember { FocusRequester() }
-        val burntOrSourFocus = remember { FocusRequester() }
-        val moldyFocus = remember { FocusRequester() }
-        val spoiledFocus = remember { FocusRequester() }
-        val daysOfStorageFocus = remember { FocusRequester() }
-        val deductionValueFocus = remember { FocusRequester() }
+    val lotWeightFocus      = remember { FocusRequester() }
+    val priceBySackFocus    = remember { FocusRequester() }
+    val moistureFocus       = remember { FocusRequester() }
+    val daysOfStorageFocus  = remember { FocusRequester() }
+    val deductionValueFocus = remember { FocusRequester() }
 
-        val tabTitles = listOf("Informação Básica", "Defeitos 1", "Defeitos 2")
-        var selectedTab by remember { mutableStateOf(0) }
+    val defectFocusMap = remember(defectFields) {
+        defectFields.associate { it.key to FocusRequester() }
+    }
 
-        LaunchedEffect(selectedTab) {
-            when (selectedTab) {
-                0 -> lotWeightFocus.requestFocus()
-                1 -> burntFocus.requestFocus()
-                2 -> greenishFocus.requestFocus()
-            }
+    val tabTitles = listOf("Informação Básica", "Defeitos", "Extras")
+    var selectedTab by remember { mutableStateOf(0) }
+
+    LaunchedEffect(selectedTab) {
+        when (selectedTab) {
+            0 -> lotWeightFocus.requestFocus()
+            1 -> defects1Fields.firstOrNull()?.key?.let { defectFocusMap[it]?.requestFocus() }
+            2 -> defects2Fields.firstOrNull()?.key?.let { defectFocusMap[it]?.requestFocus() }
         }
+    }
 
-        Column(modifier = Modifier.fillMaxSize().padding(innerPadding)
+    Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
         ) {
             TabRow(selectedTabIndex = selectedTab) {
                 tabTitles.forEachIndexed { index, title ->
                     Tab(
                         selected = selectedTab == index,
-                        onClick = { selectedTab = index },
-                        text = { Text(text = title) }
+                        onClick  = { selectedTab = index },
+                        text     = { Text(title) }
                     )
                 }
             }
 
             Column(modifier = Modifier.weight(1f).fillMaxWidth()) {
                 Text(
-                    "Insira os dados",
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = MaterialTheme.colorScheme.onBackground,
+                    text     = "Insira os dados",
+                    style    = MaterialTheme.typography.headlineSmall,
                     modifier = Modifier.padding(16.dp)
                 )
 
-                errorMessage?.let {
+                s.errorMessage.value?.let {
                     Text(
-                        it,
-                        color = MaterialTheme.colorScheme.error,
+                        text     = it,
+                        color    = MaterialTheme.colorScheme.error,
                         modifier = Modifier.padding(horizontal = 16.dp)
                     )
                 }
@@ -166,58 +158,53 @@ fun DiscountInputScreen(
 
                 when (selectedTab) {
                     0 -> BasicInfoTab(
-                        lotWeight = lotWeight,
-                        onLotWeightChange = { lotWeight = it },
-                        moisture = moisture,
-                        onMoistureChange = { moisture = it },
-                        impurities = impurities,
-                        onImpuritiesChange = { impurities = it },
-                        priceBySack = priceBySack,
-                        onPriceBySackChange = { priceBySack = it },
-                        lotWeightFocus = lotWeightFocus,
-                        moistureFocus = moistureFocus,
-                        impuritiesFocus = impuritiesFocus,
-                        priceBySackFocus = priceBySackFocus
+                        lotWeight              = s.lotWeight.value,
+                        onLotWeightChange      = { s.lotWeight.value = it },
+                        priceBySack            = s.priceBySack.value,
+                        onPriceBySackChange    = { s.priceBySack.value = it },
+                        moisture               = s.moisture.value,
+                        onMoistureChange       = { s.moisture.value = it },
+                        lotWeightFocus         = lotWeightFocus,
+                        priceBySackFocus       = priceBySackFocus,
+                        moistureFocus          = moistureFocus,
+                        nextFocusAfterMoisture = basicTabExtraFields.firstOrNull()
+                            ?.key?.let { defectFocusMap[it] },
+                        extraFields            = basicTabExtraFields,
+                        extraFieldValues       = fieldValues,
+                        onExtraFieldChange     = { key, value -> fieldValues = fieldValues + (key to value) },
+                        extraFocusMap          = defectFocusMap
                     )
 
-                    1 -> GraveDefectsTab(
-                        burnt = burnt,
-                        onBurntChange = { burnt = it },
-                        burntOrSour = burntOrSour,
-                        onBurntOrSourChange = { burntOrSour = it },
-                        moldy = moldy,
-                        onMoldyChange = { moldy = it },
-                        spoiled = spoiled,
-                        onSpoiledChange = { spoiled = it },
-                        burntFocus = burntFocus,
-                        burntOrSourFocus = burntOrSourFocus,
-                        moldyFocus = moldyFocus,
-                        spoiledFocus = spoiledFocus
+                    1 -> DynamicDefectsTab(
+                        fields        = defects1Fields,
+                        fieldValues   = fieldValues,
+                        onValueChange = { key, value -> fieldValues = fieldValues + (key to value) },
+                        focusMap      = defectFocusMap,
+                        showSwitches  = false
                     )
 
-                    2 -> FinalDefectsTab(
-                        greenish = greenish,
-                        onGreenishChange = { greenish = it },
-                        brokenCrackedDamaged = brokenCrackedDamaged,
-                        onBrokenCrackedDamagedChange = { brokenCrackedDamaged = it },
-                        greenishFocus = greenishFocus,
-                        brokenCrackedDamagedFocus = brokenFocus,
-                        daysOfStorage = daysOfStorage,
-                        onDaysOfStorageChange = { daysOfStorage = it },
-                        deductionValue = deductionValue,
-                        onDeductionValueChange = { deductionValue = it },
-                        doesDeduction = doesDeduction,
-                        onDoesDeductionChange = { doesDeduction = it },
-                        doesTechnicalLoss = doesTechnicalLoss,
-                        onDoesTechnicalLossChange = { doesTechnicalLoss = it },
-                        daysOfStorageFocus = daysOfStorageFocus,
-                        deductionValueFocus = deductionValueFocus
+                    2 -> DynamicDefectsTab(
+                        fields                    = defects2Fields,
+                        fieldValues               = fieldValues,
+                        onValueChange             = { key, value -> fieldValues = fieldValues + (key to value) },
+                        focusMap                  = defectFocusMap,
+                        showSwitches              = true,
+                        daysOfStorage             = s.daysOfStorage.value,
+                        onDaysOfStorageChange     = { s.daysOfStorage.value = it },
+                        deductionValue            = s.deductionValue.value,
+                        onDeductionValueChange    = { s.deductionValue.value = it },
+                        doesTechnicalLoss         = s.doesTechnicalLoss.value,
+                        onDoesTechnicalLossChange = { s.doesTechnicalLoss.value = it },
+                        doesDeduction             = s.doesDeduction.value,
+                        onDoesDeductionChange     = { s.doesDeduction.value = it },
+                        daysOfStorageFocus        = daysOfStorageFocus,
+                        deductionValueFocus       = deductionValueFocus
                     )
                 }
             }
 
             Row(
-                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                modifier              = Modifier.fillMaxWidth().padding(16.dp),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 if (selectedTab > 0) {
@@ -230,60 +217,42 @@ fun DiscountInputScreen(
                     Button(onClick = { selectedTab++ }) { Text("Avançar") }
                 } else {
                     Button(
-                        onClick = {
-                            val fLotWeight = lotWeight.toFloatOrZero()
-                            val fPriceBySack = priceBySack.toFloatOrZero()
-                            val fImp = impurities.toFloatOrZero()
-                            val fMoisture = moisture.toFloatOrZero()
-                            val fBroken = brokenCrackedDamaged.toFloatOrZero()
-                            val fGreenish = greenish.toFloatOrZero()
-                            val fBurnt = burnt.toFloatOrZero()
-                            val fBurntOrSour = burntOrSour.toFloatOrZero()
-                            val fMoldy = moldy.toFloatOrZero()
-                            val fSpoiled = spoiled.toFloatOrZero()
-                            val fDays = daysOfStorage.toIntOrZero()
-                            val fDeduction = deductionValue.toFloatOrZero()
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick  = {
+                            val fLotWeight   = s.lotWeight.value.toFloatOrZero()
+                            val fPriceBySack = s.priceBySack.value.toFloatOrZero()
 
                             if (fLotWeight <= 0f || fPriceBySack <= 0f) {
-                                errorMessage =
-                                    "Por favor, insira valores válidos para Peso do Lote e Preço por Saca."
+                                s.errorMessage.value =
+                                    "Insira valores válidos para Peso do Lote e Preço por Saca."
                                 return@Button
                             }
 
-                            val fLotPrice = (fLotWeight * fPriceBySack) / 60f
-
-                            val inputDiscount = InputDiscountSoja(
-                                grain = grain ?: "Soja",
-                                group = group ?: 1,
-                                limitSource = 0,
-                                classificationId = loadedClassif?.id, // Vincula à classificação carregada
-                                daysOfStorage = fDays,
-                                lotWeight = fLotWeight,
-                                lotPrice = fLotPrice,
-                                foreignMattersAndImpurities = fImp,
-                                humidity = fMoisture,
-                                burnt = fBurnt,
-                                burntOrSour = fBurntOrSour,
-                                moldy = fMoldy,
-                                spoiled = fSpoiled,
-                                greenish = fGreenish,
-                                brokenCrackedDamaged = fBroken,
-                                deductionValue = fDeduction
+                            val fullMap = fieldValues.mapValues { it.value.toFloatOrZero() } + mapOf(
+                                "umidade"   to s.moisture.value.toFloatOrZero(),
+                                "lotWeight" to fLotWeight,
+                                "lotPrice"  to (fLotWeight * fPriceBySack) / 60f
                             )
 
-                            try {
-                                viewModel.setDiscount(
-                                    inputDiscount,
-                                    doesTechnicalLoss,
-                                    true,
-                                    doesDeduction
-                                )
-                                navController.navigate("discountResultsScreen")
-                            } catch (e: Exception) {
-                                errorMessage = "Erro no cálculo: ${e.message}"
-                            }
-                        },
-                        modifier = Modifier.fillMaxWidth()
+                            val resolvedStrategy = viewModel.getStrategy(grain)
+                                ?: run {
+                                    s.errorMessage.value = "Grão não suportado: $grain"
+                                    return@Button
+                                }
+
+                            val defectsPayload   = resolvedStrategy.createDefectsPayload(fullMap)
+                            val financialPayload = FinancialDiscountPayload(
+                                priceBySack       = fPriceBySack,
+                                lotWeight         = fLotWeight,
+                                group             = viewModel.selectedGroup,
+                                daysOfStorage     = s.daysOfStorage.value.toIntOrZero(),
+                                doesTechnicalLoss = s.doesTechnicalLoss.value,
+                                deductionValue    = s.deductionValue.value.toFloatOrZero(),
+                                doesDeduction     = s.doesDeduction.value
+                            )
+
+                            viewModel.calculateDiscount(defectsPayload, financialPayload)
+                        }
                     ) {
                         Text("Calcular Desconto")
                     }
@@ -293,111 +262,139 @@ fun DiscountInputScreen(
     }
 }
 
-// --- COMPONENTES AUXILIARES (TABS) ---
+// =============================================================================
+// COMPONENTES AUXILIARES
+// =============================================================================
 
 @Composable
-fun BasicInfoTab(
-    lotWeight: String, onLotWeightChange: (String) -> Unit,
-    priceBySack: String, onPriceBySackChange: (String) -> Unit,
-    moisture: String, onMoistureChange: (String) -> Unit,
-    impurities: String, onImpuritiesChange: (String) -> Unit,
-    lotWeightFocus: FocusRequester, moistureFocus: FocusRequester,
-    impuritiesFocus: FocusRequester, priceBySackFocus: FocusRequester
+private fun BasicInfoTab(
+    lotWeight: String,              onLotWeightChange: (String) -> Unit,
+    priceBySack: String,            onPriceBySackChange: (String) -> Unit,
+    moisture: String,               onMoistureChange: (String) -> Unit,
+    lotWeightFocus: FocusRequester,
+    priceBySackFocus: FocusRequester,
+    moistureFocus: FocusRequester,
+    nextFocusAfterMoisture: FocusRequester?,
+    extraFields: List<DiscountInputField>,
+    extraFieldValues: Map<String, String>,
+    onExtraFieldChange: (String, String) -> Unit,
+    extraFocusMap: Map<String, FocusRequester>
 ) {
-    Column(modifier = Modifier.padding(16.dp).verticalScroll(rememberScrollState())) {
-        NumberInputField(lotWeight, onLotWeightChange, "Peso do lote (kg)", lotWeightFocus, priceBySackFocus)
-        Spacer(modifier = Modifier.height(16.dp))
-        NumberInputField(priceBySack, onPriceBySackChange, "Preço por Saca (60kg)", priceBySackFocus, moistureFocus)
-        Spacer(modifier = Modifier.height(16.dp))
-        NumberInputField(moisture, onMoistureChange, "Umidade (%)", moistureFocus, impuritiesFocus)
-        Spacer(modifier = Modifier.height(16.dp))
-        NumberInputField(impurities, onImpuritiesChange, "Matéria estranha e Impurezas (%)", impuritiesFocus, null)
-    }
-}
+    Column(
+        modifier = Modifier
+            .padding(16.dp)
+            .verticalScroll(rememberScrollState())
+    ) {
+        DiscountNumberInputField(lotWeight,   onLotWeightChange,   "Peso do lote (kg)",     lotWeightFocus,   priceBySackFocus)
+        Spacer(Modifier.height(16.dp))
+        DiscountNumberInputField(priceBySack, onPriceBySackChange, "Preço por Saca (60kg)", priceBySackFocus, moistureFocus)
+        Spacer(Modifier.height(16.dp))
+        DiscountNumberInputField(moisture,    onMoistureChange,    "Umidade (%)",           moistureFocus,    nextFocusAfterMoisture)
+        Spacer(Modifier.height(16.dp))
 
-@Composable
-fun GraveDefectsTab(
-    burnt: String, onBurntChange: (String) -> Unit,
-    burntOrSour: String, onBurntOrSourChange: (String) -> Unit,
-    moldy: String, onMoldyChange: (String) -> Unit,
-    spoiled: String, onSpoiledChange: (String) -> Unit,
-    burntFocus: FocusRequester, burntOrSourFocus: FocusRequester,
-    moldyFocus: FocusRequester, spoiledFocus: FocusRequester,
-) {
-    Column(modifier = Modifier.padding(16.dp).verticalScroll(rememberScrollState())) {
-        NumberInputField(burnt, onBurntChange, "Queimados (%)", burntFocus, burntOrSourFocus)
-        Spacer(modifier = Modifier.height(16.dp))
-        NumberInputField(burntOrSour, onBurntOrSourChange, "Ardidos e Queimados (%)", burntOrSourFocus, moldyFocus)
-        Spacer(modifier = Modifier.height(16.dp))
-        NumberInputField(moldy, onMoldyChange, "Mofados (%)", moldyFocus, spoiledFocus)
-        Spacer(modifier = Modifier.height(16.dp))
-        NumberInputField(spoiled, onSpoiledChange, "Total de Avariados (%)", spoiledFocus, null)
-    }
-}
-
-@Composable
-fun FinalDefectsTab(
-    greenish: String, onGreenishChange: (String) -> Unit,
-    brokenCrackedDamaged: String, onBrokenCrackedDamagedChange: (String) -> Unit,
-    daysOfStorage: String, onDaysOfStorageChange: (String) -> Unit,
-    deductionValue: String, onDeductionValueChange: (String) -> Unit,
-    greenishFocus: FocusRequester, brokenCrackedDamagedFocus: FocusRequester,
-    daysOfStorageFocus: FocusRequester, deductionValueFocus: FocusRequester,
-    doesTechnicalLoss: Boolean, onDoesTechnicalLossChange: (Boolean) -> Unit,
-    doesDeduction: Boolean, onDoesDeductionChange: (Boolean) -> Unit
-) {
-    Column(modifier = Modifier.padding(16.dp).verticalScroll(rememberScrollState())) {
-        NumberInputField(greenish, onGreenishChange, "Esverdeados (%)", greenishFocus, brokenCrackedDamagedFocus)
-        Spacer(modifier = Modifier.height(16.dp))
-        NumberInputField(brokenCrackedDamaged, onBrokenCrackedDamagedChange, "Partidos/Quebrados (%)", brokenCrackedDamagedFocus, daysOfStorageFocus)
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Switch(checked = doesTechnicalLoss, onCheckedChange = onDoesTechnicalLossChange)
-            Spacer(modifier = Modifier.width(8.dp))
-            Text("Aplicar Quebra Técnica?")
-        }
-
-        if (doesTechnicalLoss) {
-            NumberInputField(daysOfStorage, onDaysOfStorageChange, "Dias de armazenamento", daysOfStorageFocus, deductionValueFocus)
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Switch(checked = doesDeduction, onCheckedChange = onDoesDeductionChange)
-            Spacer(modifier = Modifier.width(8.dp))
-            Text("Aplicar Deságio?")
-        }
-
-        if (doesDeduction) {
-            NumberInputField(deductionValue, onDeductionValueChange, "Valor de Deságio", deductionValueFocus, null)
+        extraFields.forEachIndexed { index, field ->
+            val nextFocus = extraFields.getOrNull(index + 1)?.key?.let { extraFocusMap[it] }
+            DiscountNumberInputField(
+                value          = extraFieldValues[field.key] ?: "",
+                onValueChange  = { onExtraFieldChange(field.key, it) },
+                label          = field.label,
+                focusRequester = extraFocusMap[field.key] ?: remember { FocusRequester() },
+                nextFocus      = nextFocus
+            )
+            Spacer(Modifier.height(16.dp))
         }
     }
 }
 
 @Composable
-private fun NumberInputField(
-    value: String, onValueChange: (String) -> Unit, label: String,
-    focusRequester: FocusRequester, nextFocus: FocusRequester? = null
+private fun DynamicDefectsTab(
+    fields: List<DiscountInputField>,
+    fieldValues: Map<String, String>,
+    onValueChange: (String, String) -> Unit,
+    focusMap: Map<String, FocusRequester>,
+    showSwitches: Boolean = false,
+    daysOfStorage: String = "0",
+    onDaysOfStorageChange: (String) -> Unit = {},
+    deductionValue: String = "0",
+    onDeductionValueChange: (String) -> Unit = {},
+    doesTechnicalLoss: Boolean = false,
+    onDoesTechnicalLossChange: (Boolean) -> Unit = {},
+    doesDeduction: Boolean = false,
+    onDoesDeductionChange: (Boolean) -> Unit = {},
+    daysOfStorageFocus: FocusRequester = remember { FocusRequester() },
+    deductionValueFocus: FocusRequester = remember { FocusRequester() }
+) {
+    Column(
+        modifier = Modifier
+            .padding(16.dp)
+            .verticalScroll(rememberScrollState())
+    ) {
+        fields.forEachIndexed { index, field ->
+            val nextFocus = fields.getOrNull(index + 1)?.key?.let { focusMap[it] }
+            DiscountNumberInputField(
+                value          = fieldValues[field.key] ?: "",
+                onValueChange  = { onValueChange(field.key, it) },
+                label          = field.label,
+                focusRequester = focusMap[field.key] ?: remember { FocusRequester() },
+                nextFocus      = nextFocus
+            )
+            Spacer(Modifier.height(16.dp))
+        }
+
+        if (showSwitches) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Switch(checked = doesTechnicalLoss, onCheckedChange = onDoesTechnicalLossChange)
+                Spacer(Modifier.width(8.dp))
+                Text("Aplicar Quebra Técnica?")
+            }
+            if (doesTechnicalLoss) {
+                Spacer(Modifier.height(8.dp))
+                DiscountNumberInputField(daysOfStorage, onDaysOfStorageChange, "Dias de armazenamento", daysOfStorageFocus, deductionValueFocus)
+            }
+            Spacer(Modifier.height(16.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Switch(checked = doesDeduction, onCheckedChange = onDoesDeductionChange)
+                Spacer(Modifier.width(8.dp))
+                Text("Aplicar Deságio?")
+            }
+            if (doesDeduction) {
+                Spacer(Modifier.height(8.dp))
+                DiscountNumberInputField(deductionValue, onDeductionValueChange, "Valor de Deságio (%)", deductionValueFocus, null)
+            }
+        }
+    }
+}
+
+@Composable
+private fun DiscountNumberInputField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    focusRequester: FocusRequester,
+    nextFocus: FocusRequester? = null
 ) {
     OutlinedTextField(
         value = value,
-        onValueChange = onValueChange,
-        label = { Text(label) },
-        modifier = Modifier.fillMaxWidth().focusRequester(focusRequester),
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = if (nextFocus != null) ImeAction.Next else ImeAction.Done),
+        onValueChange = { newValue ->
+            val sanitized = newValue.replace(',', '.').filter { it.isDigit() || it == '.' }
+            if (sanitized.count { it == '.' } <= 1) {
+                onValueChange(sanitized)
+            }
+        },
+        label           = { Text(label) },
+        modifier        = Modifier.fillMaxWidth().focusRequester(focusRequester),
+        keyboardOptions = KeyboardOptions(
+            keyboardType = KeyboardType.Decimal,
+            imeAction    = if (nextFocus != null) ImeAction.Next else ImeAction.Done
+        ),
         keyboardActions = KeyboardActions(onNext = { nextFocus?.requestFocus() }),
-        singleLine = true
+        singleLine      = true
     )
 }
 
-// --- FUNÇÕES DE EXTENSÃO ---
+// =============================================================================
+// EXTENSÕES PRIVADAS
+// =============================================================================
 
-private fun String.toFloatOrZero(): Float {
-    return this.replace(",", ".").toFloatOrNull() ?: 0f
-}
-
-private fun String.toIntOrZero(): Int {
-    return this.toIntOrNull() ?: 0
-}
+private fun String.toFloatOrZero(): Float = replace(",", ".").toFloatOrNull() ?: 0f
+private fun String.toIntOrZero(): Int     = toIntOrNull() ?: 0

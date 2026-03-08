@@ -25,10 +25,9 @@ fun GrainScreen(
     navController: NavController,
     viewModel: ClassificationViewModel = hiltViewModel()
 ) {
-    // 1. O Scaffold envolve toda a tela
     Scaffold(
         modifier = Modifier.fillMaxSize()
-    ) { innerPadding -> // Esse innerPadding contém as medidas da barra de status e navegação
+    ) { innerPadding -> // Esse innerPadding contém as medidas da barra de status e navegação para responsividade em diferentes telas
 
         Column(
             modifier = Modifier
@@ -36,7 +35,7 @@ fun GrainScreen(
                 .padding(innerPadding)
                 .padding(32.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center // <-- Centralização mantida
+            verticalArrangement = Arrangement.Center
         ) {
             Button(
                 onClick = {
