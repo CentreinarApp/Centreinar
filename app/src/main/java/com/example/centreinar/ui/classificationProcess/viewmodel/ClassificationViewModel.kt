@@ -7,11 +7,14 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.saveable
+import com.example.centreinar.domain.model.GrainDescriptor
+import com.example.centreinar.ui.classificationProcess.strategy.ClassificationInputState
 import com.example.centreinar.ui.classificationProcess.strategy.ClassificationPayload
 import com.example.centreinar.ui.classificationProcess.strategy.ClassificationUIState
 import com.example.centreinar.ui.classificationProcess.strategy.CustomLimitPayload
 import com.example.centreinar.ui.classificationProcess.strategy.GrainStrategy
 import com.example.centreinar.util.Utilities
+import com.example.centreinar.util.retryUntilNotNull
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,15 +24,28 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-
 @HiltViewModel
 class ClassificationViewModel @Inject constructor(
     private val strategies: Map<String, @JvmSuppressWildcards GrainStrategy>,
     private val savedStateHandle: SavedStateHandle,
     val utilities: Utilities
 ) : ViewModel() {
+
     private val currentStrategy: GrainStrategy?
         get() = strategies[selectedGrain]
+
+    val availableGrainDescriptors: List<GrainDescriptor> =
+        strategies.values
+            .map { it.descriptor }
+            .sortedBy { it.displayName }
+
+    // Descriptor do grão atualmente selecionado
+    val currentDescriptor: GrainDescriptor?
+        get() = currentStrategy?.descriptor
+
+    // Delega a construção do ClassificationPayload para a strategy.
+    fun buildPayload(state: ClassificationInputState): ClassificationPayload? =
+        currentStrategy?.buildPayload(state)
 
     // =========================================================================
     // ESTADOS
@@ -43,8 +59,8 @@ class ClassificationViewModel @Inject constructor(
 
     var selectedGrain by savedStateHandle.saveable { mutableStateOf<String?>(null) }
     var selectedGroup by savedStateHandle.saveable { mutableStateOf<Int?>(null) }
-    var isOfficial by savedStateHandle.saveable { mutableStateOf<Boolean>(false) }
-    var observation by savedStateHandle.saveable { mutableStateOf<String?>(null) }
+    var isOfficial    by savedStateHandle.saveable { mutableStateOf<Boolean>(false) }
+    var observation   by savedStateHandle.saveable { mutableStateOf<String?>(null) }
 
     private val _allOfficialLimits = MutableStateFlow<List<Any>>(emptyList())
     val allOfficialLimits: StateFlow<List<Any>> = _allOfficialLimits.asStateFlow()
@@ -83,17 +99,16 @@ class ClassificationViewModel @Inject constructor(
         toxicSeeds: List<Pair<String, String>>,
         onSuccess: () -> Unit
     ) {
-        val strategy = currentStrategy ?: return // Garante que a estratégia foi carregada
-
+        val strategy = currentStrategy ?: return
         viewModelScope.launch {
             try {
                 strategy.saveDisqualificationData(
                     classificationId = classificationId,
-                    badConservation = badConservation,
-                    strangeSmell = strangeSmell,
-                    insects = insects,
-                    toxicGrains = toxicGrains,
-                    toxicSeeds = toxicSeeds
+                    badConservation  = badConservation,
+                    strangeSmell     = strangeSmell,
+                    insects          = insects,
+                    toxicGrains      = toxicGrains,
+                    toxicSeeds       = toxicSeeds
                 )
                 onSuccess()
             } catch (e: Exception) {
@@ -103,20 +118,14 @@ class ClassificationViewModel @Inject constructor(
     }
 
     fun loadDefaultLimits() {
-        val group = selectedGroup ?: return
+        val group    = selectedGroup ?: return
         val strategy = currentStrategy ?: return
 
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 _isLoading.value = true
 
-                // Retry até o banco estar populado
-                var baseLimits: Map<String, Float>? = null
-                repeat(10) {
-                    baseLimits = strategy.getBaseLimits(group)
-                    if (baseLimits != null) return@repeat
-                    kotlinx.coroutines.delay(300)
-                }
+                val baseLimits = retryUntilNotNull { strategy.getBaseLimits(group) }
 
                 if (baseLimits == null) {
                     _error.value = "Não foi possível carregar os limites."
@@ -138,22 +147,18 @@ class ClassificationViewModel @Inject constructor(
     }
 
     fun resetLimits() {
-        // Pegamos a estratégia atual
         val strategy = currentStrategy ?: return
-
         viewModelScope.launch {
             try {
-                // A Strategy sabe em qual tabela do banco ela precisa dar o "delete"
                 strategy.deleteCustomLimits()
-
-                // Limpamos os limites do Estado da UI também, por segurança
                 _uiState.update { it.copy(limitUsed = null) }
-
             } catch (e: Exception) {
                 e.printStackTrace()
             }
         }
     }
+
+    fun getLimitFields() = currentStrategy?.getLimitFields() ?: emptyList()
 
     fun deleteCustomLimits() {
         viewModelScope.launch(Dispatchers.IO) {
@@ -181,16 +186,15 @@ class ClassificationViewModel @Inject constructor(
 
     fun exportPdf(context: Context) {
         val strategy = currentStrategy ?: return
-        val state = _uiState.value
-
+        val state    = _uiState.value
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 strategy.exportClassificationToPdf(
-                    context = context,
-                    state = state,
-                    limits = _allOfficialLimits.value,
+                    context     = context,
+                    state       = state,
+                    limits      = _allOfficialLimits.value,
                     observation = observation,
-                    isOfficial = isOfficial
+                    isOfficial  = isOfficial
                 )
             } catch (e: Exception) {
                 _error.value = "Erro ao exportar PDF: ${e.message}"
@@ -208,10 +212,10 @@ class ClassificationViewModel @Inject constructor(
     }
 
     fun clearStates() {
-        _uiState.value = ClassificationUIState()
-        _defaultLimits.value = null
+        _uiState.value           = ClassificationUIState()
+        _defaultLimits.value     = null
         _allOfficialLimits.value = emptyList()
-        _error.value = null
-        observation = null
+        _error.value             = null
+        observation              = null
     }
 }

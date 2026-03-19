@@ -9,6 +9,7 @@ import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import dagger.multibindings.IntoMap
 import dagger.multibindings.StringKey
+import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -16,15 +17,11 @@ abstract class ClassificationStrategyModule {
     // As chaves que usamos para buscar as estratégias
     @Binds
     @IntoMap
-    @StringKey("Soja")
-    abstract fun bindSojaStrategy(
-        sojaStrategy: SojaClassificationStrategy
-    ): GrainStrategy
+    @StringKey("Soja") @Singleton
+    abstract fun bindSojaClassificationStrategy(sojaStrategy: SojaClassificationStrategy): GrainStrategy
 
     @Binds
     @IntoMap
-    @StringKey("Milho")
-    abstract fun bindMilhoStrategy(
-        milhoStrategy: MilhoClassificationStrategy
-    ): GrainStrategy
+    @StringKey("Milho") @Singleton
+    abstract fun bindMilhoClassificationStrategy(milhoStrategy: MilhoClassificationStrategy): GrainStrategy
 }

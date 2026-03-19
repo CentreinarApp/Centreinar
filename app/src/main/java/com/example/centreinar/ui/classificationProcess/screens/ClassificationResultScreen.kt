@@ -1,6 +1,5 @@
 package com.example.centreinar.ui.classificationProcess.screens
 
-import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
@@ -20,18 +19,15 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
-import com.example.centreinar.ClassificationMilho
-import com.example.centreinar.ClassificationSoja
-import com.example.centreinar.DisqualificationSoja
-import com.example.centreinar.data.local.entity.DisqualificationMilho
-import com.example.centreinar.LimitSoja
-import com.example.centreinar.data.local.entity.LimitMilho
 import com.example.centreinar.ui.classificationProcess.components.*
+import com.example.centreinar.ui.classificationProcess.strategy.BaseLimit
 import com.example.centreinar.ui.classificationProcess.viewmodel.ClassificationViewModel
 import com.example.centreinar.ui.components.ActionButtons
+import com.example.centreinar.ui.components.InputDataTable
 import com.example.centreinar.ui.components.OfficialReferenceTable
-import com.example.centreinar.ui.discount.strategy.FinancialDiscountPayload
+import com.example.centreinar.ui.discount.viewmodel.DiscountNavigationEvent
 import com.example.centreinar.ui.discount.viewmodel.DiscountViewModel
+import com.example.centreinar.util.Routes
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -43,18 +39,27 @@ fun ClassificationResultScreen(
     val uiState           by classificationViewModel.uiState.collectAsStateWithLifecycle()
     val error             by classificationViewModel.error.collectAsStateWithLifecycle()
     val allOfficialLimits by classificationViewModel.allOfficialLimits.collectAsStateWithLifecycle()
-    val discountResult    by discountViewModel.discountResult.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
     // Controla a visibilidade do BottomSheet
     var showDiscountSheet by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-    // Navega para o resultado do desconto assim que o cálculo terminar
-    LaunchedEffect(discountResult) {
-        if (discountResult != null) {
-            showDiscountSheet = false
-            navController.navigate("discountResultsScreen")
+    // One-shot event — Channel garante que a navegação acontece exatamente
+    // uma vez por cálculo, sem depender de estado residual no ViewModel.
+    LaunchedEffect(Unit) {
+        discountViewModel.navigationEvent.collect { event ->
+            when (event) {
+                is DiscountNavigationEvent.NavigateToResults -> {
+                    showDiscountSheet = false
+                    navController.navigate(Routes.DISCOUNT_RESULTS) {
+                        // Remove instâncias anteriores de DISCOUNT_RESULTS do back stack
+                        // antes de empilhar a nova — garante que o usuário veja sempre
+                        // o resultado do cálculo mais recente ao recalcular.
+                        popUpTo(Routes.DISCOUNT_RESULTS) { inclusive = true }
+                    }
+                }
+            }
         }
     }
 
@@ -88,30 +93,10 @@ fun ClassificationResultScreen(
         } else if (uiState.classification != null && uiState.limitUsed != null) {
             val result = uiState.classification!!
             val limits = uiState.limitUsed!!
-
-            val moistureValue = when (result) {
-                is ClassificationSoja  -> result.moisturePercentage
-                is ClassificationMilho -> result.moisturePercentage
-                else -> 0f
-            }
-
-            val finalTypeValue = when (result) {
-                is ClassificationSoja  -> result.finalType
-                is ClassificationMilho -> result.finalType
-                else -> 0
-            }
-
-            val moistureLimit = when (limits) {
-                is LimitSoja  -> limits.moistureUpLim
-                is LimitMilho -> limits.moistureUpLim
-                else -> 0f
-            }
-
-            val groupLimit = when (limits) {
-                is LimitSoja  -> limits.group
-                is LimitMilho -> limits.group
-                else -> 0
-            }
+            val moistureValue  = result.moisturePercentage
+            val finalTypeValue = result.finalType
+            val moistureLimit  = limits.moistureUpLim
+            val groupLimit     = limits.group
 
             Column(
                 modifier = Modifier
@@ -151,41 +136,39 @@ fun ClassificationResultScreen(
 
                     Spacer(Modifier.height(26.dp))
 
+                    // Desclassificação
                     uiState.disqualification?.let { disq ->
                         DisqualificationInfoCard(
-                            badConservation = when (disq) {
-                                is DisqualificationSoja  -> disq.badConservation == 1
-                                is DisqualificationMilho -> disq.badConservation == 1
-                                else -> false
-                            },
-                            strangeSmell = when (disq) {
-                                is DisqualificationSoja  -> disq.strangeSmell == 1
-                                is DisqualificationMilho -> disq.strangeSmell == 1
-                                else -> false
-                            },
-                            insects = when (disq) {
-                                is DisqualificationSoja  -> disq.insects == 1
-                                is DisqualificationMilho -> disq.insects == 1
-                                else -> false
-                            },
-                            toxicGrains = when (disq) {
-                                is DisqualificationSoja  -> disq.toxicGrains == 1
-                                is DisqualificationMilho -> disq.toxicGrains == 1
-                                else -> false
-                            },
-                            toxicSeeds = uiState.toxicSeeds
+                            badConservation = disq.badConservation == 1,
+                            strangeSmell    = disq.strangeSmell    == 1,
+                            insects         = disq.insects         == 1,
+                            toxicGrains     = disq.toxicGrains     == 1,
+                            toxicSeeds      = uiState.toxicSeeds
                         )
                     }
 
                     Spacer(Modifier.height(26.dp))
 
+                    // Tabela de referência
+                    val limitsForTable: List<BaseLimit> =
+                        if (classificationViewModel.isOfficial && allOfficialLimits.isNotEmpty())
+                            allOfficialLimits.filterIsInstance<BaseLimit>()
+                        else
+                            listOf(limits)
+
+                    // Tabela de dados de entrada da amostra (pesos e defeitos em gramas)
+                    if (uiState.sampleInputRows.isNotEmpty()) {
+                        InputDataTable(
+                            title = "DADOS DA AMOSTRA",
+                            rows  = uiState.sampleInputRows.map { it.label to it.value }
+                        )
+                        Spacer(Modifier.height(12.dp))
+                    }
+
                     OfficialReferenceTable(
-                        grain      = classificationViewModel.selectedGrain ?: "",
                         group      = groupLimit,
                         isOfficial = classificationViewModel.isOfficial,
-                        data       = if (classificationViewModel.isOfficial && allOfficialLimits.isNotEmpty())
-                            allOfficialLimits
-                        else listOf(limits)
+                        data       = limitsForTable
                     )
                 }
 
@@ -193,23 +176,18 @@ fun ClassificationResultScreen(
                     onBack            = { navController.popBackStack() },
                     primaryActionText = "Calcular Desconto",
                     onPrimaryAction   = {
-                        // Extrai o ID concreto da classificação para vinculá-lo ao desconto
-                        val classifId = when (result) {
-                            is ClassificationSoja  -> result.id
-                            is ClassificationMilho -> result.id
-                            else -> -1
-                        }
+                        val classifId = result.id
 
                         // SALVA O ID DA CLASSIFICAÇÃO NO VIEWMODEL DE DESCONTO PARA USO NO PDF
                         discountViewModel.setClassificationId(classifId)
 
                         discountViewModel.loadFromClassification(
-                            lotWeight          = uiState.sampleLotWeight,
-                            classification     = result,
-                            grain              = classificationViewModel.selectedGrain ?: "Soja",
-                            group              = classificationViewModel.selectedGroup ?: 1,
-                            isOfficial         = classificationViewModel.isOfficial,
-                            classificationId   = classifId
+                            lotWeight        = uiState.sampleLotWeight,
+                            classification   = result,
+                            grain            = classificationViewModel.selectedGrain ?: "Soja",
+                            group            = classificationViewModel.selectedGroup ?: 1,
+                            isOfficial       = classificationViewModel.isOfficial,
+                            classificationId = classifId
                         )
                         showDiscountSheet = true
                     },
@@ -226,9 +204,9 @@ fun ClassificationResultScreen(
                     sheetState       = sheetState
                 ) {
                     DiscountBottomSheetContent(
-                        initialLotWeight = uiState.sampleLotWeight.takeIf { it > 0f }?.toString() ?: "",
+                        initialLotWeight  = uiState.sampleLotWeight.takeIf { it > 0f }?.toString() ?: "",
                         discountViewModel = discountViewModel,
-                        onDismiss = { showDiscountSheet = false }
+                        onDismiss         = { showDiscountSheet = false }
                     )
                 }
             }
@@ -256,8 +234,8 @@ private fun DiscountBottomSheetContent(
     var doesDeduction     by remember { mutableStateOf(false) }
     var errorMessage      by remember { mutableStateOf<String?>(null) }
 
-    val lotWeightFocus   = remember { FocusRequester() }
-    val priceBySackFocus = remember { FocusRequester() }
+    val lotWeightFocus      = remember { FocusRequester() }
+    val priceBySackFocus    = remember { FocusRequester() }
     val daysOfStorageFocus  = remember { FocusRequester() }
     val deductionValueFocus = remember { FocusRequester() }
 
@@ -392,38 +370,23 @@ private fun DiscountBottomSheetContent(
                     }
                     errorMessage = null
 
-                    val grain    = discountViewModel.selectedGrain
-                    val strategy = discountViewModel.getStrategy(grain)
-                        ?: run { errorMessage = "Grão não suportado: $grain"; return@Button }
-
-                    // Recupera o mapa de defeitos que foi preenchido pelo loadFromClassification
-                    val prefill = discountViewModel.classificationPrefill.value
-
-                    val defectsMap = (prefill?.defects ?: emptyMap()) + mapOf(
-                        "umidade"   to (prefill?.moisture ?: 0f),
-                        "lotWeight" to fLotWeight,
-                        "lotPrice"  to (fLotWeight * fPriceBySack) / 60f
-                    )
-
-                    val defectsPayload   = strategy.createDefectsPayload(defectsMap)
-                    val financialPayload = FinancialDiscountPayload(
-                        priceBySack       = fPriceBySack,
+                    // A tela só conhece dados financeiros.
+                    // Defeitos e grão vêm do prefill interno do ViewModel.
+                    discountViewModel.calculateDiscountFromClassification(
                         lotWeight         = fLotWeight,
-                        group             = discountViewModel.selectedGroup,
+                        priceBySack       = fPriceBySack,
                         daysOfStorage     = daysOfStorage.toIntOrZero(),
                         doesTechnicalLoss = doesTechnicalLoss,
                         deductionValue    = deductionValue.toFloatOrZero(),
                         doesDeduction     = doesDeduction
                     )
-
-                    discountViewModel.calculateDiscount(defectsPayload, financialPayload)
                 }
             ) {
                 if (uiState.isLoading) {
                     CircularProgressIndicator(
-                        modifier  = Modifier.size(20.dp),
+                        modifier    = Modifier.size(20.dp),
                         strokeWidth = 2.dp,
-                        color     = MaterialTheme.colorScheme.onPrimary
+                        color       = MaterialTheme.colorScheme.onPrimary
                     )
                 } else {
                     Text("Calcular")

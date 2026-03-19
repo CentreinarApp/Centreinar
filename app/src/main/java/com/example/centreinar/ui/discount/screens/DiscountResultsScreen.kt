@@ -16,23 +16,25 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import com.example.centreinar.ui.classificationProcess.strategy.BaseLimit
+import com.example.centreinar.ui.components.InputDataTable
 import com.example.centreinar.ui.components.ActionButtons
 import com.example.centreinar.ui.components.OfficialReferenceTable
 import com.example.centreinar.ui.discount.strategy.DiscountResultRow
 import com.example.centreinar.ui.discount.viewmodel.DiscountViewModel
+import com.example.centreinar.util.Routes
 
 @Composable
 fun DiscountResultScreen(
     navController: NavController,
     viewModel: DiscountViewModel = hiltViewModel()
 ) {
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val discountResult by viewModel.discountResult.collectAsStateWithLifecycle()
-
-    // Coletamos os limites brutos da base de dados
+    val uiState           by viewModel.uiState.collectAsStateWithLifecycle()
+    val discountInputRows = uiState.discountInputRows
+    val discountResult    by viewModel.discountResult.collectAsStateWithLifecycle()
     val allOfficialLimits by viewModel.allOfficialLimits.collectAsStateWithLifecycle()
 
-    val context = LocalContext.current
+    val context     = LocalContext.current
     var showDetails by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
@@ -87,8 +89,18 @@ fun DiscountResultScreen(
                             )
                         }
 
-                        // Tabela de limites oficiais
-                        if (allOfficialLimits.isNotEmpty()) {
+                        // Tabela de limites — filtra para BaseLimit
+                        // Tabela de dados de entrada usados no cálculo
+                        if (discountInputRows.isNotEmpty()) {
+                            Spacer(Modifier.height(16.dp))
+                            InputDataTable(
+                                title = "DADOS UTILIZADOS NO CÁLCULO",
+                                rows  = discountInputRows.map { it.label to it.value }
+                            )
+                        }
+
+                        val limitsForTable = allOfficialLimits.filterIsInstance<BaseLimit>()
+                        if (limitsForTable.isNotEmpty()) {
                             Spacer(Modifier.height(24.dp))
                             Text(
                                 text      = "Limites Utilizados no Cálculo",
@@ -96,12 +108,10 @@ fun DiscountResultScreen(
                                 modifier  = Modifier.fillMaxWidth().padding(bottom = 8.dp),
                                 textAlign = TextAlign.Center
                             )
-
                             OfficialReferenceTable(
-                                grain = viewModel.selectedGrain,
-                                group = viewModel.selectedGroup ?: 1,
+                                group      = viewModel.selectedGroup,
                                 isOfficial = viewModel.isOfficial,
-                                data = allOfficialLimits
+                                data       = limitsForTable
                             )
                         }
                     }
@@ -120,10 +130,10 @@ fun DiscountResultScreen(
             }
 
             ActionButtons(
-                onBack = { navController.popBackStack() },
+                onBack            = { navController.popBackStack() },
                 primaryActionText = "Nova Análise",
-                onPrimaryAction = {
-                    navController.navigate("home") {
+                onPrimaryAction   = {
+                    navController.navigate(Routes.HOME) {
                         popUpTo("main_flow") { inclusive = true }
                     }
                 },
@@ -209,6 +219,7 @@ private fun GenericDiscountTable(
                     ) {
                         Text(
                             text     = row.label,
+
                             style    = MaterialTheme.typography.bodyLarge,
                             modifier = Modifier.weight(2f),
                             color    = MaterialTheme.colorScheme.onSurface

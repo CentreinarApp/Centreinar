@@ -40,7 +40,7 @@ fun DisqualificationInfoCard(
                 .fillMaxWidth()
         ) {
             Text(
-                text = "Atenção: Esse lote apresentou os seguintes parâmetros de Desclassificação:",
+                text = "Atenção: Esse lote apresentou os seguintes parâmetros com potencial de Desclassificação:",
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.error,

@@ -5,16 +5,19 @@ import android.util.Log
 import com.example.centreinar.ClassificationSoja
 import com.example.centreinar.DisqualificationSoja
 import com.example.centreinar.LimitSoja
+import com.example.centreinar.SampleSoja
 import com.example.centreinar.data.local.entities.ToxicSeedSoja
 import com.example.centreinar.data.repository.ClassificationRepository
+import com.example.centreinar.domain.model.GrainDescriptor
+import com.example.centreinar.domain.model.LimitField
 import com.example.centreinar.domain.usecase.ClassifySojaUseCase
 import com.example.centreinar.util.ClassificationPdfPayload
+import com.example.centreinar.util.FieldKeys
 import com.example.centreinar.util.PDFExporter
 import com.example.centreinar.util.PdfDisqualificationData
 import com.example.centreinar.util.PdfLimitRow
 import com.example.centreinar.util.PdfSampleData
 import com.example.centreinar.util.PdfTableRow
-import com.example.centreinar.util.getTypeLabel
 import javax.inject.Inject
 
 class SojaClassificationStrategy @Inject constructor(
@@ -23,30 +26,66 @@ class SojaClassificationStrategy @Inject constructor(
     private val pdfExporter: PDFExporter
 ) : GrainStrategy {
 
-    override val grainName: String = "Soja"
+    override val descriptor = GrainDescriptor(
+        name               = "Soja",
+        displayName        = "Soja",
+        colorScheme        = "primary",
+        supportsGroups     = true,
+        supportsColorClass = true
+    )
+
+    override fun buildPayload(state: ClassificationInputState): ClassificationPayload {
+        val sample = SampleSoja(
+            grain = grainName,
+            group = state.group,
+            lotWeight = state.lotWeight,
+            sampleWeight = state.sampleWeight,
+            moisture = state.moisture,
+            foreignMattersAndImpurities = state.foreignMatters,
+            greenish = state.greenish,
+            brokenCrackedDamaged = state.brokenCrackedDamaged,
+            damaged = state.damaged,
+            burnt = state.burnt,
+            sour = state.sour,
+            moldy = state.moldy,
+            fermented = state.fermented,
+            germinated = state.germinated,
+            immature = state.immature,
+            shriveled = state.shriveled
+        )
+        return ClassificationPayload.Soja(
+            sample            = sample,
+            otherColorsWeight = state.otherColorsWeight,
+            baseWeightCor     = state.baseWeightForColor,
+            isColorDefined    = state.isColorDefined
+        )
+    }
+
+    override fun getSampleInputRows(state: ClassificationUIState): List<SampleInputRow> {
+        return state.sampleInputRows
+    }
 
     override suspend fun getOfficialLimits(group: Int): List<Any> {
         return repositorySoja.getLimitsByGroup(grainName, group, 0)
     }
 
     override suspend fun getBaseLimits(group: Int): Map<String, Float>? {
-        return repositorySoja.getLimitOfType1Official(group, grainName)
+        return repositorySoja.getLimitOfType1Official(group, grainName).takeIf { it.isNotEmpty() }
     }
 
     override suspend fun getUiStateData(id: Int): StrategyResultData {
         val classification = repositorySoja.getClassification(id)
             ?: throw Exception("Classificação de Soja não encontrada")
 
-        // Busca o sample para pegar o lotWeight
         val sample = repositorySoja.getSample(classification.sampleId)
 
         val disqualification = repositorySoja.getDisqualificationByClassificationId(id)
 
         val lastSource = repositorySoja.getLastLimitSource()
         val limits = repositorySoja.getLimit(
-            grain = "Soja",
-            group = classification.group,
-            tipo = classification.finalType,
+            grain  = "Soja",
+            group  = classification.group,
+            tipo   = classification.finalType,
             source = lastSource
         ) ?: throw Exception("Limites de referência não encontrados")
 
@@ -55,10 +94,10 @@ class SojaClassificationStrategy @Inject constructor(
         } ?: emptyList()
 
         val rows = listOf(
-            ClassificationRow("Matéria Estranha/Imp", classification.impuritiesPercentage, classification.impuritiesType, limits.impuritiesUpLim),
+            ClassificationRow("Matérias Estranhas e Impurezas", classification.impuritiesPercentage, classification.impuritiesType, limits.impuritiesUpLim),
             ClassificationRow("Ardidos", classification.sourPercentage, 0, 0f),
             ClassificationRow("Queimados", classification.burntPercentage, classification.burntType, limits.burntUpLim),
-            ClassificationRow("Total de Ardidos + Queimados", classification.burntOrSourPercentage, classification.burntOrSourType, limits.burntOrSourUpLim),
+            ClassificationRow("Total de Ardidos e Queimados", classification.burntOrSourPercentage, classification.burntOrSourType, limits.burntOrSourUpLim),
             ClassificationRow("Mofados", classification.moldyPercentage, classification.moldyType, limits.moldyUpLim),
             ClassificationRow("Fermentados", classification.fermentedPercentage, 0, 0f),
             ClassificationRow("Germinados", classification.germinatedPercentage, 0, 0f),
@@ -75,7 +114,7 @@ class SojaClassificationStrategy @Inject constructor(
         colorClass?.let {
             cards.add(
                 ComplementaryCardData(
-                    title = it.framingClass,
+                    title    = it.framingClass,
                     subtitle = "Amarela: %.2f%% | Outras Cores: %.2f%%".format(it.yellowPercentage, it.otherColorPercentage),
                     colorType = "tertiary"
                 )
@@ -83,15 +122,25 @@ class SojaClassificationStrategy @Inject constructor(
         }
 
         return StrategyResultData(
-            classification    = classification,
-            disqualification  = disqualification,
-            limit             = limits,
-            tableRows         = rows,
-            toxicSeeds        = toxicSeeds.map { it.name to it.quantity },
-            cards             = cards,
-            sampleLotWeight   = sample?.lotWeight ?: 0f  // ✅ agora sample existe
+            classification   = classification,
+            disqualification = disqualification,
+            limit            = limits,
+            tableRows        = rows,
+            toxicSeeds       = toxicSeeds.map { it.name to it.quantity },
+            cards            = cards,
+            sampleLotWeight  = sample?.lotWeight ?: 0f
         )
     }
+
+    override fun getLimitFields(): List<LimitField> = listOf(
+        LimitField(FieldKeys.BURNT_OR_SOUR, "Ardidos e Queimados (%)"),
+        LimitField(FieldKeys.BURNT,         "Queimados (%)"),
+        LimitField(FieldKeys.MOLDY,         "Mofados (%)"),
+        LimitField(FieldKeys.SPOILED,       "Total Avariados (%)"),
+        LimitField(FieldKeys.GREENISH,      "Esverdeados (%)"),
+        LimitField(FieldKeys.BROKEN,        "Partidos, Quebrados e Amassados (%)"),
+        LimitField(FieldKeys.IMPURITIES, "Matérias Estranhas e Impurezas (%)")
+    )
 
     override suspend fun classify(payload: ClassificationPayload, isOfficial: Boolean): ClassificationUIState {
         require(payload is ClassificationPayload.Soja) { "Payload incorreto para a estratégia de Soja" }
@@ -120,29 +169,47 @@ class SojaClassificationStrategy @Inject constructor(
             )
         }
 
-        val classification = result.classification as com.example.centreinar.ClassificationSoja
-        val limits         = result.limitUsed as com.example.centreinar.LimitSoja
+        val classification = result.classification as ClassificationSoja
+        val limits         = result.limitUsed as LimitSoja
 
         val rows = listOf(
-            ClassificationRow("Matérias Estranhas e Impurezas (%)", classification.impuritiesPercentage, classification.impuritiesType, limits.impuritiesUpLim),
+            ClassificationRow("Matérias Estranhas e Impurezas", classification.impuritiesPercentage, classification.impuritiesType, limits.impuritiesUpLim),
+            ClassificationRow("Ardidos", classification.sourPercentage, -1, 0f),
+            ClassificationRow("Queimados", classification.burntPercentage, classification.burntType, limits.burntUpLim),
+            ClassificationRow("Total de Ardidos e Queimados", classification.burntOrSourPercentage, classification.burntOrSourType, limits.burntOrSourUpLim),
+            ClassificationRow("Mofados", classification.moldyPercentage, classification.moldyType, limits.moldyUpLim),
+            ClassificationRow("Fermentados", classification.fermentedPercentage, -1, 0f),
+            ClassificationRow("Germinados", classification.germinatedPercentage, -1, 0f),
+            ClassificationRow("Imaturos", classification.immaturePercentage, -1, 0f),
+            ClassificationRow("Chochos", classification.shriveledPercentage, -1, 0f),
+            ClassificationRow("Danificados", classification.damagedPercentage, -1, 0f),
+            ClassificationRow("Total de Avariados", classification.spoiledPercentage, classification.spoiledType, limits.spoiledTotalUpLim),
+            ClassificationRow("Esverdeados", classification.greenishPercentage, classification.greenishType, limits.greenishUpLim),
+            ClassificationRow("Partidos, Quebrados e Amassados", classification.brokenCrackedDamagedPercentage, classification.brokenCrackedDamagedType, limits.brokenCrackedDamagedUpLim)
+        )
 
-            // Não define tipo = -1
-            ClassificationRow("Ardidos (%)", classification.sourPercentage, -1, 0f),
-
-            ClassificationRow("Queimados (%)", classification.burntPercentage, classification.burntType, limits.burntUpLim),
-            ClassificationRow("Total de Ardidos e Queimados (%)", classification.burntOrSourPercentage, classification.burntOrSourType, limits.burntOrSourUpLim),
-            ClassificationRow("Mofados (%)", classification.moldyPercentage, classification.moldyType, limits.moldyUpLim),
-
-            // Não definem tipo = -1
-            ClassificationRow("Fermentados (%)", classification.fermentedPercentage, -1, 0f),
-            ClassificationRow("Germinados (%)", classification.germinatedPercentage, -1, 0f),
-            ClassificationRow("Imaturos (%)", classification.immaturePercentage, -1, 0f),
-            ClassificationRow("Chochos (%)", classification.shriveledPercentage, -1, 0f),
-            ClassificationRow("Danificados (%)", classification.damagedPercentage, -1, 0f),
-
-            ClassificationRow("Total de Avariados (%)", classification.spoiledPercentage, classification.spoiledType, limits.spoiledTotalUpLim),
-            ClassificationRow("Esverdeados (%)", classification.greenishPercentage, classification.greenishType, limits.greenishUpLim),
-            ClassificationRow("Partidos, Quebrados e Amassados (%)", classification.brokenCrackedDamagedPercentage, classification.brokenCrackedDamagedType, limits.brokenCrackedDamagedUpLim)
+        val sampleInputRows = listOf(
+            SampleInputRow("Peso do Lote",           "%.2f kg".format(payload.sample.lotWeight)),
+            SampleInputRow("Peso da Amostra",        "%.2f g".format(payload.sample.sampleWeight)),
+            SampleInputRow("Peso Limpo",             "%.2f g".format(
+                if (payload.sample.cleanWeight > 0f) payload.sample.cleanWeight
+                else payload.sample.sampleWeight - payload.sample.foreignMattersAndImpurities
+            )),
+            SampleInputRow("Matérias Estranhas e Impurezas",              "%.2f g".format(payload.sample.foreignMattersAndImpurities)),
+            SampleInputRow("Ardidos",                "%.2f g".format(payload.sample.sour)),
+            SampleInputRow("Queimados",              "%.2f g".format(payload.sample.burnt)),
+            SampleInputRow("Mofados",                "%.2f g".format(payload.sample.moldy)),
+            SampleInputRow("Fermentados",            "%.2f g".format(payload.sample.fermented)),
+            SampleInputRow("Germinados",             "%.2f g".format(payload.sample.germinated)),
+            SampleInputRow("Imaturos",               "%.2f g".format(payload.sample.immature)),
+            SampleInputRow("Chochos",                "%.2f g".format(payload.sample.shriveled)),
+            SampleInputRow("Danificados Total",            "%.2f g".format(payload.sample.damaged)),
+            SampleInputRow("Avariados Total",        "%.2f g".format(
+                payload.sample.moldy + payload.sample.fermented + payload.sample.sour +
+                        payload.sample.burnt + payload.sample.germinated + payload.sample.immature +
+                        payload.sample.shriveled + payload.sample.damaged)),
+            SampleInputRow("Esverdeados",            "%.2f g".format(payload.sample.greenish)),
+            SampleInputRow("Partidos, Quebrados e Amassados",     "%.2f g".format(payload.sample.brokenCrackedDamaged))
         )
 
         return ClassificationUIState(
@@ -152,7 +219,8 @@ class SojaClassificationStrategy @Inject constructor(
             toxicSeeds         = mappedToxicSeeds,
             complementaryCards = cards,
             tableRows          = rows,
-            sampleLotWeight    = payload.sample.lotWeight
+            sampleLotWeight    = payload.sample.lotWeight,
+            sampleInputRows    = sampleInputRows
         )
     }
 
@@ -211,7 +279,6 @@ class SojaClassificationStrategy @Inject constructor(
 
             val limitesParaPdf = if (isOfficial) limits.filterIsInstance<LimitSoja>() else listOf(limit)
 
-            // Cabeçalhos dinâmicos: ["Defeito", "Tipo 1", "Tipo 2", ...]
             val limitHeaders = listOf("Defeito") + limitesParaPdf.mapIndexed { i, item ->
                 if (item.group == 2) "Padrão Básico"
                 else if (item.group == 1 && (i + 1) == 4) "Fora de Tipo"
@@ -219,13 +286,13 @@ class SojaClassificationStrategy @Inject constructor(
             }
 
             val limitRows = listOf(
-                "Ardidos e Queimados" to limitesParaPdf.map { "%.2f%%".format(it.burntOrSourUpLim) },
-                "Queimados"           to limitesParaPdf.map { "%.2f%%".format(it.burntUpLim) },
-                "Mofados"             to limitesParaPdf.map { "%.2f%%".format(it.moldyUpLim) },
-                "Avariados Total"     to limitesParaPdf.map { "%.2f%%".format(it.spoiledTotalUpLim) },
-                "Esverdeados"         to limitesParaPdf.map { "%.2f%%".format(it.greenishUpLim) },
-                "Partidos, Quebrados e Amassados"  to limitesParaPdf.map { "%.2f%%".format(it.brokenCrackedDamagedUpLim) },
-                "Matérias Estranhas e Impurezas"  to limitesParaPdf.map { "%.2f%%".format(it.impuritiesUpLim) }
+                "Ardidos e Queimados"                    to limitesParaPdf.map { "%.2f%%".format(it.burntOrSourUpLim) },
+                "Queimados"                              to limitesParaPdf.map { "%.2f%%".format(it.burntUpLim) },
+                "Mofados"                                to limitesParaPdf.map { "%.2f%%".format(it.moldyUpLim) },
+                "Avariados Total"                        to limitesParaPdf.map { "%.2f%%".format(it.spoiledTotalUpLim) },
+                "Esverdeados"                            to limitesParaPdf.map { "%.2f%%".format(it.greenishUpLim) },
+                "Partidos, Quebrados e Amassados"        to limitesParaPdf.map { "%.2f%%".format(it.brokenCrackedDamagedUpLim) },
+                "Matérias Estranhas e Impurezas"         to limitesParaPdf.map { "%.2f%%".format(it.impuritiesUpLim) }
             ).map { (label, values) -> PdfLimitRow(label, values) }
 
             val payload = ClassificationPdfPayload(
@@ -238,16 +305,20 @@ class SojaClassificationStrategy @Inject constructor(
                 tableRows          = state.tableRows.map { row ->
                     PdfTableRow(row.label, "%.2f".format(row.percentage), getTypeLabel(row.typeCode, sample.group))
                 },
-                colorLabel         = colorClass?.framingClass,
+                colorLabel         = colorClass?.framingClass ?: "CLASSE DE COR DA SOJA",
+                colorDefined       = colorClass != null,
                 colorYellow        = colorClass?.yellowPercentage,
                 colorOther         = colorClass?.otherColorPercentage,
-                sample             = PdfSampleData(sample.lotWeight, sample.sampleWeight, sample.humidity),
+                sample             = PdfSampleData(sample.lotWeight, sample.sampleWeight, sample.moisture),
+                sampleInputRows    = state.sampleInputRows
+                    .filter { it.label != "Peso do Lote" && it.label != "Peso da Amostra" }
+                    .map { it.label to it.value },
                 disqualification   = disqSoja?.let { disq ->
                     PdfDisqualificationData(
-                        badConservation = disq.badConservation,
-                        strangeSmell    = disq.strangeSmell,
-                        insects         = disq.insects,
-                        toxicGrains     = disq.toxicGrains,
+                        badConservation  = disq.badConservation,
+                        strangeSmell     = disq.strangeSmell,
+                        insects          = disq.insects,
+                        toxicGrains      = disq.toxicGrains,
                         toxicSeedDetails = toxicSeeds?.map { it.name to it.quantity } ?: emptyList()
                     )
                 },
@@ -269,7 +340,7 @@ class SojaClassificationStrategy @Inject constructor(
             type                 = 1,
             impurities           = payload.impurities,
             moisture             = payload.moisture,
-            brokenCrackedDamaged = payload.brokenCrackedDamaged,
+            brokenCrackedDamaged = payload.broken,
             greenish             = payload.greenish,
             burnt                = payload.burnt,
             burntOrSour          = payload.burntOrSour,
@@ -282,7 +353,11 @@ class SojaClassificationStrategy @Inject constructor(
         repositorySoja.deleteCustomLimits()
     }
 
-    override suspend fun saveColorClass(classificationId: Int, totalWeight: Float, otherColorsWeight: Float) {
+    override suspend fun saveColorClass(
+        classificationId: Int,
+        totalWeight: Float,
+        otherColorsWeight: Float
+    ) {
         repositorySoja.setClass(grainName, classificationId, totalWeight, otherColorsWeight)
     }
 
@@ -292,10 +367,8 @@ class SojaClassificationStrategy @Inject constructor(
         if (finalType == 7) return "Fora de Tipo"
 
         return if (group == 2) {
-            // Grupo 2 só tem um limite de referência (padrão básico)
             "Padrão Básico"
         } else when (finalType) {
-            // Grupo 1 tem 3 limites de referência
             1    -> "Tipo 1"
             2    -> "Tipo 2"
             3    -> "Tipo 3"

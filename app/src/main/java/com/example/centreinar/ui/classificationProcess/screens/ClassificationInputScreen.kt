@@ -19,398 +19,320 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.example.centreinar.SampleSoja
-import com.example.centreinar.data.local.entity.SampleMilho
-import com.example.centreinar.ui.classificationProcess.strategy.ClassificationPayload
+import com.example.centreinar.domain.model.GrainDescriptor
+import com.example.centreinar.ui.classificationProcess.strategy.ClassificationInputState
 import com.example.centreinar.ui.classificationProcess.viewmodel.ClassificationViewModel
+import com.example.centreinar.util.Routes
 import com.example.centreinar.util.roundToOneDecimal
 import com.example.centreinar.util.toFloatOrZero
 import com.example.centreinar.util.toUniversalString
 import kotlin.math.roundToInt
 
-// -------------------------------------------------------------------------------------------------
-// --- TELA PRINCIPAL ----
-// -------------------------------------------------------------------------------------------------
+// =============================================================================
+// TELA PRINCIPAL
+// =============================================================================
 
 @Composable
 fun ClassificationInputScreen(
     navController: NavController,
     viewModel: ClassificationViewModel = hiltViewModel()
 ) {
-    Scaffold(
-        modifier = Modifier.fillMaxSize()
-    ) { innerPadding -> // Esse innerPadding contém as medidas da barra de status e navegação para responsividade em diferentes telas
-        // Leitura das variáveis 'val' do ViewModel
-        val currentGrain = viewModel.selectedGrain
-        val currentGroup = viewModel.selectedGroup
-        val isMilho = currentGrain == "Milho"
-        val isSoja = !isMilho
+    val descriptor = viewModel.currentDescriptor ?: return
+    val currentGroup = viewModel.selectedGroup ?: 1
+    val focusManager = LocalFocusManager.current
 
-        val focusManager = LocalFocusManager.current
+    // Informação Básica
+    var lotWeight     by remember { mutableStateOf("") }
+    var sampleWeight  by remember { mutableStateOf("") }
+    var moisture      by remember { mutableStateOf("") }
+    var foreignMatters by remember { mutableStateOf("") }
+    var cleanSampleWeightInput by remember { mutableStateOf("") }
 
-        // Variáveis de Estado para os Inputs
-        var lotWeight by remember { mutableStateOf("") }
-        var sampleWeight by remember { mutableStateOf("") }
-        var foreignMatters by remember { mutableStateOf("") }
-        var moisture by remember { mutableStateOf("") }
+    // Avariados
+    var sour       by remember { mutableStateOf("") }
+    var burnt      by remember { mutableStateOf("") }
+    var moldy      by remember { mutableStateOf("") }
+    var fermented  by remember { mutableStateOf("") }
+    var germinated by remember { mutableStateOf("") }
+    var immature   by remember { mutableStateOf("") }
+    var shriveled  by remember { mutableStateOf("") }
+    var gessado    by remember { mutableStateOf("") }
+    var piercingInput by remember { mutableStateOf("") }
+    var damagedInput  by remember { mutableStateOf("") }
+    var damaged       by remember { mutableStateOf("") }
 
-        // INPUT CONDICIONAL: Peso da Amostra Limpa (usado APENAS se definir classe de cor)
-        var cleanSampleWeightInput by remember { mutableStateOf("") }
+    // Defeitos Finais
+    var brokenCrackedDamaged by remember { mutableStateOf("") }
+    var greenish   by remember { mutableStateOf("") }
+    var carunchado by remember { mutableStateOf("") }
 
-        // CAMPOS DEFEITOS GERAIS
-        var brokenCrackedDamaged by remember { mutableStateOf("") }
-        var greenish by remember { mutableStateOf("") }
-        var burnt by remember { mutableStateOf("") }
-        var sour by remember { mutableStateOf("") }
-        var moldy by remember { mutableStateOf("") }
-        var fermented by remember { mutableStateOf("") }
-        var germinated by remember { mutableStateOf("") }
-        var immature by remember { mutableStateOf("") }
-        var shriveled by remember { mutableStateOf("") }
+    // Classe de Cor
+    var doesDefineColorClass    by remember { mutableStateOf(false) }
+    var otherColorsGrainsWeight by remember { mutableStateOf("") }
 
-        // CAMPOS DEFEITOS DE SOMA
-        var damaged by remember { mutableStateOf("") } // Total de Danificados (Soma final Soja)
-        var piercingInput by remember { mutableStateOf("") }
-        var damagedInput by remember { mutableStateOf("") } // Demais danificados (Soja)
+    // Classe e Grupo
+    var defineClasseMilho by remember { mutableStateOf(false) }
+    var weightAmarela     by remember { mutableStateOf("") }
+    var weightBranca      by remember { mutableStateOf("") }
+    var weightCores       by remember { mutableStateOf("") }
+    var defineGrupoMilho  by remember { mutableStateOf(false) }
+    var weightDuro        by remember { mutableStateOf("") }
+    var weightDentado     by remember { mutableStateOf("") }
+    var weightSemiduro    by remember { mutableStateOf("") }
 
-        var doesDefineColorClass by remember { mutableStateOf(false) }
-        var gessado by remember { mutableStateOf("") } // Milho
-        var carunchado by remember { mutableStateOf("") } // Milho
+    var errorMessage by remember { mutableStateOf<String?>(null) }
 
-        // CAMPOS CLASSE DE COR (SOJA)
-        var otherColorsGrainsWeight by remember { mutableStateOf("") }
-        var colorClassResult by remember { mutableStateOf<String?>(null) }
-        var errorMessage by remember { mutableStateOf<String?>(null) }
+    // Cálculos derivados
+    val calculatedCleanWeight: Float by remember(sampleWeight, foreignMatters) {
+        val sw = sampleWeight.toFloatOrZero()
+        val fm = foreignMatters.toFloatOrZero()
+        mutableFloatStateOf((sw - fm).roundToOneDecimal())
+    }
 
-        // ESTADOS PARA CLASSE E GRUPO DO MILHO
-        var defineClasseMilho by remember { mutableStateOf(false) }
-        var weightAmarela by remember { mutableStateOf("") }
-        var weightBranca by remember { mutableStateOf("") }
-        var weightCores by remember { mutableStateOf("") }
+    val calculatedCleanWeightDisplay: String = remember(calculatedCleanWeight) {
+        if (calculatedCleanWeight > 0) calculatedCleanWeight.toUniversalString() else "0.00"
+    }
 
-        var defineGrupoMilho by remember { mutableStateOf(false) }
-        var weightDuro by remember { mutableStateOf("") }
-        var weightDentado by remember { mutableStateOf("") }
-        var weightSemiduro by remember { mutableStateOf("") }
+    val baseCleanWeightForColor: Float = remember(
+        doesDefineColorClass, cleanSampleWeightInput, calculatedCleanWeight
+    ) {
+        if (descriptor.supportsColorClass && doesDefineColorClass)
+            cleanSampleWeightInput.toFloatOrZero()
+        else
+            calculatedCleanWeight
+    }
 
-        // CÁLCULO DA AMOSTRA LIMPA
-        val calculatedCleanSampleWeightFloat: Float by remember(sampleWeight, foreignMatters) {
-            val sWeight = sampleWeight.toFloatOrZero()
-            val fm = foreignMatters.toFloatOrZero()
-            mutableFloatStateOf((sWeight - fm).roundToOneDecimal())
+    val yellowGrainsDisplay: String by remember(baseCleanWeightForColor, otherColorsGrainsWeight) {
+        val yellow = baseCleanWeightForColor - otherColorsGrainsWeight.toFloatOrZero()
+        mutableStateOf(if (yellow > 0) yellow.toUniversalString() else "0.00")
+    }
+
+    // Focus requesters
+    val lotWeightFocus              = remember { FocusRequester() }
+    val sampleWeightFocus           = remember { FocusRequester() }
+    val moistureFocus               = remember { FocusRequester() }
+    val impuritiesFocus             = remember { FocusRequester() }
+    val cleanSampleWeightInputFocus = remember { FocusRequester() }
+    val brokenFocus                 = remember { FocusRequester() }
+    val greenishFocus               = remember { FocusRequester() }
+    val sourFocus                   = remember { FocusRequester() }
+    val burntFocus                  = remember { FocusRequester() }
+    val moldyFocus                  = remember { FocusRequester() }
+    val carunchadoFocus             = remember { FocusRequester() }
+    val insectFocus                 = remember { FocusRequester() }
+    val damagedFocus                = remember { FocusRequester() }
+    val otherColorsFocus            = remember { FocusRequester() }
+    val gessadoFocus                = remember { FocusRequester() }
+    val focusBranca                 = remember { FocusRequester() }
+    val focusCores                  = remember { FocusRequester() }
+    val focusDuro                   = remember { FocusRequester() }
+    val focusDentado                = remember { FocusRequester() }
+    val focusSemi                   = remember { FocusRequester() }
+
+    val tabTitles = listOf("Informação Básica", "Avariados", "Defeitos Finais")
+    var selectedTab by remember { mutableStateOf(0) }
+
+    LaunchedEffect(selectedTab) {
+        when (selectedTab) {
+            0 -> lotWeightFocus.requestFocus()
+            1 -> sourFocus.requestFocus()
+            2 -> if (descriptor.supportsCarunchado) carunchadoFocus.requestFocus()
+            else brokenFocus.requestFocus()
         }
+    }
 
-        // CÁLCULO DA AMOSTRA LIMPA (Para Exibição)
-        val calculatedCleanSampleWeightDisplay: String =
-            remember(calculatedCleanSampleWeightFloat) {
-                if (calculatedCleanSampleWeightFloat > 0) {
-                    calculatedCleanSampleWeightFloat.toUniversalString()
-                } else "0.00"
-            }
-
-        // VARIÁVEL BASE PARA CÁLCULOS (USA INPUT MANUAL SE DEFINIR CLASSE DE COR)
-        val baseCleanWeightForColor: Float = remember(
-            doesDefineColorClass,
-            cleanSampleWeightInput,
-            calculatedCleanSampleWeightFloat
-        ) {
-            if (isSoja && doesDefineColorClass) {
-                cleanSampleWeightInput.toFloatOrZero()
-            } else {
-                calculatedCleanSampleWeightFloat
-            }
-        }
-
-        // Peso de Grãos Amarelos (Soja)
-        val yellowGrainsDisplay: String by remember(
-            baseCleanWeightForColor,
-            otherColorsGrainsWeight
-        ) {
-            val cleanWeight = baseCleanWeightForColor
-            val otherColors = otherColorsGrainsWeight.toFloatOrZero()
-            val yellowGrains = cleanWeight - otherColors
-            mutableStateOf(if (yellowGrains > 0) yellowGrains.toUniversalString() else "0.00")
-        }
-        val yellowGrainsFloat: Float = yellowGrainsDisplay.toFloatOrZero()
-
-
-        // Requesters de Foco
-        val lotWeightFocus = remember { FocusRequester() }
-        val sampleWeightFocus = remember { FocusRequester() }
-        val moistureFocus = remember { FocusRequester() }
-        val impuritiesFocus = remember { FocusRequester() }
-        val cleanSampleWeightInputFocus = remember { FocusRequester() }
-        val brokenFocus = remember { FocusRequester() }
-        val greenishFocus = remember { FocusRequester() }
-        val sourFocus = remember { FocusRequester() }
-        val burntFocus = remember { FocusRequester() }
-        val moldyFocus = remember { FocusRequester() }
-        val carunchadoFocus = remember { FocusRequester() }
-        val insectFocus = remember { FocusRequester() }
-        val damagedFocus = remember { FocusRequester() }
-        val otherColorsFocus = remember { FocusRequester() }
-        val gessadoFocus = remember { FocusRequester() }
-        val focusBranca = remember { FocusRequester() }
-        val focusCores = remember { FocusRequester() }
-        val focusDuro = remember { FocusRequester() }
-        val focusDentado = remember { FocusRequester() }
-        val focusSemi = remember { FocusRequester() }
-
-
-        val tabTitles = listOf("Informação Básica", "Avariados", "Defeitos Finais")
-        var selectedTab by remember { mutableStateOf(0) }
-
-        LaunchedEffect(selectedTab) {
-            when (selectedTab) {
-                0 -> lotWeightFocus.requestFocus()
-                1 -> sourFocus.requestFocus()
-                2 -> if (isMilho) {
-                    // No Milho, o primeiro campo da Tab 2 é o Carunchado
-                    carunchadoFocus.requestFocus()
-                } else {
-                    // Na Soja, o primeiro campo da Tab 2 é o Quebrados (PQA)
-                    brokenFocus.requestFocus()
-                }
-            }
-        }
-
-        // Cálculo e Definição da Classe de Cor (Soja)
-        LaunchedEffect(doesDefineColorClass, baseCleanWeightForColor, otherColorsGrainsWeight) {
-            if (doesDefineColorClass && isSoja) {
-                val totalSample = baseCleanWeightForColor
-                val otherColors = otherColorsGrainsWeight.toFloatOrZero()
-                if (totalSample > 0.01f && otherColors >= 0.0f) {
-                    val otherColorPct = (otherColors / totalSample) * 100f
-                    colorClassResult =
-                        if (otherColorPct.roundToInt() <= 10) "Classe Amarela" else "Classe Misturada"
-                } else {
-                    colorClassResult = null
-                }
-            } else {
-                colorClassResult = null
-            }
-        }
-
-
+    Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
         Column(
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier
+                .fillMaxSize()
                 .padding(innerPadding)
         ) {
             TabRow(selectedTabIndex = selectedTab) {
                 tabTitles.forEachIndexed { index, title ->
                     Tab(
                         selected = selectedTab == index,
-                        onClick = { selectedTab = index },
-                        text = { Text(text = title) })
+                        onClick  = { selectedTab = index },
+                        text     = { Text(title) }
+                    )
                 }
             }
 
             Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-                Text(
-                    "Insira os dados de classificação",
-                    style = MaterialTheme.typography.headlineSmall
-                )
+                Text("Insira os dados de classificação",
+                    style = MaterialTheme.typography.headlineSmall)
                 Spacer(modifier = Modifier.height(5.dp))
             }
 
             Box(
-                modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(8.dp)
+                modifier = Modifier
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState())
+                    .padding(8.dp)
             ) {
                 when (selectedTab) {
-                    0 -> BasicInfoTabClassification(
-                        lotWeight = lotWeight, onLotWeightChange = { lotWeight = it },
-                        sampleWeight = sampleWeight, onSampleWeightChange = { sampleWeight = it },
-                        moisture = moisture, onMoistureChange = { moisture = it },
-                        impurities = foreignMatters, onImpuritiesChange = { foreignMatters = it },
-                        cleanSampleWeight = calculatedCleanSampleWeightDisplay,
-                        lotWeightFocus = lotWeightFocus, sampleWeightFocus = sampleWeightFocus,
-                        moistureFocus = moistureFocus, impuritiesFocus = impuritiesFocus,
-                        isMilho = isMilho,
-                        brokenCrackedDamaged = brokenCrackedDamaged,
-                        onBrokenCrackedDamagedChange = { brokenCrackedDamaged = it },
-                        brokenFocus = brokenFocus
+                    0 -> BasicInfoTab(
+                        lotWeight               = lotWeight,
+                        onLotWeightChange       = { lotWeight = it },
+                        sampleWeight            = sampleWeight,
+                        onSampleWeightChange    = { sampleWeight = it },
+                        moisture                = moisture,
+                        onMoistureChange        = { moisture = it },
+                        impurities              = foreignMatters,
+                        onImpuritiesChange      = { foreignMatters = it },
+                        cleanSampleWeight       = calculatedCleanWeightDisplay,
+                        lotWeightFocus          = lotWeightFocus,
+                        sampleWeightFocus       = sampleWeightFocus,
+                        moistureFocus           = moistureFocus,
+                        impuritiesFocus         = impuritiesFocus,
+                        showBroken              = descriptor.supportsCarunchado,
+                        brokenCrackedDamaged    = brokenCrackedDamaged,
+                        onBrokenChange          = { brokenCrackedDamaged = it },
+                        brokenFocus             = brokenFocus
                     )
 
                     1 -> DefectsTab1(
-                        isMilho = isMilho,
-                        burnt = burnt, onBurntChange = { burnt = it },
-                        sour = sour, onSourChange = { sour = it },
-                        moldy = moldy, onMoldyChange = { moldy = it },
-                        shriveled = shriveled, onShriveledChange = { shriveled = it },
-                        fermented = fermented, onFermentedChange = { fermented = it },
-                        germinated = germinated, onGerminatedChange = { germinated = it },
-                        immature = immature, onImmatureChange = { immature = it },
-                        gessado = gessado, onGessadoChange = { gessado = it },
+                        supportsCarunchado      = descriptor.supportsCarunchado,
+                        burnt                   = burnt,   onBurntChange    = { burnt = it },
+                        sour                    = sour,    onSourChange     = { sour = it },
+                        moldy                   = moldy,   onMoldyChange    = { moldy = it },
+                        shriveled               = shriveled, onShriveledChange = { shriveled = it },
+                        fermented               = fermented, onFermentedChange = { fermented = it },
+                        germinated              = germinated, onGerminatedChange = { germinated = it },
+                        immature                = immature, onImmatureChange  = { immature = it },
+                        gessado                 = gessado, onGessadoChange   = { gessado = it },
                         burntFocus = burntFocus, sourFocus = sourFocus, moldyFocus = moldyFocus,
-                        shriveledFocus = remember { FocusRequester() },
-                        fermentedFocus = remember { FocusRequester() },
-                        germinatedFocus = remember { FocusRequester() },
-                        immatureFocus = remember { FocusRequester() },
-                        gessadoFocus = gessadoFocus,
-                        piercingInput = piercingInput,
-                        onPiercingInputChange = {
+                        shriveledFocus          = remember { FocusRequester() },
+                        fermentedFocus          = remember { FocusRequester() },
+                        germinatedFocus         = remember { FocusRequester() },
+                        immatureFocus           = remember { FocusRequester() },
+                        gessadoFocus            = gessadoFocus,
+                        piercingInput           = piercingInput,
+                        onPiercingInputChange   = {
                             piercingInput = it
-                            val calculatedPiercing = (it.toFloatOrZero() / 4f).toString()
-                            damaged = calculateDamagedSum(damagedInput, calculatedPiercing)
+                            damaged = calculateDamagedSum(damagedInput, (it.toFloatOrZero() / 4f).toString())
                         },
-                        damagedInput = damagedInput,
-                        onDamagedInputChange = {
+                        damagedInput            = damagedInput,
+                        onDamagedInputChange    = {
                             damagedInput = it
-                            val calculatedPiercing = (piercingInput.toFloatOrZero() / 4f).toString()
-                            damaged = calculateDamagedSum(it, calculatedPiercing)
+                            damaged = calculateDamagedSum(it, (piercingInput.toFloatOrZero() / 4f).toString())
                         },
-                        damaged = damaged, onDamagedChange = { damaged = it },
-                        insectFocus = insectFocus, damagedFocus = damagedFocus
+                        damaged                 = damaged,
+                        onDamagedChange         = { damaged = it },
+                        insectFocus             = insectFocus,
+                        damagedFocus            = damagedFocus
                     )
 
                     2 -> DefectsTab2(
-                        isSoja = isSoja,
-                        isMilho = isMilho,
-                        brokenCrackedDamaged = brokenCrackedDamaged,
-                        onBrokenCrackedDamagedChange = { brokenCrackedDamaged = it },
-                        greenish = greenish,
-                        onGreenishChange = { greenish = it },
-                        carunchado = carunchado,
-                        onCarunchadoChange = { carunchado = it },
-                        carunchadoFocus = carunchadoFocus,
-                        brokenCrackedDamagedFocus = brokenFocus,
-                        greenishFocus = greenishFocus,
-                        doesDefineColorClass = doesDefineColorClass,
+                        descriptor              = descriptor,
+                        brokenCrackedDamaged    = brokenCrackedDamaged,
+                        onBrokenChange          = { brokenCrackedDamaged = it },
+                        greenish                = greenish,
+                        onGreenishChange        = { greenish = it },
+                        carunchado              = carunchado,
+                        onCarunchadoChange      = { carunchado = it },
+                        carunchadoFocus         = carunchadoFocus,
+                        brokenFocus             = brokenFocus,
+                        greenishFocus           = greenishFocus,
+                        doesDefineColorClass    = doesDefineColorClass,
                         onDoesDefineColorClassChange = {
                             doesDefineColorClass = it
                             if (!it) cleanSampleWeightInput = ""
                         },
-                        cleanSampleWeightInput = cleanSampleWeightInput,
+                        cleanSampleWeightInput  = cleanSampleWeightInput,
                         onCleanSampleWeightChange = { cleanSampleWeightInput = it },
                         cleanSampleWeightInputFocus = cleanSampleWeightInputFocus,
-                        yellowGrainsDisplay = yellowGrainsDisplay,
+                        yellowGrainsDisplay     = yellowGrainsDisplay,
                         otherColorsGrainsWeight = otherColorsGrainsWeight,
-                        onOtherColorsGrainsWeightChange = { otherColorsGrainsWeight = it },
-                        otherColorsFocus = otherColorsFocus,
-                        // Parâmetros Milho
-                        milhoClasse = defineClasseMilho,
-                        onMilhoClasseToggle = { defineClasseMilho = it },
-                        mAmarela = weightAmarela,
-                        onMAmarela = { weightAmarela = it },
-                        mBranca = weightBranca,
-                        onMBranca = { weightBranca = it },
-                        mCores = weightCores,
-                        onMCores = { weightCores = it },
-                        milhoGrupo = defineGrupoMilho,
-                        onMilhoGrupoToggle = { defineGrupoMilho = it },
-                        mDuro = weightDuro,
-                        onMDuro = { weightDuro = it },
-                        mDentado = weightDentado,
-                        onMDentado = { weightDentado = it },
-                        mSemi = weightSemiduro,
-                        onMSemi = { weightSemiduro = it },
-                        focusBranca = focusBranca,
-                        focusCores = focusCores,
-                        focusDuro = focusDuro,
-                        focusSemi = focusSemi,
-                        focusDentado = focusDentado
+                        onOtherColorsChange     = { otherColorsGrainsWeight = it },
+                        otherColorsFocus        = otherColorsFocus,
+                        milhoClasse             = defineClasseMilho,
+                        onMilhoClasseToggle     = { defineClasseMilho = it },
+                        mAmarela = weightAmarela, onMAmarela = { weightAmarela = it },
+                        mBranca  = weightBranca,  onMBranca  = { weightBranca = it },
+                        mCores   = weightCores,   onMCores   = { weightCores = it },
+                        milhoGrupo              = defineGrupoMilho,
+                        onMilhoGrupoToggle      = { defineGrupoMilho = it },
+                        mDuro    = weightDuro,    onMDuro    = { weightDuro = it },
+                        mDentado = weightDentado, onMDentado = { weightDentado = it },
+                        mSemi    = weightSemiduro, onMSemi   = { weightSemiduro = it },
+                        focusBranca = focusBranca, focusCores = focusCores,
+                        focusDuro   = focusDuro,   focusDentado = focusDentado,
+                        focusSemi   = focusSemi
                     )
                 }
             }
 
+            // Navegação entre tabs e envio
             Row(
-                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                if (selectedTab > 0) Button(onClick = { selectedTab-- }) { Text("Voltar") } else Spacer(
-                    modifier = Modifier.weight(1f)
-                )
+                if (selectedTab > 0)
+                    Button(onClick = { selectedTab-- }) { Text("Voltar") }
+                else
+                    Spacer(modifier = Modifier.weight(1f))
 
                 if (selectedTab < tabTitles.lastIndex) {
                     Button(onClick = { selectedTab++ }) { Text("Avançar") }
                 } else {
                     Button(
-                        onClick = {
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick  = {
                             focusManager.clearFocus()
-                            val group = currentGroup ?: 1
 
-                            // Validação do peso
                             if (baseCleanWeightForColor <= 0f) {
                                 errorMessage = "O Peso da Amostra Limpa não pode ser zero ou negativo."
                                 return@Button
                             }
 
-                            // Criamos o payload que será enviado ao ViewModel
-                            val payload = if (isSoja) {
-                                // --- PREPARAÇÃO PAYLOAD SOJA ---
-                                val sample = SampleSoja(
-                                    grain = "Soja",
-                                    group = group,
-                                    lotWeight = lotWeight.toFloatOrZero(),
-                                    sampleWeight = sampleWeight.toFloatOrZero(),
-                                    moisture = moisture.toFloatOrZero(),
-                                    foreignMattersAndImpurities = foreignMatters.toFloatOrZero(),
-                                    humidity = moisture.toFloatOrZero(),
-                                    greenish = greenish.toFloatOrZero(),
-                                    brokenCrackedDamaged = brokenCrackedDamaged.toFloatOrZero(),
-                                    damaged = damaged.toFloatOrZero(),
-                                    burnt = burnt.toFloatOrZero(),
-                                    sour = sour.toFloatOrZero(),
-                                    moldy = moldy.toFloatOrZero(),
-                                    fermented = fermented.toFloatOrZero(),
-                                    germinated = germinated.toFloatOrZero(),
-                                    immature = immature.toFloatOrZero(),
-                                    shriveled = shriveled.toFloatOrZero()
-                                )
+                            val inputState = ClassificationInputState(
+                                group                = currentGroup,
+                                lotWeight            = lotWeight.toFloatOrZero(),
+                                sampleWeight         = sampleWeight.toFloatOrZero(),
+                                moisture             = moisture.toFloatOrZero(),
+                                foreignMatters       = foreignMatters.toFloatOrZero(),
+                                cleanSampleWeight    = baseCleanWeightForColor,
+                                sour                 = sour.toFloatOrZero(),
+                                burnt                = burnt.toFloatOrZero(),
+                                moldy                = moldy.toFloatOrZero(),
+                                fermented            = fermented.toFloatOrZero(),
+                                germinated           = germinated.toFloatOrZero(),
+                                immature             = immature.toFloatOrZero(),
+                                shriveled            = shriveled.toFloatOrZero(),
+                                damaged              = damaged.toFloatOrZero(),
+                                gessado              = gessado.toFloatOrZero(),
+                                brokenCrackedDamaged = brokenCrackedDamaged.toFloatOrZero(),
+                                greenish             = greenish.toFloatOrZero(),
+                                carunchado           = carunchado.toFloatOrZero(),
+                                isColorDefined       = doesDefineColorClass,
+                                otherColorsWeight    = otherColorsGrainsWeight.toFloatOrZero(),
+                                baseWeightForColor   = baseCleanWeightForColor,
+                                shouldDefineClass    = defineClasseMilho,
+                                weightYellow         = weightAmarela.toFloatOrZero(),
+                                weightWhite          = weightBranca.toFloatOrZero(),
+                                weightMixedColors    = weightCores.toFloatOrZero(),
+                                shouldDefineGroup    = defineGrupoMilho,
+                                weightHard           = weightDuro.toFloatOrZero(),
+                                weightDent           = weightDentado.toFloatOrZero(),
+                                weightSemiHard       = weightSemiduro.toFloatOrZero()
+                            )
 
-                                ClassificationPayload.Soja(
-                                    sample = sample,
-                                    otherColorsWeight = otherColorsGrainsWeight.toFloatOrZero(),
-                                    baseWeightCor = baseCleanWeightForColor,
-                                    isColorDefined = doesDefineColorClass
-                                )
-                            } else {
-                                // --- PREPARAÇÃO PAYLOAD MILHO ---
-                                val sample = SampleMilho(
-                                    grain = "Milho",
-                                    group = group,
-                                    lotWeight = lotWeight.toFloatOrZero(),
-                                    sampleWeight = sampleWeight.toFloatOrZero(),
-                                    moisture = moisture.toFloatOrZero(),
-                                    cleanWeight = baseCleanWeightForColor,
-                                    impurities = foreignMatters.toFloatOrZero(),
-                                    broken = brokenCrackedDamaged.toFloatOrZero(),
-                                    carunchado = carunchado.toFloatOrZero(),
-                                    ardido = sour.toFloatOrZero(),
-                                    mofado = moldy.toFloatOrZero(),
-                                    fermented = fermented.toFloatOrZero(),
-                                    germinated = germinated.toFloatOrZero(),
-                                    immature = immature.toFloatOrZero(),
-                                    gessado = gessado.toFloatOrZero()
-                                )
-
-                                ClassificationPayload.Milho(
-                                    sample = sample,
-                                    shouldDefineClass = defineClasseMilho,
-                                    weightYellow = weightAmarela.toFloatOrZero(),
-                                    weightWhite = weightBranca.toFloatOrZero(),
-                                    weightMixedColors = weightCores.toFloatOrZero(),
-                                    shouldDefineGroup = defineGrupoMilho,
-                                    weightHard = weightDuro.toFloatOrZero(),
-                                    weightDent = weightDentado.toFloatOrZero(),
-                                    weightSemiHard = weightSemiduro.toFloatOrZero()
-                                )
-                            }
+                            val payload = viewModel.buildPayload(inputState)
+                                ?: run { errorMessage = "Grão não selecionado."; return@Button }
 
                             viewModel.classifySample(payload)
-                            navController.navigate("classificationResult")
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Classificar")
-                    }
+                            navController.navigate(Routes.CLASSIFICATION_RESULT)
+                        }
+                    ) { Text("Classificar") }
                 }
             }
 
-            if (errorMessage != null) {
+            errorMessage?.let {
                 Text(
-                    text = errorMessage!!,
-                    color = MaterialTheme.colorScheme.error,
+                    text     = it,
+                    color    = MaterialTheme.colorScheme.error,
                     modifier = Modifier.padding(16.dp)
                 )
             }
@@ -418,12 +340,12 @@ fun ClassificationInputScreen(
     }
 }
 
-// -------------------------------------------------------------------------------------------------
-// --- TAB 0: INFORMAÇÃO BÁSICA ---
-// -------------------------------------------------------------------------------------------------
+// =============================================================================
+// TAB 0 — INFORMAÇÃO BÁSICA
+// =============================================================================
 
 @Composable
-fun BasicInfoTabClassification(
+private fun BasicInfoTab(
     lotWeight: String, onLotWeightChange: (String) -> Unit,
     sampleWeight: String, onSampleWeightChange: (String) -> Unit,
     moisture: String, onMoistureChange: (String) -> Unit,
@@ -431,44 +353,39 @@ fun BasicInfoTabClassification(
     cleanSampleWeight: String,
     lotWeightFocus: FocusRequester, sampleWeightFocus: FocusRequester,
     moistureFocus: FocusRequester, impuritiesFocus: FocusRequester,
-    isMilho: Boolean,
-    brokenCrackedDamaged: String,
-    onBrokenCrackedDamagedChange: (String) -> Unit,
+    showBroken: Boolean,
+    brokenCrackedDamaged: String, onBrokenChange: (String) -> Unit,
     brokenFocus: FocusRequester
 ) {
     Column(modifier = Modifier.padding(16.dp)) {
         NumberInputField(lotWeight, onLotWeightChange, "Peso do Lote (kg)", lotWeightFocus, sampleWeightFocus)
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(Modifier.height(16.dp))
         NumberInputField(sampleWeight, onSampleWeightChange, "Peso da amostra de trabalho (g)", sampleWeightFocus, moistureFocus)
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(Modifier.height(16.dp))
         NumberInputField(moisture, onMoistureChange, "Umidade (%)", moistureFocus, impuritiesFocus)
-        Spacer(modifier = Modifier.height(16.dp))
-        NumberInputField(impurities, onImpuritiesChange, "Matéria Estranha e Impurezas (g)", impuritiesFocus, if(isMilho) brokenFocus else null)
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(Modifier.height(16.dp))
+        NumberInputField(impurities, onImpuritiesChange, "Matéria Estranha e Impurezas (g)", impuritiesFocus, if (showBroken) brokenFocus else null)
+        Spacer(Modifier.height(16.dp))
         Column(modifier = Modifier.fillMaxWidth()) {
             Text("Peso da Amostra Limpa (Trabalho - Impurezas):", style = MaterialTheme.typography.bodyMedium)
-            Text("$cleanSampleWeight g", style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.primary)
+            Text("$cleanSampleWeight g",
+                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.primary)
         }
-        if (isMilho) {
-            Spacer(modifier = Modifier.height(24.dp))
-            NumberInputField(
-                value = brokenCrackedDamaged,
-                onValueChange = onBrokenCrackedDamagedChange,
-                label = "Grãos Quebrados (g)",
-                focusRequester = brokenFocus,
-                nextFocus = null // Último campo da tab
-            )
+        if (showBroken) {
+            Spacer(Modifier.height(24.dp))
+            NumberInputField(brokenCrackedDamaged, onBrokenChange, "Grãos Quebrados (g)", brokenFocus, null)
         }
     }
 }
 
-// -------------------------------------------------------------------------------------------------
-// --- TAB 1: AVARIADOS ---
-// -------------------------------------------------------------------------------------------------
+// =============================================================================
+// TAB 1 — AVARIADOS
+// =============================================================================
 
 @Composable
-fun DefectsTab1(
-    isMilho: Boolean,
+private fun DefectsTab1(
+    supportsCarunchado: Boolean,
     burnt: String, onBurntChange: (String) -> Unit,
     sour: String, onSourChange: (String) -> Unit,
     moldy: String, onMoldyChange: (String) -> Unit,
@@ -478,69 +395,182 @@ fun DefectsTab1(
     immature: String, onImmatureChange: (String) -> Unit,
     gessado: String, onGessadoChange: (String) -> Unit,
     burntFocus: FocusRequester, sourFocus: FocusRequester, moldyFocus: FocusRequester,
-    shriveledFocus: FocusRequester, fermentedFocus: FocusRequester, germinatedFocus: FocusRequester,
-    immatureFocus: FocusRequester, gessadoFocus: FocusRequester,
+    shriveledFocus: FocusRequester, fermentedFocus: FocusRequester,
+    germinatedFocus: FocusRequester, immatureFocus: FocusRequester,
+    gessadoFocus: FocusRequester,
     piercingInput: String, onPiercingInputChange: (String) -> Unit,
     damagedInput: String, onDamagedInputChange: (String) -> Unit,
     damaged: String, onDamagedChange: (String) -> Unit,
-    insectFocus: FocusRequester, damagedFocus: FocusRequester,
+    insectFocus: FocusRequester, damagedFocus: FocusRequester
 ) {
     Column(modifier = Modifier.padding(16.dp)) {
-        // Ordem do Milho ajustada conforme laudo: Ardidos -> Mofados -> Fermentados -> Germinados -> Chochos/Imaturos -> Gessados
-        NumberInputField(sour, onSourChange, "Ardidos (g)", sourFocus, if (!isMilho) burntFocus else moldyFocus)
-        Spacer(modifier = Modifier.height(16.dp))
+        NumberInputField(sour, onSourChange, "Ardidos (g)", sourFocus,
+            if (!supportsCarunchado) burntFocus else moldyFocus)
+        Spacer(Modifier.height(16.dp))
 
-        if (!isMilho) {
+        if (!supportsCarunchado) {
             NumberInputField(burnt, onBurntChange, "Queimados (g)", burntFocus, moldyFocus)
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(Modifier.height(16.dp))
         }
 
         NumberInputField(moldy, onMoldyChange, "Mofados (g)", moldyFocus, fermentedFocus)
-        Spacer(modifier = Modifier.height(16.dp))
-
+        Spacer(Modifier.height(16.dp))
         NumberInputField(fermented, onFermentedChange, "Fermentados (g)", fermentedFocus, germinatedFocus)
-        Spacer(modifier = Modifier.height(16.dp))
-
+        Spacer(Modifier.height(16.dp))
         NumberInputField(germinated, onGerminatedChange, "Germinados (g)", germinatedFocus, immatureFocus)
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(Modifier.height(16.dp))
+        NumberInputField(
+            immature, onImmatureChange,
+            if (supportsCarunchado) "Chochos e Imaturos (g)" else "Imaturos (g)",
+            immatureFocus,
+            if (supportsCarunchado) gessadoFocus else shriveledFocus
+        )
+        Spacer(Modifier.height(16.dp))
 
-        // Nome unificado para Milho: Chochos e Imaturos
-        NumberInputField(immature, onImmatureChange, if (isMilho) "Chochos e Imaturos (g)" else "Imaturos (g)", immatureFocus, if (isMilho) gessadoFocus else shriveledFocus)
-        Spacer(modifier = Modifier.height(16.dp))
-
-        if (isMilho) {
+        if (supportsCarunchado) {
             NumberInputField(gessado, onGessadoChange, "Gessados (g)", gessadoFocus, null)
         } else {
             NumberInputField(shriveled, onShriveledChange, "Chochos (g)", shriveledFocus, insectFocus)
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(Modifier.height(24.dp))
             Text("Danificados", style = MaterialTheme.typography.titleMedium)
             NumberInputField(piercingInput, onPiercingInputChange, "Grãos picados (a)", insectFocus, damagedFocus)
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(Modifier.height(16.dp))
             NumberInputField(damagedInput, onDamagedInputChange, "Demais grãos danificados (b)", damagedFocus, null)
-            Spacer(modifier = Modifier.height(16.dp))
-            OutlinedTextField(value = damaged, onValueChange = onDamagedChange, label = { Text("Total de Danificados [(a)+(b)]") }, modifier = Modifier.fillMaxWidth(), readOnly = true, enabled = false)
+            Spacer(Modifier.height(16.dp))
+            OutlinedTextField(
+                value         = damaged,
+                onValueChange = onDamagedChange,
+                label         = { Text("Total de Danificados [(a)+(b)]") },
+                modifier      = Modifier.fillMaxWidth(),
+                readOnly      = true,
+                enabled       = false
+            )
         }
     }
 }
 
-// -------------------------------------------------------------------------------------------------
-// --- TAB 2: DEFEITOS FINAIS ---
-// -------------------------------------------------------------------------------------------------
+// =============================================================================
+// TAB 2 — DEFEITOS FINAIS
+// =============================================================================
 
 @Composable
-fun DefectsTab2(
-    isSoja: Boolean, isMilho: Boolean,
+private fun DefectsTab2(
+    descriptor: GrainDescriptor,
+    brokenCrackedDamaged: String, onBrokenChange: (String) -> Unit,
+    greenish: String, onGreenishChange: (String) -> Unit,
     carunchado: String, onCarunchadoChange: (String) -> Unit,
-    brokenCrackedDamaged: String, onBrokenCrackedDamagedChange: (String) -> Unit,
-    greenish: String, onGreenishChange: (String) -> Unit, carunchadoFocus: FocusRequester,
-    brokenCrackedDamagedFocus: FocusRequester, greenishFocus: FocusRequester,
+    carunchadoFocus: FocusRequester, brokenFocus: FocusRequester,
+    greenishFocus: FocusRequester,
+    // Soja — classe de cor
     doesDefineColorClass: Boolean, onDoesDefineColorClassChange: (Boolean) -> Unit,
     cleanSampleWeightInput: String, onCleanSampleWeightChange: (String) -> Unit,
     cleanSampleWeightInputFocus: FocusRequester,
     yellowGrainsDisplay: String,
-    otherColorsGrainsWeight: String, onOtherColorsGrainsWeightChange: (String) -> Unit,
+    otherColorsGrainsWeight: String, onOtherColorsChange: (String) -> Unit,
     otherColorsFocus: FocusRequester,
-    // Novos parâmetros Milho
+    // Milho — classe
+    milhoClasse: Boolean, onMilhoClasseToggle: (Boolean) -> Unit,
+    mAmarela: String, onMAmarela: (String) -> Unit,
+    mBranca: String, onMBranca: (String) -> Unit, focusBranca: FocusRequester,
+    mCores: String, onMCores: (String) -> Unit, focusCores: FocusRequester,
+    // Milho — grupo
+    milhoGrupo: Boolean, onMilhoGrupoToggle: (Boolean) -> Unit,
+    mDuro: String, onMDuro: (String) -> Unit, focusDuro: FocusRequester,
+    mDentado: String, onMDentado: (String) -> Unit, focusDentado: FocusRequester,
+    mSemi: String, onMSemi: (String) -> Unit, focusSemi: FocusRequester
+) {
+    Column(modifier = Modifier.padding(16.dp)) {
+        Text("Defeitos Finais", style = MaterialTheme.typography.titleMedium)
+
+        // Carunchados — controlado por descriptor.supportsCarunchado
+        if (descriptor.supportsCarunchado) {
+            NumberInputField(carunchado, onCarunchadoChange, "Grãos Carunchados (g)", carunchadoFocus, null)
+            Spacer(Modifier.height(16.dp))
+        }
+
+        // PQA + Esverdeados + Classe de Cor — controlado por descriptor.supportsColorClass
+        if (!descriptor.supportsCarunchado) {
+            NumberInputField(brokenCrackedDamaged, onBrokenChange, "Partidos, Quebrados e Amassados (g)", brokenFocus, greenishFocus)
+            Spacer(Modifier.height(16.dp))
+            NumberInputField(greenish, onGreenishChange, "Esverdeados (g)", greenishFocus, null)
+        }
+
+        if (descriptor.supportsColorClass) {
+            Spacer(Modifier.height(24.dp))
+            SojaColorClassSection(
+                doesDefineColorClass         = doesDefineColorClass,
+                onDoesDefineColorClassChange = onDoesDefineColorClassChange,
+                cleanSampleWeightInput       = cleanSampleWeightInput,
+                onCleanSampleWeightChange    = onCleanSampleWeightChange,
+                cleanSampleWeightInputFocus  = cleanSampleWeightInputFocus,
+                yellowGrainsDisplay          = yellowGrainsDisplay,
+                otherColorsGrainsWeight      = otherColorsGrainsWeight,
+                onOtherColorsChange          = onOtherColorsChange,
+                otherColorsFocus             = otherColorsFocus
+            )
+        }
+
+        // Classe e Grupo do Milho — controlado por descriptor.supportsCarunchado
+        if (descriptor.supportsCarunchado) {
+            MilhoClasseGroupSection(
+                milhoClasse        = milhoClasse,
+                onMilhoClasseToggle = onMilhoClasseToggle,
+                mAmarela = mAmarela, onMAmarela = onMAmarela,
+                mBranca  = mBranca,  onMBranca  = onMBranca,  focusBranca = focusBranca,
+                mCores   = mCores,   onMCores   = onMCores,   focusCores  = focusCores,
+                milhoGrupo         = milhoGrupo,
+                onMilhoGrupoToggle = onMilhoGrupoToggle,
+                mDuro    = mDuro,    onMDuro    = onMDuro,    focusDuro    = focusDuro,
+                mDentado = mDentado, onMDentado = onMDentado, focusDentado = focusDentado,
+                mSemi    = mSemi,    onMSemi    = onMSemi,    focusSemi    = focusSemi
+            )
+        }
+    }
+}
+
+// =============================================================================
+// SEÇÃO CLASSE DE COR — SOJA
+// =============================================================================
+
+@Composable
+private fun SojaColorClassSection(
+    doesDefineColorClass: Boolean, onDoesDefineColorClassChange: (Boolean) -> Unit,
+    cleanSampleWeightInput: String, onCleanSampleWeightChange: (String) -> Unit,
+    cleanSampleWeightInputFocus: FocusRequester,
+    yellowGrainsDisplay: String,
+    otherColorsGrainsWeight: String, onOtherColorsChange: (String) -> Unit,
+    otherColorsFocus: FocusRequester
+) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Switch(checked = doesDefineColorClass, onCheckedChange = onDoesDefineColorClassChange)
+        Spacer(Modifier.width(8.dp))
+        Text("Definir Classe?")
+    }
+    if (doesDefineColorClass) {
+        Spacer(Modifier.height(16.dp))
+        NumberInputField(cleanSampleWeightInput, onCleanSampleWeightChange,
+            "Peso da Amostra Limpa (Base Cor) (g)", cleanSampleWeightInputFocus, otherColorsFocus)
+        Spacer(Modifier.height(16.dp))
+        NumberInputField(otherColorsGrainsWeight, onOtherColorsChange,
+            "Peso grãos outras cores (g)", otherColorsFocus, null)
+        Spacer(Modifier.height(16.dp))
+        OutlinedTextField(
+            value         = yellowGrainsDisplay,
+            onValueChange = {},
+            label         = { Text("Peso de grãos amarelos (g) (Calculado)") },
+            modifier      = Modifier.fillMaxWidth(),
+            readOnly      = true,
+            enabled       = false
+        )
+    }
+}
+
+// =============================================================================
+// SEÇÃO CLASSE E GRUPO — MILHO
+// =============================================================================
+
+@Composable
+private fun MilhoClasseGroupSection(
     milhoClasse: Boolean, onMilhoClasseToggle: (Boolean) -> Unit,
     mAmarela: String, onMAmarela: (String) -> Unit,
     mBranca: String, onMBranca: (String) -> Unit, focusBranca: FocusRequester,
@@ -550,100 +580,72 @@ fun DefectsTab2(
     mDentado: String, onMDentado: (String) -> Unit, focusDentado: FocusRequester,
     mSemi: String, onMSemi: (String) -> Unit, focusSemi: FocusRequester
 ) {
-    val focusManager = LocalFocusManager.current
+    // Classe
+    Spacer(Modifier.height(24.dp))
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Switch(checked = milhoClasse, onCheckedChange = onMilhoClasseToggle)
+        Text(" Definir Classe (Cor) do Milho", fontWeight = FontWeight.Bold)
+    }
+    if (milhoClasse) {
+        NumberInputField(mAmarela, onMAmarela, "Peso Amarela (g)", FocusRequester(), focusBranca)
+        NumberInputField(mBranca,  onMBranca,  "Peso Branca (g)",  focusBranca,      focusCores)
+        NumberInputField(mCores,   onMCores,   "Peso Cores (Misturada) (g)", focusCores, null)
 
-    Column(modifier = Modifier.padding(16.dp)) {
-        Text("Defeitos Finais", style = MaterialTheme.typography.titleMedium)
-        if (isMilho) {
-            NumberInputField(
-                carunchado,
-                onCarunchadoChange,
-                "Grãos Carunchados (g)",
-                carunchadoFocus,
-                null
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-        }
-
-        if (isSoja) {
-            NumberInputField(brokenCrackedDamaged, onBrokenCrackedDamagedChange, "Partidos, Quebrados e Amassados (g)", brokenCrackedDamagedFocus, greenishFocus)
-            Spacer(modifier = Modifier.height(16.dp))
-            NumberInputField(greenish, onGreenishChange, "Esverdeados (g)", greenishFocus, null)
-            Spacer(modifier = Modifier.height(24.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Switch(checked = doesDefineColorClass, onCheckedChange = onDoesDefineColorClassChange)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Definir Classe?")
+        val totalC = mAmarela.toFloatOrZero() + mBranca.toFloatOrZero() + mCores.toFloatOrZero()
+        if (totalC > 0) {
+            val pA = (mAmarela.toFloatOrZero() / totalC) * 100
+            val pB = (mBranca.toFloatOrZero()  / totalC) * 100
+            val resC = when {
+                pA >= 95f -> "CLASSE AMARELA"
+                pB >= 95f -> "CLASSE BRANCA"
+                else      -> "CLASSE CORES"
             }
-            if (doesDefineColorClass) {
-                Spacer(modifier = Modifier.height(16.dp))
-                NumberInputField(cleanSampleWeightInput, onCleanSampleWeightChange, "Peso da Amostra Limpa (Base Cor) (g)", cleanSampleWeightInputFocus, otherColorsFocus)
-                Spacer(modifier = Modifier.height(16.dp))
-                NumberInputField(otherColorsGrainsWeight, onOtherColorsGrainsWeightChange, "Peso grãos outras cores (g)", otherColorsFocus, null)
-                Spacer(modifier = Modifier.height(16.dp))
-                OutlinedTextField(value = yellowGrainsDisplay, onValueChange = {}, label = { Text("Peso de grãos amarelos (g) (Calculado)") }, modifier = Modifier.fillMaxWidth(), readOnly = true, enabled = false)
-            }
-        }
-
-        if (isMilho) {
-            // --- 1º CLASSE (AMARELA/BRANCA/CORES) ---
-            Spacer(Modifier.height(24.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Switch(checked = milhoClasse, onCheckedChange = onMilhoClasseToggle)
-                Text(" Definir Classe (Cor) do Milho", fontWeight = FontWeight.Bold)
-            }
-            if (milhoClasse) {
-                NumberInputField(mAmarela, onMAmarela, "Peso Amarela (g)", focusRequester = FocusRequester(), nextFocus = focusBranca)
-                NumberInputField(mBranca, onMBranca, "Peso Branca (g)", focusRequester = focusBranca, nextFocus = focusCores)
-                NumberInputField(mCores, onMCores, "Peso Cores (Misturada) (g)", focusRequester = focusCores, nextFocus = null)
-
-                // --- Seção de Grupo ---
-                val totalC = mAmarela.toFloatOrZero() + mBranca.toFloatOrZero() + mCores.toFloatOrZero()
-                if (totalC > 0) {
-                    val pA = (mAmarela.toFloatOrZero() / totalC) * 100
-                    val pB = (mBranca.toFloatOrZero() / totalC) * 100
-                    val resC = when {
-                        pA >= 95f -> "CLASSE AMARELA"
-                        pB >= 95f -> "CLASSE BRANCA"
-                        else -> "CLASSE CORES"
-                    }
-                    Card(Modifier.padding(vertical = 8.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer)) {
-                        Column(Modifier.padding(12.dp).fillMaxWidth()) { Text("Resultado Classe: $resC", fontWeight = FontWeight.ExtraBold) }
-                    }
+            Card(
+                modifier = Modifier.padding(vertical = 8.dp),
+                colors   = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer)
+            ) {
+                Column(Modifier.padding(12.dp).fillMaxWidth()) {
+                    Text("Resultado Classe: $resC", fontWeight = FontWeight.ExtraBold)
                 }
             }
+        }
+    }
 
-            // --- 2º GRUPO (DURO/DENTADO/SEMIDURO) ---
-            Spacer(Modifier.height(24.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Switch(checked = milhoGrupo, onCheckedChange = onMilhoGrupoToggle)
-                Text(" Definir Grupo (Forma) do Milho", fontWeight = FontWeight.Bold)
+    // Grupo
+    Spacer(Modifier.height(24.dp))
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Switch(checked = milhoGrupo, onCheckedChange = onMilhoGrupoToggle)
+        Text(" Definir Grupo (Forma) do Milho", fontWeight = FontWeight.Bold)
+    }
+    if (milhoGrupo) {
+        NumberInputField(mDuro,    onMDuro,    "Peso Duro (g)",     focusDuro,    focusDentado)
+        NumberInputField(mDentado, onMDentado, "Peso Dentado (g)",  focusDentado, focusSemi)
+        NumberInputField(mSemi,    onMSemi,    "Peso Semiduro (g)", focusSemi,    null)
+
+        val totalG = mDuro.toFloatOrZero() + mDentado.toFloatOrZero() + mSemi.toFloatOrZero()
+        if (totalG > 0) {
+            val pD  = (mDuro.toFloatOrZero()    / totalG) * 100
+            val pDt = (mDentado.toFloatOrZero() / totalG) * 100
+            val resG = when {
+                pD  >= 85f -> "GRUPO DURO"
+                pDt >= 85f -> "GRUPO DENTADO"
+                else       -> "GRUPO SEMIDURO"
             }
-            if (milhoGrupo) {
-                NumberInputField(mDuro, onMDuro, "Peso Duro (g)", focusRequester = focusDuro, nextFocus = focusDentado)
-                NumberInputField(mDentado, onMDentado, "Peso Dentado (g)", focusRequester = focusDentado, nextFocus = focusSemi)
-                NumberInputField(mSemi, onMSemi, "Peso Semiduro (g)", focusRequester = focusSemi, nextFocus = null)
-                val totalG = mDuro.toFloatOrZero() + mDentado.toFloatOrZero() + mSemi.toFloatOrZero()
-                if (totalG > 0) {
-                    val pD = (mDuro.toFloatOrZero() / totalG) * 100
-                    val pDt = (mDentado.toFloatOrZero() / totalG) * 100
-                    val resG = when {
-                        pD >= 85f -> "GRUPO DURO"
-                        pDt >= 85f -> "GRUPO DENTADO"
-                        else -> "GRUPO SEMIDURO"
-                    }
-                    Card(Modifier.padding(vertical = 8.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)) {
-                        Column(Modifier.padding(12.dp).fillMaxWidth()) { Text("Resultado Grupo: $resG", fontWeight = FontWeight.ExtraBold) }
-                    }
+            Card(
+                modifier = Modifier.padding(vertical = 8.dp),
+                colors   = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
+            ) {
+                Column(Modifier.padding(12.dp).fillMaxWidth()) {
+                    Text("Resultado Grupo: $resG", fontWeight = FontWeight.ExtraBold)
                 }
             }
         }
     }
 }
 
-// -------------------------------------------------------------------------------------------------
-// --- FUNÇÕES AUXILIARES ---
-// -------------------------------------------------------------------------------------------------
+// =============================================================================
+// CAMPO NUMÉRICO
+// =============================================================================
 
 @Composable
 private fun NumberInputField(
@@ -652,24 +654,34 @@ private fun NumberInputField(
     onDone: (() -> Unit)? = null, enabled: Boolean = true
 ) {
     val keyboardController = LocalSoftwareKeyboardController.current
-    val focusManager = LocalFocusManager.current
+    val focusManager       = LocalFocusManager.current
     OutlinedTextField(
-        value = value,
-        onValueChange = { newValue ->
-            val sanitized = newValue.replace(',', '.').filter { it.isDigit() || it == '.' }
+        value         = value,
+        onValueChange = { raw ->
+            val sanitized = raw.replace(',', '.').filter { it.isDigit() || it == '.' }
             if (sanitized.count { it == '.' } <= 1) onValueChange(sanitized)
         },
-        label = { Text(label) }, modifier = Modifier.fillMaxWidth().focusRequester(focusRequester),
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = if (nextFocus != null) ImeAction.Next else ImeAction.Done),
-        keyboardActions = KeyboardActions(onNext = { nextFocus?.requestFocus() }, onDone = { onDone?.invoke(); keyboardController?.hide(); focusManager.clearFocus() }),
-        singleLine = true, enabled = enabled, readOnly = !enabled
+        label           = { Text(label) },
+        modifier        = Modifier.fillMaxWidth().focusRequester(focusRequester),
+        keyboardOptions = KeyboardOptions(
+            keyboardType = KeyboardType.Number,
+            imeAction    = if (nextFocus != null) ImeAction.Next else ImeAction.Done
+        ),
+        keyboardActions = KeyboardActions(
+            onNext = { nextFocus?.requestFocus() },
+            onDone = { onDone?.invoke(); keyboardController?.hide(); focusManager.clearFocus() }
+        ),
+        singleLine = true,
+        enabled    = enabled,
+        readOnly   = !enabled
     )
 }
 
+// =============================================================================
+// AUXILIAR
+// =============================================================================
+
 private fun calculateDamagedSum(damagedInput: String, piercingDamaged: String): String {
-    // Pegando o formatador para float #.##
-    val dInput = damagedInput.toFloatOrZero()
-    val pDamaged = piercingDamaged.toFloatOrZero()
-    val sum = dInput + pDamaged
+    val sum = damagedInput.toFloatOrZero() + piercingDamaged.toFloatOrZero()
     return sum.toUniversalString()
 }

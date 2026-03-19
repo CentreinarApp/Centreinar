@@ -10,40 +10,15 @@ interface DiscountRepository {
 
     suspend fun getClassificationById(id: Int): ClassificationSoja?
 
-    suspend fun calculateDiscount(
-        grain: String,
-        group: Int,
-        tipo: Int,
-        sample: InputDiscountSoja,
-        doesTechnicalLoss: Boolean,
-        doesClassificationLoss: Boolean,
-        doesDeduction: Boolean
-    ): Long
-
-    suspend fun calculateDiscount(
-        grain: String,
-        group: Int,
-        tipo: Int,
-        sample: InputDiscountSoja,
-        limit: Map<String, Float>,
-        doesTechnicalLoss: Boolean,
-        doesClassificationLoss: Boolean,
-        doesDeduction: Boolean
-    ): Long
-
-    suspend fun calculateTechnicalLoss(
-        storageDays: Int,
-        humidityAndImpuritiesLoss: Float,
-        lotWeight: Float
-    ): Float
-
-    suspend fun calculateDeduction(
-        deductionValue: Float,
-        classificationLoss: Float
-    ): Float
+    suspend fun insertDiscount(discount: DiscountSoja): Long
 
     suspend fun getDiscountById(id: Long): DiscountSoja?
 
+    suspend fun setInputDiscount(inputDiscount: InputDiscountSoja): Long
+
+    suspend fun getLastInputDiscount(): InputDiscountSoja
+
+    // Limites
     suspend fun getLimitsByType(
         grain: String,
         group: Int,
@@ -65,38 +40,17 @@ interface DiscountRepository {
         spoiled: Float
     ): Long
 
-    suspend fun getLimit(
-        grain: String,
-        group: Int,
-        tipo: Int,
-        source: Int
-    ): LimitSoja?
+    suspend fun getLimit(grain: String, group: Int, tipo: Int, source: Int): LimitSoja?
+    suspend fun getLimitOfType1Official(group: Int, grain: String): Map<String, Float>
+    suspend fun getLastLimitSource(): Int
 
-    suspend fun getLimitOfType1Official(
-        group: Int,
-        grain: String
-    ): Map<String, Float>
-
+    // Auxiliares
     suspend fun getLastClassification(): ClassificationSoja
-
     suspend fun toInputDiscount(
         priceBySack: Float,
         classification: ClassificationSoja,
         daysOfStorage: Int,
         deductionValue: Float
     ): InputDiscountSoja
-
-    suspend fun getDiscountForClassification(
-        priceBySack: Float,
-        daysOfStorage: Int,
-        deductionValue: Float
-    ): DiscountSoja?
-
-    suspend fun getLastLimitSource(): Int
-
-    suspend fun setInputDiscount(inputDiscount: InputDiscountSoja): Long
-
-    suspend fun getLastInputDiscount(): InputDiscountSoja
-
     suspend fun getSampleById(id: Int): SampleSoja?
 }

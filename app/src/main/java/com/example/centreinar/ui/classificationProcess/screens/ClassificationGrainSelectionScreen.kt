@@ -1,16 +1,16 @@
-package com.example.centreinar.ui.discount.screens
+package com.example.centreinar.ui.classificationProcess.screens
 
 import androidx.compose.runtime.Composable
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.example.centreinar.ui.discount.viewmodel.DiscountViewModel
+import com.example.centreinar.ui.classificationProcess.viewmodel.ClassificationViewModel
 import com.example.centreinar.ui.main.screens.GrainSelectionScreen
 import com.example.centreinar.util.Routes
 
 @Composable
-fun GrainSelectionDiscountScreen(
+fun ClassificationGrainSelectionScreen(
     navController: NavController,
-    viewModel: DiscountViewModel = hiltViewModel()
+    viewModel: ClassificationViewModel = hiltViewModel()
 ) {
     GrainSelectionScreen(
         grainDescriptors = viewModel.availableGrainDescriptors,
@@ -19,10 +19,10 @@ fun GrainSelectionDiscountScreen(
             viewModel.selectedGrain = descriptor.name
 
             if (descriptor.supportsGroups) {
-                navController.navigate(Routes.GROUP_SELECTION_DISCOUNT)
+                navController.navigate(Routes.GROUP_SELECTION)
             } else {
                 viewModel.selectedGroup = 1
-                navController.navigate(Routes.OFFICIAL_OR_NOT_DISCOUNT)
+                navController.navigate(Routes.OFFICIAL_OR_NOT)
             }
         }
     )

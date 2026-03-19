@@ -1,4 +1,4 @@
-package com.example.centreinar.ui.classificationProcess.screens
+package com.example.centreinar.ui.main.screens
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -10,7 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Scaffold // Importante
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -19,15 +19,16 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.centreinar.ui.classificationProcess.viewmodel.ClassificationViewModel
+import com.example.centreinar.util.Routes
 
 @Composable
-fun GroupSelectionScreen(
+fun HomeScreen(
     navController: NavController,
     viewModel: ClassificationViewModel = hiltViewModel()
 ) {
     Scaffold(
         modifier = Modifier.fillMaxSize()
-    ) { innerPadding ->
+    ) { innerPadding -> // Esse innerPadding contém as medidas da barra de status e navegação para responsividade em diferentes telas
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -36,13 +37,9 @@ fun GroupSelectionScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
+            // Classification Button
             Button(
-                onClick = {
-                    // A ViewModel cuida do reset
-                    viewModel.resetLimits()
-                    viewModel.selectedGroup = 1
-                    navController.navigate("officialOrNot")
-                },
+                onClick = { navController.navigate(Routes.GRAIN_SELECTION) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(80.dp)
@@ -52,18 +49,17 @@ fun GroupSelectionScreen(
                     contentColor = MaterialTheme.colorScheme.onPrimaryContainer
                 )
             ) {
-                Text("Grupo 1", style = MaterialTheme.typography.titleMedium)
+                Text(
+                    text = "Classificação de Grãos",
+                    style = MaterialTheme.typography.titleMedium
+                )
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
+            // Botão de Cálculo de Descontos
             Button(
-                onClick = {
-                    // A ViewModel cuida do reset
-                    viewModel.resetLimits()
-                    viewModel.selectedGroup = 2
-                    navController.navigate("officialOrNot")
-                },
+                onClick = { navController.navigate(Routes.GRAIN_SELECTION_DISCOUNT) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(80.dp)
@@ -73,7 +69,10 @@ fun GroupSelectionScreen(
                     contentColor = MaterialTheme.colorScheme.onSecondaryContainer
                 )
             ) {
-                Text("Grupo 2", style = MaterialTheme.typography.titleMedium)
+                Text(
+                    text = "Cálculo de Descontos",
+                    style = MaterialTheme.typography.titleMedium
+                )
             }
         }
     }

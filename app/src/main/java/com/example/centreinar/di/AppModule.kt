@@ -16,6 +16,7 @@ import javax.inject.Singleton
 object AppModule {
 
     @Provides
+    @Singleton
     fun provideUtilities(): Utilities = Utilities()
 }
 
@@ -36,11 +37,13 @@ abstract class RepositoryBindsModule {
     ): DiscountRepository
 
     @Binds
+    @Singleton
     abstract fun bindClassificationRepositoryMilho(
         impl: ClassificationRepositoryMilhoImpl
     ): ClassificationRepositoryMilho
 
     @Binds
+    @Singleton
     abstract fun bindDiscountRepositoryMilho(
         impl: DiscountRepositoryMilhoImpl
     ): DiscountRepositoryMilho

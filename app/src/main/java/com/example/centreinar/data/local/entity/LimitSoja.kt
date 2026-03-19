@@ -30,5 +30,16 @@ data class LimitSoja(
     @ColumnInfo(name = "burntOrSourUpLim") val burntOrSourUpLim: Float,
     @ColumnInfo(name = "spoiledTotalLowerLim") val spoiledTotalLowerLim: Float,
     @ColumnInfo(name = "spoiledTotalUpLim") val spoiledTotalUpLim: Float,
-) : BaseLimit
+) : BaseLimit {
 
+    // Retorna as linhas de limites da soja para exibição nas tabelas
+    override fun toDisplayRows(): List<Pair<String, Float>> = listOf(
+        "Ardidos e Queimados"                  to burntOrSourUpLim,
+        "Queimados"                            to burntUpLim,
+        "Mofados"                              to moldyUpLim,
+        "Avariados Total"                      to spoiledTotalUpLim,
+        "Esverdeados"                          to greenishUpLim,
+        "Partidos, Quebrados e Amassados"      to brokenCrackedDamagedUpLim,
+        "Matérias Estranhas e Impurezas"       to impuritiesUpLim
+    )
+}

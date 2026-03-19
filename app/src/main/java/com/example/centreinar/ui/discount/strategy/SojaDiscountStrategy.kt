@@ -6,8 +6,11 @@ import com.example.centreinar.InputDiscountSoja
 import com.example.centreinar.LimitSoja
 import com.example.centreinar.data.repository.ClassificationRepository
 import com.example.centreinar.data.repository.DiscountRepository
+import com.example.centreinar.domain.model.GrainDescriptor
+import com.example.centreinar.domain.usecase.CalculateDiscountSojaUseCase
 import com.example.centreinar.util.ClassificationPdfPayload
 import com.example.centreinar.util.DiscountPdfPayload
+import com.example.centreinar.util.FieldKeys
 import com.example.centreinar.util.PDFExporter
 import com.example.centreinar.util.PdfDiscountRow
 import com.example.centreinar.util.PdfDisqualificationData
@@ -20,45 +23,76 @@ import javax.inject.Inject
 class SojaDiscountStrategy @Inject constructor(
     private val classificationRepo: ClassificationRepository,
     private val discountRepo: DiscountRepository,
+    private val calculateDiscountUseCase: CalculateDiscountSojaUseCase,
     private val pdfExporter: PDFExporter
 ) : GrainDiscountStrategy {
 
-    override val grainName: String = "Soja"
+    override val descriptor = GrainDescriptor(
+        name           = "Soja",
+        displayName    = "Soja",
+        colorScheme    = "primary",
+        supportsGroups = true
+    )
 
     private var lastDiscountId: Long = -1L
     private var lastInputDiscountId: Long = -1L
 
+    // -------------------------------------------------------------------------
+    // Campos de input — TODAS AS CHAVES USAM FieldKeys.*
+    //
+    // Contrato obrigatório: as chaves em getLimitInputFields, getDefectInputFields,
+    // createDefectsPayload, getBaseLimits e saveCustomLimitData devem ser
+    // IDÊNTICAS às chaves retornadas por ClassificationSoja.toDefectsMap().
+    // Isso garante que o prefill da classificação preencha os campos corretamente.
+    // -------------------------------------------------------------------------
+
+    override fun getDiscountInputRows(
+        prefill: com.example.centreinar.ui.discount.viewmodel.ClassificationPrefill?,
+        financial: FinancialDiscountPayload
+    ): List<DiscountInputRow> = listOf(
+        DiscountInputRow("Peso do Lote",          "%.2f kg".format(financial.lotWeight)),
+        DiscountInputRow("Preço por Saca",        "R\$ %.2f".format(financial.priceBySack)),
+        DiscountInputRow("Umidade",               "%.2f %%".format(prefill?.moisture ?: 0f)),
+        DiscountInputRow("Matérias Estranhas e Impurezas",             "%.2f %%".format(prefill?.defects?.get(com.example.centreinar.util.FieldKeys.IMPURITIES) ?: 0f)),
+        DiscountInputRow("Ardidos e Queimados",   "%.2f %%".format(prefill?.defects?.get(com.example.centreinar.util.FieldKeys.BURNT_OR_SOUR) ?: 0f)),
+        DiscountInputRow("Queimados",             "%.2f %%".format(prefill?.defects?.get(com.example.centreinar.util.FieldKeys.BURNT) ?: 0f)),
+        DiscountInputRow("Mofados",               "%.2f %%".format(prefill?.defects?.get(com.example.centreinar.util.FieldKeys.MOLDY) ?: 0f)),
+        DiscountInputRow("Avariados Total",       "%.2f %%".format(prefill?.defects?.get(com.example.centreinar.util.FieldKeys.SPOILED) ?: 0f)),
+        DiscountInputRow("Esverdeados",           "%.2f %%".format(prefill?.defects?.get(com.example.centreinar.util.FieldKeys.GREENISH) ?: 0f)),
+        DiscountInputRow("Partidos, Quebrados e Amassados",    "%.2f %%".format(prefill?.defects?.get(com.example.centreinar.util.FieldKeys.BROKEN) ?: 0f))
+    )
+
     override fun getLimitInputFields(classificationId: Int?): List<DiscountInputField> = listOf(
-        DiscountInputField("umidade",     "Umidade da Amostra (%)"),
-        DiscountInputField("impureza",    "Impurezas (%)"),
-        DiscountInputField("queimados",   "Queimados (%)"),
-        DiscountInputField("ardidos",     "Ardidos e Queimados (%)"),
-        DiscountInputField("mofados",     "Mofados (%)"),
-        DiscountInputField("avariados",   "Total Avariados (%)"),
-        DiscountInputField("esverdeados", "Esverdeados (%)"),
-        DiscountInputField("quebrados",   "Quebrados/Amassados (%)")
+        DiscountInputField(FieldKeys.MOISTURE,      "Umidade da Amostra (%)"),
+        DiscountInputField(FieldKeys.IMPURITIES,    "Impurezas (%)"),
+        DiscountInputField(FieldKeys.BURNT,         "Queimados (%)"),
+        DiscountInputField(FieldKeys.BURNT_OR_SOUR, "Ardidos e Queimados (%)"),
+        DiscountInputField(FieldKeys.MOLDY,         "Mofados (%)"),
+        DiscountInputField(FieldKeys.SPOILED,       "Total Avariados (%)"),
+        DiscountInputField(FieldKeys.GREENISH,      "Esverdeados (%)"),
+        DiscountInputField(FieldKeys.BROKEN,        "Quebrados/Amassados (%)")
     )
 
     override fun getDefectInputFields(): List<DiscountInputField> = listOf(
-        DiscountInputField("impureza",    "Mat. Estranha e Imp. (%)",  tabGroup = 0),
-        DiscountInputField("ardidos",     "Ardidos e Queimados (%)",    tabGroup = 1),
-        DiscountInputField("queimados",   "Queimados (%)",              tabGroup = 1),
-        DiscountInputField("mofados",     "Mofados (%)",                tabGroup = 1),
-        DiscountInputField("avariados",   "Total Avariados (%)",        tabGroup = 1),
-        DiscountInputField("esverdeados", "Esverdeados (%)",            tabGroup = 2),
-        DiscountInputField("quebrados",   "Partidos/Quebrados (%)",     tabGroup = 2)
+        DiscountInputField(FieldKeys.IMPURITIES,    "Mat. Estranha e Imp. (%)",  tabGroup = 0),
+        DiscountInputField(FieldKeys.BURNT_OR_SOUR, "Ardidos e Queimados (%)",   tabGroup = 1),
+        DiscountInputField(FieldKeys.BURNT,         "Queimados (%)",             tabGroup = 1),
+        DiscountInputField(FieldKeys.MOLDY,         "Mofados (%)",               tabGroup = 1),
+        DiscountInputField(FieldKeys.SPOILED,       "Total Avariados (%)",       tabGroup = 1),
+        DiscountInputField(FieldKeys.GREENISH,      "Esverdeados (%)",           tabGroup = 2),
+        DiscountInputField(FieldKeys.BROKEN,        "Partidos/Quebrados (%)",    tabGroup = 2)
     )
 
     override fun createDefectsPayload(fieldValues: Map<String, Float>): DiscountDefectsPayload {
         return DiscountDefectsPayload.Soja(
-            moisture    = fieldValues["umidade"]     ?: 0f,
-            impurities  = fieldValues["impureza"]    ?: 0f,
-            greenish    = fieldValues["esverdeados"] ?: 0f,
-            broken      = fieldValues["quebrados"]   ?: 0f,
-            spoiled     = fieldValues["avariados"]   ?: 0f,
-            burnt       = fieldValues["queimados"]   ?: 0f,
-            burntOrSour = fieldValues["ardidos"]     ?: 0f,
-            moldy       = fieldValues["mofados"]     ?: 0f
+            moisture    = fieldValues[FieldKeys.MOISTURE]      ?: 0f,
+            impurities  = fieldValues[FieldKeys.IMPURITIES]    ?: 0f,
+            greenish    = fieldValues[FieldKeys.GREENISH]      ?: 0f,
+            broken      = fieldValues[FieldKeys.BROKEN]        ?: 0f,
+            spoiled     = fieldValues[FieldKeys.SPOILED]       ?: 0f,
+            burnt       = fieldValues[FieldKeys.BURNT]         ?: 0f,
+            burntOrSour = fieldValues[FieldKeys.BURNT_OR_SOUR] ?: 0f,
+            moldy       = fieldValues[FieldKeys.MOLDY]         ?: 0f
         )
     }
 
@@ -66,14 +100,14 @@ class SojaDiscountStrategy @Inject constructor(
         val limit = classificationRepo.getLimitsByGroup(grainName, group, 0)
             .firstOrNull() ?: return null
         return mapOf(
-            "umidade"     to limit.moistureUpLim,
-            "impureza"    to limit.impuritiesUpLim,
-            "queimados"   to limit.burntUpLim,
-            "ardidos"     to limit.burntOrSourUpLim,
-            "mofados"     to limit.moldyUpLim,
-            "avariados"   to limit.spoiledTotalUpLim,
-            "esverdeados" to limit.greenishUpLim,
-            "quebrados"   to limit.brokenCrackedDamagedUpLim
+            FieldKeys.MOISTURE      to limit.moistureUpLim,
+            FieldKeys.IMPURITIES    to limit.impuritiesUpLim,
+            FieldKeys.BURNT         to limit.burntUpLim,
+            FieldKeys.BURNT_OR_SOUR to limit.burntOrSourUpLim,
+            FieldKeys.MOLDY         to limit.moldyUpLim,
+            FieldKeys.SPOILED       to limit.spoiledTotalUpLim,
+            FieldKeys.GREENISH      to limit.greenishUpLim,
+            FieldKeys.BROKEN        to limit.brokenCrackedDamagedUpLim
         )
     }
 
@@ -95,20 +129,30 @@ class SojaDiscountStrategy @Inject constructor(
     override suspend fun getOfficialLimitsList(group: Int): List<Any> =
         classificationRepo.getLimitsByGroup(grainName, group, 0)
 
+    override fun getLimitFields(): List<com.example.centreinar.domain.model.LimitField> = listOf(
+        com.example.centreinar.domain.model.LimitField(FieldKeys.BURNT_OR_SOUR, "Ardidos e Queimados (%)"),
+        com.example.centreinar.domain.model.LimitField(FieldKeys.BURNT,         "Queimados (%)"),
+        com.example.centreinar.domain.model.LimitField(FieldKeys.MOLDY,         "Mofados (%)"),
+        com.example.centreinar.domain.model.LimitField(FieldKeys.SPOILED,       "Total Avariados (%)"),
+        com.example.centreinar.domain.model.LimitField(FieldKeys.GREENISH,      "Esverdeados (%)"),
+        com.example.centreinar.domain.model.LimitField(FieldKeys.BROKEN,        "Partidos, Quebrados e Amassados (%)"),
+        com.example.centreinar.domain.model.LimitField(FieldKeys.IMPURITIES,    "Matérias Estranhas e Impurezas (%)"),
+    )
+
     override suspend fun saveCustomLimitData(group: Int, fieldMap: Map<String, Float>) {
         classificationRepo.deleteCustomLimits()
         classificationRepo.setLimit(
             grain                = grainName,
             group                = group,
             type                 = 1,
-            impurities           = fieldMap["impureza"]    ?: 0f,
-            moisture             = fieldMap["umidade"]     ?: 0f,
-            brokenCrackedDamaged = fieldMap["quebrados"]   ?: 0f,
-            greenish             = fieldMap["esverdeados"] ?: 0f,
-            burnt                = fieldMap["queimados"]   ?: 0f,
-            burntOrSour          = fieldMap["ardidos"]     ?: 0f,
-            moldy                = fieldMap["mofados"]     ?: 0f,
-            spoiled              = fieldMap["avariados"]   ?: 0f
+            impurities           = fieldMap[FieldKeys.IMPURITIES]    ?: 0f,
+            moisture             = fieldMap[FieldKeys.MOISTURE]       ?: 0f,
+            brokenCrackedDamaged = fieldMap[FieldKeys.BROKEN]         ?: 0f,
+            greenish             = fieldMap[FieldKeys.GREENISH]       ?: 0f,
+            burnt                = fieldMap[FieldKeys.BURNT]          ?: 0f,
+            burntOrSour          = fieldMap[FieldKeys.BURNT_OR_SOUR]  ?: 0f,
+            moldy                = fieldMap[FieldKeys.MOLDY]          ?: 0f,
+            spoiled              = fieldMap[FieldKeys.SPOILED]        ?: 0f
         )
     }
 
@@ -127,12 +171,12 @@ class SojaDiscountStrategy @Inject constructor(
             grain                       = grainName,
             group                       = financialPayload.group,
             limitSource                 = limitSource,
-            classificationId            = financialPayload.sourceClassificationId, // ← vem do ViewModel
+            classificationId            = financialPayload.sourceClassificationId,
             daysOfStorage               = financialPayload.daysOfStorage,
             lotWeight                   = financialPayload.lotWeight,
             lotPrice                    = lotPrice,
             foreignMattersAndImpurities = payload.impurities,
-            humidity                    = payload.moisture,
+            moisture                    = payload.moisture,
             burnt                       = payload.burnt,
             burntOrSour                 = payload.burntOrSour,
             moldy                       = payload.moldy,
@@ -146,10 +190,7 @@ class SojaDiscountStrategy @Inject constructor(
         val savedInput = discountRepo.getLastInputDiscount()
         lastInputDiscountId = savedInput.id.toLong()
 
-        val discountId = discountRepo.calculateDiscount(
-            grain                  = grainName,
-            group                  = savedInput.group,
-            tipo                   = 1,
+        val discountId = calculateDiscountUseCase.execute(
             sample                 = savedInput,
             doesTechnicalLoss      = financialPayload.doesTechnicalLoss,
             doesClassificationLoss = true,
@@ -167,12 +208,24 @@ class SojaDiscountStrategy @Inject constructor(
         return discount.toDiscountResult(limitRows, limitHeaders)
     }
 
+    private fun buildSojaDiscountInputRows(input: InputDiscountSoja): List<Pair<String, String>> =
+        listOf(
+            "Umidade"             to "%.2f %%".format(input.moisture),
+            "Matérias Estranhas e Impurezas"           to "%.2f %%".format(input.foreignMattersAndImpurities),
+            "Ardidos e Queimados" to "%.2f %%".format(input.burntOrSour),
+            "Queimados"           to "%.2f %%".format(input.burnt),
+            "Mofados"             to "%.2f %%".format(input.moldy),
+            "Avariados Total"     to "%.2f %%".format(input.spoiled),
+            "Esverdeados"         to "%.2f %%".format(input.greenish),
+            "Partidos, Quebrados e Amassados"  to "%.2f %%".format(input.brokenCrackedDamaged)
+        )
+
     override suspend fun exportDiscountToPdf(context: Context, sourceClassificationId: Int?) {
         try {
             if (lastDiscountId < 0) return
             val discount = discountRepo.getDiscountById(lastDiscountId) ?: return
 
-            val input = discountRepo.getLastInputDiscount()
+            val input      = discountRepo.getLastInputDiscount()
             val isOfficial = input.limitSource == 0
 
             val classificationPayload: ClassificationPdfPayload? =
@@ -198,11 +251,12 @@ class SojaDiscountStrategy @Inject constructor(
                     PdfDiscountRow("Esverdeados",                discount.greenishLoss,      discount.greenishLossPrice),
                     PdfDiscountRow("Partidos/Quebrados",         discount.brokenLoss,        discount.brokenLossPrice)
                 ),
-                inputMoisture         = input.humidity,
+                inputMoisture         = input.moisture,
                 inputImpurities       = input.foreignMattersAndImpurities,
                 lotWeight             = input.lotWeight,
                 lotPrice              = input.lotPrice,
-                classificationPayload = classificationPayload
+                classificationPayload = classificationPayload,
+                discountInputRows     = buildSojaDiscountInputRows(input)
             )
 
             pdfExporter.exportDiscount(context, discountPayload)
@@ -212,20 +266,18 @@ class SojaDiscountStrategy @Inject constructor(
     }
 
     private suspend fun buildClassificationPayload(classificationId: Int, isOfficial: Boolean): ClassificationPdfPayload? {
-        val classification = classificationRepo.getClassification(classificationId) ?: return null
-        val sample = classificationRepo.getSample(classification.sampleId) ?: return null
+        val classification   = classificationRepo.getClassification(classificationId) ?: return null
+        val sample           = classificationRepo.getSample(classification.sampleId)  ?: return null
         val disqualification = classificationRepo.getDisqualificationByClassificationId(classificationId)
-        val toxicSeeds = disqualification?.let { classificationRepo.getToxicSeedsByDisqualificationId(it.id) }
-
+        val toxicSeeds       = disqualification?.let { classificationRepo.getToxicSeedsByDisqualificationId(it.id) }
         val colorClassification = classificationRepo.getColorClassification(classificationId)
-
-        val lastSource = classificationRepo.getLastLimitSource()
-        val limit = classificationRepo.getLimit(grainName, sample.group, classification.finalType, lastSource)
+        val lastSource       = classificationRepo.getLastLimitSource()
+        val limit            = classificationRepo.getLimit(grainName, sample.group, classification.finalType, lastSource)
 
         val limitesParaPdf = if (isOfficial) {
             classificationRepo.getLimitsByGroup(grainName, sample.group, 0).filterIsInstance<LimitSoja>()
         } else {
-            limit?.let { listOf(it as LimitSoja) } ?: emptyList()
+            limit?.let { listOf(it) } ?: emptyList()
         }
 
         val limitHeaders = listOf("Defeito") + limitesParaPdf.mapIndexed { i, _ ->
@@ -233,75 +285,76 @@ class SojaDiscountStrategy @Inject constructor(
         }
 
         val limitRows = listOf(
-            "Ardidos/Queim."   to limitesParaPdf.map { "%.2f%%".format(it.burntOrSourUpLim) },
-            "Queimados"        to limitesParaPdf.map { "%.2f%%".format(it.burntUpLim) },
-            "Mofados"          to limitesParaPdf.map { "%.2f%%".format(it.moldyUpLim) },
-            "Avariados Total"  to limitesParaPdf.map { "%.2f%%".format(it.spoiledTotalUpLim) },
-            "Esverdeados"      to limitesParaPdf.map { "%.2f%%".format(it.greenishUpLim) },
-            "Partidos/Quebr."  to limitesParaPdf.map { "%.2f%%".format(it.brokenCrackedDamagedUpLim) },
-            "Mat. Est./Imp."   to limitesParaPdf.map { "%.2f%%".format(it.impuritiesUpLim) }
+            "Ardidos e Queimados"  to limitesParaPdf.map { "%.2f%%".format(it.burntOrSourUpLim) },
+            "Queimados"       to limitesParaPdf.map { "%.2f%%".format(it.burntUpLim) },
+            "Mofados"         to limitesParaPdf.map { "%.2f%%".format(it.moldyUpLim) },
+            "Avariados Total" to limitesParaPdf.map { "%.2f%%".format(it.spoiledTotalUpLim) },
+            "Esverdeados"     to limitesParaPdf.map { "%.2f%%".format(it.greenishUpLim) },
+            "Partidos, Quebrados e Amassados" to limitesParaPdf.map { "%.2f%%".format(it.brokenCrackedDamagedUpLim) },
+            "Matérias Estranhas e Impurezas"  to limitesParaPdf.map { "%.2f%%".format(it.impuritiesUpLim) }
         ).map { (label, values) -> PdfLimitRow(label, values) }
 
         val tableRows = listOf(
-            PdfTableRow("Matérias Estranhas e Impurezas (%)", "%.2f".format(classification.impuritiesPercentage), getTypeLabel(classification.impuritiesType, sample.group)),
-
-            // Defeitos específicos (Avariados e outros)
-            PdfTableRow("Ardidos (%)", "%.2f".format(classification.sourPercentage ?: 0f), getTypeLabel( -1, sample.group)),
-
-            PdfTableRow("Queimados (%)", "%.2f".format(classification.burntPercentage), getTypeLabel(classification.burntType, sample.group)),
-
-            PdfTableRow("Total Ardidos + Queimados (%)", "%.2f".format(classification.burntOrSourPercentage), getTypeLabel(classification.burntOrSourType, sample.group)),
-
-            PdfTableRow("Mofados (%)", "%.2f".format(classification.moldyPercentage), getTypeLabel(classification.moldyType, sample.group)),
-
-            PdfTableRow("Fermentados (%)", "%.2f".format(classification.fermentedPercentage ?: 0f), getTypeLabel(-1, sample.group)),
-
-            PdfTableRow("Germinados (%)", "%.2f".format(classification.germinatedPercentage ?: 0f), getTypeLabel(-1, sample.group)),
-
-            PdfTableRow("Imaturos (%)", "%.2f".format(classification.immaturePercentage ?: 0f), getTypeLabel(-1, sample.group)),
-
-            PdfTableRow("Chochos (%)", "%.2f".format(classification.shriveledPercentage ?: 0f), getTypeLabel(-1, sample.group)),
-
-            PdfTableRow("Danificados (%)", "%.2f".format(classification.damagedPercentage ?: 0f), getTypeLabel(-1, sample.group)),
-
-            // Totais e outros
-            PdfTableRow("Total de Avariados (%)", "%.2f".format(classification.spoiledPercentage), getTypeLabel(classification.spoiledType, sample.group)),
-
-            PdfTableRow("Esverdeados (%)", "%.2f".format(classification.greenishPercentage), getTypeLabel(classification.greenishType, sample.group)),
-
-            PdfTableRow("Partidos, Quebrados e Amassados (%)", "%.2f".format(classification.brokenCrackedDamagedPercentage), getTypeLabel(classification.brokenCrackedDamagedType, sample.group))
+            PdfTableRow("Matérias Estranhas e Impurezas", "%.2f".format(classification.impuritiesPercentage), getTypeLabel(classification.impuritiesType, sample.group)),
+            PdfTableRow("Ardidos", "%.2f".format(classification.sourPercentage), getTypeLabel(-1, sample.group)),
+            PdfTableRow("Queimados", "%.2f".format(classification.burntPercentage), getTypeLabel(classification.burntType, sample.group)),
+            PdfTableRow("Total Ardidos e Queimados", "%.2f".format(classification.burntOrSourPercentage), getTypeLabel(classification.burntOrSourType, sample.group)),
+            PdfTableRow("Mofados", "%.2f".format(classification.moldyPercentage), getTypeLabel(classification.moldyType, sample.group)),
+            PdfTableRow("Fermentados", "%.2f".format(classification.fermentedPercentage), getTypeLabel(-1, sample.group)),
+            PdfTableRow("Germinados", "%.2f".format(classification.germinatedPercentage), getTypeLabel(-1, sample.group)),
+            PdfTableRow("Imaturos", "%.2f".format(classification.immaturePercentage), getTypeLabel(-1, sample.group)),
+            PdfTableRow("Chochos", "%.2f".format(classification.shriveledPercentage), getTypeLabel(-1, sample.group)),
+            PdfTableRow("Danificados", "%.2f".format(classification.damagedPercentage), getTypeLabel(-1, sample.group)),
+            PdfTableRow("Total de Avariados", "%.2f".format(classification.spoiledPercentage), getTypeLabel(classification.spoiledType, sample.group)),
+            PdfTableRow("Esverdeados", "%.2f".format(classification.greenishPercentage), getTypeLabel(classification.greenishType, sample.group)),
+            PdfTableRow("Partidos, Quebrados e Amassados", "%.2f".format(classification.brokenCrackedDamagedPercentage), getTypeLabel(classification.brokenCrackedDamagedType, sample.group))
         )
 
         val disqData = disqualification?.let { disq ->
             PdfDisqualificationData(
-                badConservation = disq.badConservation,
-                strangeSmell = disq.strangeSmell,
-                insects = disq.insects,
-                toxicGrains = disq.toxicGrains,
+                badConservation  = disq.badConservation,
+                strangeSmell     = disq.strangeSmell,
+                insects          = disq.insects,
+                toxicGrains      = disq.toxicGrains,
                 toxicSeedDetails = toxicSeeds?.map { it.name to it.quantity } ?: emptyList()
             )
         }
+
+        val sampleInputRows = listOf(
+            "Matérias Estranhas e Impurezas"           to "%.2f g".format(sample.foreignMattersAndImpurities),
+            "Ardidos"             to "%.2f g".format(sample.sour),
+            "Queimados"           to "%.2f g".format(sample.burnt),
+            "Mofados"             to "%.2f g".format(sample.moldy),
+            "Fermentados"         to "%.2f g".format(sample.fermented),
+            "Germinados"          to "%.2f g".format(sample.germinated),
+            "Imaturos"            to "%.2f g".format(sample.immature),
+            "Chochos"             to "%.2f g".format(sample.shriveled),
+            "Danificados"         to "%.2f g".format(sample.damaged),
+            "Avariados Total"     to "%.2f g".format(
+                sample.moldy + sample.fermented + sample.sour + sample.burnt +
+                        sample.germinated + sample.immature + sample.shriveled + sample.damaged),
+            "Esverdeados"         to "%.2f g".format(sample.greenish),
+            "Partidos, Quebrados e Amassados"  to "%.2f g".format(sample.brokenCrackedDamaged)
+        )
 
         return ClassificationPdfPayload(
             grain              = grainName,
             group              = sample.group,
             isOfficial         = isOfficial,
-            moisturePercentage = classification.moisturePercentage ?: 0f,
+            moisturePercentage = classification.moisturePercentage,
             moistureLimit      = limitesParaPdf.firstOrNull()?.moistureUpLim ?: 14f,
-            finalTypeLabel     = getTypeLabel(classification.finalType ?: -1, sample.group),
+            finalTypeLabel     = getTypeLabel(classification.finalType, sample.group),
             tableRows          = tableRows,
-
-            // 👇 AGORA PEGAMOS DA ENTIDADE DE COR 👇
-            colorLabel         = colorClassification?.framingClass ?: "CLASSE",
+            colorLabel         = colorClassification?.framingClass ?: "CLASSE DE COR DA SOJA",
+            colorDefined       = colorClassification != null,
             colorYellow        = colorClassification?.yellowPercentage,
             colorOther         = colorClassification?.otherColorPercentage,
-            // 👆 ================================= 👆
-
             sample             = PdfSampleData(sample.lotWeight, sample.sampleWeight, sample.moisture),
             disqualification   = disqData,
             limitHeaders       = limitHeaders,
             limitRows          = limitRows,
-            observation        = ""
+            observation        = "",
+            sampleInputRows    = sampleInputRows
         )
     }
 }
@@ -311,12 +364,12 @@ private fun DiscountSoja.toDiscountResult(
     limitHeaders: List<String>
 ) = DiscountResult(
     summaryRows = listOf(
-        DiscountResultRow("Desc. por Matérias Estranhas e Impurezas", impuritiesLoss,        impuritiesLossPrice),
-        DiscountResultRow("Desc. por Umidade",                        humidityLoss,          humidityLossPrice),
+        DiscountResultRow("Desc. por Matérias Estranhas e Impurezas", impuritiesLoss,         impuritiesLossPrice),
+        DiscountResultRow("Desc. por Umidade",                        humidityLoss,           humidityLossPrice),
         DiscountResultRow("Quebra Classificação",                     classificationDiscount, classificationDiscountPrice),
-        DiscountResultRow("Quebra Técnica",                           technicalLoss,         technicalLossPrice),
-        DiscountResultRow("Desconto Total",                           finalDiscount,         finalDiscountPrice),
-        DiscountResultRow("Lote Líquido Final",                       finalWeight,           finalWeightPrice)
+        DiscountResultRow("Quebra Técnica",                           technicalLoss,          technicalLossPrice),
+        DiscountResultRow("Desconto Total",                           finalDiscount,          finalDiscountPrice),
+        DiscountResultRow("Lote Líquido Final",                       finalWeight,            finalWeightPrice)
     ),
     detailRows = listOf(
         DiscountResultRow("Matérias Estranhas e Impurezas",  impuritiesLoss,   impuritiesLossPrice),

@@ -41,7 +41,7 @@ interface SampleSojaDao {
     @Query("SELECT * FROM sample_soja WHERE sampleWeight BETWEEN :minWeight AND :maxWeight")
     fun getByWeightRange(minWeight: Float, maxWeight: Float): Flow<List<SampleSoja>>
 
-    @Query("SELECT * FROM sample_soja WHERE humidity > :minHumidity")
+    @Query("SELECT * FROM sample_soja WHERE moisture > :minHumidity")
     fun getByMinimumHumidity(minHumidity: Float): Flow<List<SampleSoja>>
 
     @Query("SELECT * FROM sample_soja WHERE brokenCrackedDamaged > :threshold")

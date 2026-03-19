@@ -1,6 +1,8 @@
 package com.example.centreinar.ui.classificationProcess.strategy
 
 import android.content.Context
+import com.example.centreinar.domain.model.GrainDescriptor
+import com.example.centreinar.domain.model.LimitField
 
 data class StrategyResultData(
     val classification: BaseClassification?,
@@ -13,9 +15,17 @@ data class StrategyResultData(
 )
 
 interface GrainStrategy {
-    val grainName: String
 
-    // Buscar os limites no banco
+    val descriptor: GrainDescriptor
+
+    val grainName: String get() = descriptor.name
+
+    fun getLimitFields(): List<LimitField>
+
+    fun getSampleInputRows(state: ClassificationUIState): List<SampleInputRow>
+
+    fun buildPayload(state: ClassificationInputState): ClassificationPayload
+
     suspend fun getOfficialLimits(group: Int): List<Any>
 
     suspend fun getBaseLimits(group: Int): Map<String, Float>?
@@ -47,6 +57,9 @@ interface GrainStrategy {
 
     fun getTypeLabel(finalType: Int, group: Int): String
 
-    // Método específico de cor
-    suspend fun saveColorClass(classificationId: Int, totalWeight: Float, otherColorsWeight: Float) {}
+    suspend fun saveColorClass(
+        classificationId: Int,
+        totalWeight: Float,
+        otherColorsWeight: Float
+    ) {}
 }

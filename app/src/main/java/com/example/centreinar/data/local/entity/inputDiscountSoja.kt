@@ -17,7 +17,7 @@ data class InputDiscountSoja(
 
     // Defeitos Básicos
     @ColumnInfo(name = "foreignMattersAndImpurities") val foreignMattersAndImpurities: Float = 0.0f,
-    @ColumnInfo(name = "humidity") val humidity: Float = 0.0f,
+    @ColumnInfo(name = "moisture") val moisture: Float = 0.0f,
     @ColumnInfo(name = "burnt") val burnt: Float = 0.0f,
     @ColumnInfo(name = "burntOrSour") val burntOrSour: Float = 0.0f,
     @ColumnInfo(name = "moldy") val moldy: Float = 0.0f,

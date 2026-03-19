@@ -17,29 +17,25 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.centreinar.LimitSoja
-import com.example.centreinar.data.local.entity.LimitMilho
+import com.example.centreinar.ui.classificationProcess.strategy.BaseLimit
 
 @Composable
-fun OfficialReferenceTable(grain: String, group: Int, isOfficial: Boolean, data: List<Any>) {
-    val labels = if (grain == "Soja") {
-        listOf("Ardidos e Queimados", "Queimados", "Mofados", "Avariados Total", "Esverdeados", "Partidos/Quebrados e Amassados", "Matérias Estranhas e Impurezas")
-    } else {
-        listOf("Ardidos", "Avariados Total", "Quebrados", "Matérias Estranhas e Impurezas", "Carunchados",)
-    }
+fun OfficialReferenceTable(group: Int, isOfficial: Boolean, data: List<BaseLimit>) {
+    // Labels e valores vêm da própria entidade via toDisplayRows()
+    val rows = data.firstOrNull()?.toDisplayRows() ?: return
 
     val columnWeightLabel = 1.0f
-    val columnWeightValue = 1f
 
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
+            // Cabeçalho
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = "Defeito",
-                    modifier = Modifier.weight(columnWeightLabel), // Espaço maior para o nome
+                    modifier = Modifier.weight(columnWeightLabel),
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Start
@@ -48,7 +44,7 @@ fun OfficialReferenceTable(grain: String, group: Int, isOfficial: Boolean, data:
                 data.forEachIndexed { index, _ ->
                     val textoCabecalho = if (group == 2 && isOfficial) {
                         "Padrão Básico"
-                    } else if (group == 1 && ((index + 1) == 4)) {
+                    } else if (group == 1 && (index + 1) == 4) {
                         "Fora de Tipo"
                     } else {
                         "Tipo ${index + 1}"
@@ -66,10 +62,12 @@ fun OfficialReferenceTable(grain: String, group: Int, isOfficial: Boolean, data:
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
-
-            labels.forEachIndexed { rowIndex, label ->
+            // Linhas — label e valor vêm de toDisplayRows()
+            rows.forEachIndexed { rowIndex, (label, _) ->
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 6.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
@@ -80,12 +78,7 @@ fun OfficialReferenceTable(grain: String, group: Int, isOfficial: Boolean, data:
                         overflow = TextOverflow.Ellipsis
                     )
                     data.forEach { item ->
-                        val value = when (item) {
-                            is LimitSoja -> listOf(item.burntOrSourUpLim, item.burntUpLim, item.moldyUpLim, item.spoiledTotalUpLim, item.greenishUpLim, item.brokenCrackedDamagedUpLim, item.impuritiesUpLim)
-                            is LimitMilho -> listOf(item.ardidoUpLim, item.spoiledTotalUpLim, item.brokenUpLim, item.impuritiesUpLim, item.carunchadoUpLim)
-                            else -> emptyList()
-                        }.getOrNull(rowIndex) ?: 0f
-
+                        val value = item.toDisplayRows().getOrNull(rowIndex)?.second ?: 0f
                         Text(
                             text = "$value%",
                             modifier = Modifier.weight(columnWeightLabel),
@@ -96,7 +89,7 @@ fun OfficialReferenceTable(grain: String, group: Int, isOfficial: Boolean, data:
                         )
                     }
                 }
-                if (rowIndex < labels.lastIndex) {
+                if (rowIndex < rows.lastIndex) {
                     HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
                 }
             }

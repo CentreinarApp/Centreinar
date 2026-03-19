@@ -14,14 +14,6 @@ fun Float.toUniversalString(): String {
     return universalFormat.format(this)
 }
 
-// Função para String usar esse formatador
-fun String.toFloatOrZero(): Float {
-    return this.replace(",", ".")
-        .toBigDecimalOrNull()
-        ?.setScale(2, RoundingMode.HALF_UP)
-        ?.toFloat() ?: 0f
-}
-
 // Função para arredondar para duas casas decimais
 fun Float.roundToTwoDecimals(): Float {
     return this.toBigDecimal().setScale(2, RoundingMode.HALF_UP).toFloat()

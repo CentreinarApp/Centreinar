@@ -21,4 +21,14 @@ data class LimitMilho(
     @ColumnInfo(name = "mofadoUpLim") val mofadoUpLim: Float,
     @ColumnInfo(name = "carunchadoUpLim") val carunchadoUpLim: Float,
     @ColumnInfo(name = "spoiledTotalUpLim") val spoiledTotalUpLim: Float,
-) : BaseLimit
+) : BaseLimit {
+
+    // Retorna as linhas de limites do milho para exibição nas tabelas
+    override fun toDisplayRows(): List<Pair<String, Float>> = listOf(
+        "Ardidos"                        to ardidoUpLim,
+        "Avariados Total"                to spoiledTotalUpLim,
+        "Quebrados"                      to brokenUpLim,
+        "Matérias Estranhas e Impurezas" to impuritiesUpLim,
+        "Carunchados"                    to carunchadoUpLim
+    )
+}

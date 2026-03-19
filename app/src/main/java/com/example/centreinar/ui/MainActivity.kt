@@ -5,10 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -21,12 +18,24 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.navigation.navigation
-
-import com.example.centreinar.ui.classificationProcess.screens.*
-import com.example.centreinar.ui.discount.screens.*
+import com.example.centreinar.ui.classificationProcess.screens.ClassificationGroupSelectionScreen
+import com.example.centreinar.ui.classificationProcess.screens.ClassificationInputScreen
+import com.example.centreinar.ui.classificationProcess.screens.ClassificationLimitInputScreen
+import com.example.centreinar.ui.classificationProcess.screens.ClassificationResultScreen
+import com.example.centreinar.ui.classificationProcess.screens.DisqualificationScreen
+import com.example.centreinar.ui.classificationProcess.screens.ClassificationGrainSelectionScreen
+import com.example.centreinar.ui.classificationProcess.screens.OfficialOrNotOfficialScreen
 import com.example.centreinar.ui.classificationProcess.viewmodel.ClassificationViewModel
+import com.example.centreinar.ui.discount.screens.DiscountGroupSelectionScreen
+import com.example.centreinar.ui.discount.screens.DiscountInputScreen
+import com.example.centreinar.ui.discount.screens.DiscountLimitInputScreen
+import com.example.centreinar.ui.discount.screens.DiscountResultScreen
+import com.example.centreinar.ui.discount.screens.GrainSelectionDiscountScreen
+import com.example.centreinar.ui.discount.screens.OfficialOrNotOfficialDiscountScreen
 import com.example.centreinar.ui.discount.viewmodel.DiscountViewModel
+import com.example.centreinar.ui.main.screens.HomeScreen
 import com.example.centreinar.ui.theme.CentreinarTheme
+import com.example.centreinar.util.Routes
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -54,51 +63,55 @@ fun CentreinarApp() {
         modifier = Modifier.fillMaxSize()
     ) {
         navigation(
-            startDestination = "home",
+            startDestination = Routes.HOME,
             route = "main_flow"
         ) {
 
             // -------------------------------------------------------------------------
-            // Fluxo CLASSIFICAÇÃO
+            // Fluxo PRINCIPAL / HOME
             // -------------------------------------------------------------------------
-
-            composable("home") { backStackEntry ->
+            composable(Routes.HOME) { backStackEntry ->
                 HomeScreen(
                     navController,
                     backStackEntry.sharedClassificationViewModel(navController)
                 )
             }
 
-            composable("grainSelection") { backStackEntry ->
-                GrainScreen(
+            // -------------------------------------------------------------------------
+            // Fluxo CLASSIFICAÇÃO
+            // -------------------------------------------------------------------------
+            composable(Routes.GRAIN_SELECTION) { backStackEntry ->
+                ClassificationGrainSelectionScreen(
                     navController,
                     backStackEntry.sharedClassificationViewModel(navController)
                 )
             }
 
-            composable("groupSelection") { backStackEntry ->
-                GroupSelectionScreen(
+            composable(Routes.GROUP_SELECTION) { backStackEntry ->
+                // Utiliza o Wrapper que limpa estados e define o grupo no ClassificationViewModel
+                ClassificationGroupSelectionScreen(
                     navController,
                     backStackEntry.sharedClassificationViewModel(navController)
                 )
             }
 
-            composable("officialOrNot") { backStackEntry ->
+            composable(Routes.OFFICIAL_OR_NOT) { backStackEntry ->
                 OfficialOrNotOfficialScreen(
                     navController,
                     backStackEntry.sharedClassificationViewModel(navController)
                 )
             }
 
-            composable("limitInput") { backStackEntry ->
-                LimitInputScreen(
+            composable(Routes.LIMIT_INPUT) { backStackEntry ->
+                // Utiliza o Wrapper que lida com CustomLimitPayload para classificação
+                ClassificationLimitInputScreen(
                     navController,
                     backStackEntry.sharedClassificationViewModel(navController)
                 )
             }
 
             composable(
-                route = "disqualification?classificationId={classificationId}",
+                route = "${Routes.DISQUALIFICATION}?classificationId={classificationId}",
                 arguments = listOf(
                     navArgument("classificationId") {
                         type = NavType.IntType
@@ -108,53 +121,54 @@ fun CentreinarApp() {
             ) { backStackEntry ->
                 val id = backStackEntry.arguments?.getInt("classificationId") ?: -1
                 DisqualificationScreen(
-                    navController = navController,
+                    navController    = navController,
                     classificationId = id,
-                    viewModel = backStackEntry.sharedClassificationViewModel(navController)
+                    viewModel        = backStackEntry.sharedClassificationViewModel(navController)
                 )
             }
 
-            composable("classification") { backStackEntry ->
+            composable(Routes.CLASSIFICATION_INPUT) { backStackEntry ->
                 ClassificationInputScreen(
                     navController,
                     backStackEntry.sharedClassificationViewModel(navController)
                 )
             }
 
-            composable("classificationResult") { backStackEntry ->
+            composable(Routes.CLASSIFICATION_RESULT) { backStackEntry ->
                 ClassificationResultScreen(
-                    navController     = navController,
+                    navController           = navController,
                     classificationViewModel = backStackEntry.sharedClassificationViewModel(navController),
-                    discountViewModel = backStackEntry.sharedDiscountViewModel(navController)
+                    discountViewModel       = backStackEntry.sharedDiscountViewModel(navController)
                 )
             }
 
             // -------------------------------------------------------------------------
             // Fluxo DESCONTOS
             // -------------------------------------------------------------------------
-
-            composable("grainSelectionDiscount") { backStackEntry ->
+            composable(Routes.GRAIN_SELECTION_DISCOUNT) { backStackEntry ->
                 GrainSelectionDiscountScreen(
                     navController,
                     backStackEntry.sharedDiscountViewModel(navController)
                 )
             }
 
-            composable("groupSelectionDiscount") { backStackEntry ->
+            composable(Routes.GROUP_SELECTION_DISCOUNT) { backStackEntry ->
+                // Utiliza o Wrapper que limpa estados e define o grupo no DiscountViewModel
                 DiscountGroupSelectionScreen(
                     navController,
                     backStackEntry.sharedDiscountViewModel(navController)
                 )
             }
 
-            composable("officialOrNotDiscount") { backStackEntry ->
+            composable(Routes.OFFICIAL_OR_NOT_DISCOUNT) { backStackEntry ->
                 OfficialOrNotOfficialDiscountScreen(
                     navController,
                     backStackEntry.sharedDiscountViewModel(navController)
                 )
             }
 
-            composable("discountLimitInput") { backStackEntry ->
+            composable(Routes.DISCOUNT_LIMIT_INPUT) { backStackEntry ->
+                // Utiliza o Wrapper que lida com saveCustomLimit para descontos
                 DiscountLimitInputScreen(
                     navController,
                     backStackEntry.sharedDiscountViewModel(navController)
@@ -162,7 +176,7 @@ fun CentreinarApp() {
             }
 
             composable(
-                route = "discountInputScreen?classificationId={classificationId}",
+                route = "${Routes.DISCOUNT_INPUT}?classificationId={classificationId}",
                 arguments = listOf(
                     navArgument("classificationId") {
                         type = NavType.IntType
@@ -172,28 +186,13 @@ fun CentreinarApp() {
             ) { backStackEntry ->
                 val id = backStackEntry.arguments?.getInt("classificationId") ?: -1
                 DiscountInputScreen(
-                    navController = navController,
+                    navController    = navController,
                     classificationId = if (id != -1) id else null,
-                    viewModel = backStackEntry.sharedDiscountViewModel(navController)
+                    viewModel        = backStackEntry.sharedDiscountViewModel(navController)
                 )
             }
 
-            composable("milhoDiscountInputScreen?isOfficial={isOfficial}",
-                arguments = listOf(
-                    navArgument("isOfficial") {
-                        type = NavType.BoolType
-                        defaultValue = true
-                    }
-                )
-            ) { backStackEntry ->
-                DiscountInputScreen(
-                    navController = navController,
-                    classificationId = null,
-                    viewModel = backStackEntry.sharedDiscountViewModel(navController)
-                )
-            }
-
-            composable("discountResultsScreen") { backStackEntry ->
+            composable(Routes.DISCOUNT_RESULTS) { backStackEntry ->
                 DiscountResultScreen(
                     navController,
                     backStackEntry.sharedDiscountViewModel(navController)
@@ -204,7 +203,7 @@ fun CentreinarApp() {
 }
 
 // =============================================================================
-// Funções de Extensão
+// Funções de Extensão — compartilhamento de ViewModel no escopo do NavGraph
 // =============================================================================
 
 @Composable
@@ -225,10 +224,4 @@ private fun NavBackStackEntry.sharedDiscountViewModel(
         navController.getBackStackEntry("main_flow")
     }
     return hiltViewModel(parentEntry)
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun SimpleAppBar() {
-    TopAppBar(title = { Text("Centreinar") })
 }

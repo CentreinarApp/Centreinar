@@ -19,7 +19,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.example.centreinar.ui.discount.strategy.DiscountInputField
 import com.example.centreinar.ui.discount.strategy.FinancialDiscountPayload
+import com.example.centreinar.ui.discount.viewmodel.DiscountNavigationEvent
 import com.example.centreinar.ui.discount.viewmodel.DiscountViewModel
+import com.example.centreinar.util.FieldKeys
+import com.example.centreinar.util.Routes
 
 // =============================================================================
 // STATE HOLDER
@@ -50,8 +53,6 @@ fun DiscountInputScreen(
     viewModel: DiscountViewModel = hiltViewModel()
 ) {
     val uiState               by viewModel.uiState.collectAsStateWithLifecycle()
-    val discountResult        by viewModel.discountResult.collectAsStateWithLifecycle()
-    val classificationPrefill by viewModel.classificationPrefill.collectAsStateWithLifecycle()
     val grain = viewModel.selectedGrain
 
     val strategy     = viewModel.getStrategy(grain)
@@ -61,44 +62,29 @@ fun DiscountInputScreen(
     val defects1Fields      = remember(defectFields) { defectFields.filter { it.tabGroup == 1 } }
     val defects2Fields      = remember(defectFields) { defectFields.filter { it.tabGroup == 2 } }
 
+    // Inicializa fieldValues vazio — o LaunchedEffect abaixo é responsável por preencher
     var fieldValues by remember(grain) {
-        val prefill = viewModel.classificationPrefill.value
-        mutableStateOf(defectFields.associate { field ->
-            field.key to (prefill?.defects?.get(field.key)?.toString() ?: "")
-        })
+        mutableStateOf(defectFields.associate { field -> field.key to "" })
     }
-
 
     val s = rememberDiscountInputState()
-
-    // Pré-preenche TODOS os campos vindos da ClassificationResultScreen
-    var prefillApplied by remember { mutableStateOf(false) }
-
-    LaunchedEffect(grain) {
-        if (!prefillApplied) {  // só aplica currentDefectsMap se o prefill ainda não rodou
-            val saved = viewModel.currentDefectsMap
-            if (saved.isNotEmpty()) {
-                fieldValues = fieldValues.mapValues { (key, _) -> saved[key]?.toString() ?: "" }
-                saved["umidade"]?.let { s.moisture.value = it.toString() }
-            }
-        }
-    }
-
-    LaunchedEffect(classificationPrefill) {
-        val prefill = classificationPrefill ?: return@LaunchedEffect
-        prefill.lotWeight?.let { s.lotWeight.value = it.toString() }
-        s.moisture.value = prefill.moisture.toString()
-        prefillApplied = true
-    }
 
     LaunchedEffect(uiState.error) {
         uiState.error?.let { s.errorMessage.value = it }
     }
 
-
-    LaunchedEffect(discountResult) {
-        if (discountResult != null) {
-            navController.navigate("discountResultsScreen")
+    // One-shot event — navega para resultados exatamente uma vez por cálculo.
+    // Remove DiscountInputScreen do back stack para que o botão Voltar
+    // retorne à tela anterior ao fluxo de desconto.
+    LaunchedEffect(Unit) {
+        viewModel.navigationEvent.collect { event ->
+            when (event) {
+                is DiscountNavigationEvent.NavigateToResults -> {
+                    navController.navigate(Routes.DISCOUNT_RESULTS) {
+                        popUpTo(Routes.DISCOUNT_INPUT) { inclusive = true }
+                    }
+                }
+            }
         }
     }
 
@@ -229,9 +215,9 @@ fun DiscountInputScreen(
                             }
 
                             val fullMap = fieldValues.mapValues { it.value.toFloatOrZero() } + mapOf(
-                                "umidade"   to s.moisture.value.toFloatOrZero(),
-                                "lotWeight" to fLotWeight,
-                                "lotPrice"  to (fLotWeight * fPriceBySack) / 60f
+                                FieldKeys.MOISTURE   to s.moisture.value.toFloatOrZero(),
+                                FieldKeys.LOT_WEIGHT to fLotWeight,
+                                FieldKeys.LOT_PRICE  to (fLotWeight * fPriceBySack) / 60f
                             )
 
                             val resolvedStrategy = viewModel.getStrategy(grain)
@@ -352,7 +338,8 @@ private fun DynamicDefectsTab(
                 DiscountNumberInputField(daysOfStorage, onDaysOfStorageChange, "Dias de armazenamento", daysOfStorageFocus, deductionValueFocus)
             }
             Spacer(Modifier.height(16.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            // TODO: Quando for implementar o deságio só descomentar esse bloco
+            /*Row(verticalAlignment = Alignment.CenterVertically) {
                 Switch(checked = doesDeduction, onCheckedChange = onDoesDeductionChange)
                 Spacer(Modifier.width(8.dp))
                 Text("Aplicar Deságio?")
@@ -360,7 +347,7 @@ private fun DynamicDefectsTab(
             if (doesDeduction) {
                 Spacer(Modifier.height(8.dp))
                 DiscountNumberInputField(deductionValue, onDeductionValueChange, "Valor de Deságio (%)", deductionValueFocus, null)
-            }
+            }*/
         }
     }
 }

@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -26,263 +27,273 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.example.centreinar.domain.model.ToxicSeedDetail
 import com.example.centreinar.ui.classificationProcess.viewmodel.ClassificationViewModel
-
-// Tipo de dado para armazenar Nome e Quantidade de cada semente tóxica
-typealias ToxicSeedDetail = Pair<String, String> // Pair<Nome, Quantidade>
+import com.example.centreinar.util.Routes
 
 @Composable
-public fun DisqualificationScreen(
+fun DisqualificationScreen(
     navController: NavController,
     classificationId: Int,
     viewModel: ClassificationViewModel = hiltViewModel()
 ) {
-    Scaffold(
-        modifier = Modifier.fillMaxSize()
-    ) { innerPadding -> // Esse innerPadding contém as medidas da barra de status e navegação para responsividade em diferentes telas
-        // Variáveis de Estado
-        var badConservation by remember { mutableStateOf(false) }
-        var strangeSmell by remember { mutableStateOf(false) }
-        var insects by remember { mutableStateOf(false) }
-        var toxicGrains by remember { mutableStateOf(false) }
+    Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
 
-        // Lista para armazenar os detalhes de cada tipo de semente
-        var toxicSeedDetails by remember { mutableStateOf(listOf<ToxicSeedDetail>()) }
-
-        // Campo para a quantidade de TIPOS de sementes (que define o tamanho da lista)
+        var badConservation    by remember { mutableStateOf(false) }
+        var strangeSmell       by remember { mutableStateOf(false) }
+        var insects            by remember { mutableStateOf(false) }
+        var toxicGrains        by remember { mutableStateOf(false) }
+        var toxicSeedDetails   by remember { mutableStateOf(listOf<ToxicSeedDetail>()) }
         var toxicTypesQuantity by remember { mutableStateOf("0") }
-        var toxicSeedError by remember { mutableStateOf<String?>(null) }
+        var toxicSeedError     by remember { mutableStateOf<String?>(null) }
 
-        // Converte a quantidade de TIPOS para Int, usando 0 se for inválido
-        val typesQuantity = toxicTypesQuantity.toIntOrNull() ?: 0
+        val typesQuantity  = toxicTypesQuantity.toIntOrNull() ?: 0
+        val focusManager   = LocalFocusManager.current
+        val typesCountFocus = remember { FocusRequester() }
 
-        // Função local para atualizar um par específico na lista com segurança.
         fun updateSeedDetail(index: Int, newName: String? = null, newQuantity: String? = null) {
-            // Ignora se o índice não for válido
             if (index < 0 || index >= toxicSeedDetails.size) return
-
-            val currentList = toxicSeedDetails.toMutableList()
-            val currentPair = currentList[index]
-
-            val updatedPair = ToxicSeedDetail(
-                newName ?: currentPair.first,
-                newQuantity ?: currentPair.second
-            )
-
-            currentList[index] = updatedPair
-
-            toxicSeedDetails = currentList.toList()
+            val list    = toxicSeedDetails.toMutableList()
+            val current = list[index]
+            list[index] = ToxicSeedDetail(newName ?: current.first, newQuantity ?: current.second)
+            toxicSeedDetails = list.toList()
         }
 
-        // LÓGICA DE SINCRONIZAÇÃO DE LISTA: Sincroniza a lista de detalhes com a quantidade de tipos
         LaunchedEffect(typesQuantity) {
             val currentSize = toxicSeedDetails.size
-
             when {
                 typesQuantity > currentSize -> {
-                    // Adiciona pares vazios (Nome="", Quantidade="0") se a quantidade aumentar
-                    val newItems = List(typesQuantity - currentSize) { ToxicSeedDetail("", "0") }
-                    toxicSeedDetails = toxicSeedDetails + newItems
+                    toxicSeedDetails = toxicSeedDetails +
+                            List(typesQuantity - currentSize) { ToxicSeedDetail("", "0") }
                 }
-
                 typesQuantity < currentSize -> {
-                    // Trunca a lista se a quantidade diminuir
                     toxicSeedDetails = toxicSeedDetails.take(typesQuantity)
                 }
             }
         }
 
+        // Cria pares de FocusRequester para cada tipo de semente: [nome, quantidade]
+        // Recriado quando typesQuantity muda
+        val seedFocusRequesters = remember(typesQuantity) {
+            List(typesQuantity) { FocusRequester() to FocusRequester() }
+        }
 
         Surface(
             modifier = Modifier.fillMaxSize(),
-            color = MaterialTheme.colorScheme.background
+            color    = MaterialTheme.colorScheme.background
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
                     .padding(32.dp),
-                // Usa SpaceBetween para fixar o botão no final
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
-                // Coluna de conteúdo com scroll que ocupa todo o espaço restante
                 Column(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())) {
+
                     Text(
                         "O lote apresenta:",
                         style = MaterialTheme.typography.headlineSmall,
                         color = MaterialTheme.colorScheme.onBackground
                     )
+                    Spacer(Modifier.height(24.dp))
 
-                    Spacer(modifier = Modifier.height(24.dp))
-
-                    // Checkboxes de Desqualificação
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Checkbox(
-                            checked = badConservation,
-                            onCheckedChange = { badConservation = it })
-                        Text(
-                            "Mal estado de conservação?",
-                            color = MaterialTheme.colorScheme.onBackground
-                        )
+                        Checkbox(checked = badConservation, onCheckedChange = { badConservation = it })
+                        Text("Mal estado de conservação?", color = MaterialTheme.colorScheme.onBackground)
                     }
-
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Checkbox(checked = strangeSmell, onCheckedChange = { strangeSmell = it })
                         Text("Cheiro estranho?", color = MaterialTheme.colorScheme.onBackground)
                     }
-
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Checkbox(checked = insects, onCheckedChange = { insects = it })
-                        Text(
-                            "Insetos vivos ou mortos?",
-                            color = MaterialTheme.colorScheme.onBackground
-                        )
+                        Text("Insetos vivos ou mortos?", color = MaterialTheme.colorScheme.onBackground)
                     }
-
-                    // CHECKBOX DE SEMENTES TÓXICAS
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Checkbox(
-                            checked = toxicGrains,
+                            checked       = toxicGrains,
                             onCheckedChange = {
                                 toxicGrains = it
                                 if (!it) {
                                     toxicTypesQuantity = "0"
-                                    toxicSeedDetails = emptyList()
+                                    toxicSeedDetails   = emptyList()
                                 }
                             }
                         )
                         Text("Sementes tóxicas?", color = MaterialTheme.colorScheme.onBackground)
                     }
 
-                    // CAMPOS DINÂMICOS CONDICIONAIS
                     if (toxicGrains) {
-                        Spacer(modifier = Modifier.height(24.dp))
+                        Spacer(Modifier.height(24.dp))
                         Text(
                             "Detalhes dos Tipos de Sementes Tóxicas",
-                            style = MaterialTheme.typography.titleMedium.copy(color = MaterialTheme.colorScheme.primary)
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                color = MaterialTheme.colorScheme.primary
+                            )
                         )
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(Modifier.height(16.dp))
 
-                        // CAMPO DE QUANTIDADE DE TIPOS
-                        NumberInputField(
-                            value = toxicTypesQuantity,
-                            onValueChange = {
-                                if ((it.toIntOrNull() ?: 0) >= 0) {
-                                    toxicTypesQuantity = it
-                                }
-                            },
-                            label = "Quantidade de TIPOS Encontrados"
+                        // Campo de quantidade de tipos — Next vai para o nome do tipo 1 (se existir)
+                        DisqNumberField(
+                            value          = toxicTypesQuantity,
+                            onValueChange  = { if ((it.toIntOrNull() ?: 0) >= 0) toxicTypesQuantity = it },
+                            label          = "Quantidade de TIPOS Encontrados",
+                            focusRequester = typesCountFocus,
+                            nextFocus      = seedFocusRequesters.firstOrNull()?.first,
+                            imeAction      = if (typesQuantity > 0) ImeAction.Next else ImeAction.Done,
+                            onDone         = { focusManager.clearFocus() }
                         )
 
-                        Spacer(modifier = Modifier.height(24.dp))
+                        Spacer(Modifier.height(24.dp))
 
-                        // CAMPOS DE DETALHE DINÂMICOS (Nome e Unidades)
                         if (typesQuantity > 0) {
                             Text("Detalhes por Tipo:", style = MaterialTheme.typography.titleSmall)
-                            Spacer(modifier = Modifier.height(8.dp))
+                            Spacer(Modifier.height(8.dp))
 
                             repeat(typesQuantity) { index ->
-                                val currentDetail =
-                                    toxicSeedDetails.getOrElse(index) { ToxicSeedDetail("", "0") }
+                                val currentDetail = toxicSeedDetails.getOrElse(index) {
+                                    ToxicSeedDetail("", "0")
+                                }
+                                val (nameFocus, qtyFocus) = seedFocusRequesters[index]
 
-                                Column(modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
-                                    Text(
-                                        "Tipo ${index + 1}",
-                                        style = MaterialTheme.typography.bodyLarge
-                                    )
+                                // Próximo foco: quantidade deste tipo → nome do próximo tipo
+                                // No último tipo, quantidade → Done
+                                val nextNameFocus = seedFocusRequesters.getOrNull(index + 1)?.first
+                                val isLastField   = index == typesQuantity - 1
 
-                                    // Campo 1: Nome da Semente
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(bottom = 16.dp)
+                                ) {
+                                    Text("Tipo ${index + 1}", style = MaterialTheme.typography.bodyLarge)
+
+                                    // Campo nome — Next vai para quantidade deste tipo
                                     OutlinedTextField(
-                                        value = currentDetail.first,
-                                        onValueChange = { newName ->
-                                            updateSeedDetail(index, newName = newName)
-                                        },
-                                        label = { Text("Qual semente? (Ex: Mamona)") },
-                                        modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                                        value         = currentDetail.first,
+                                        onValueChange = { updateSeedDetail(index, newName = it) },
+                                        label         = { Text("Qual semente? (Ex: Mamona)") },
+                                        modifier      = Modifier
+                                            .fillMaxWidth()
+                                            .padding(top = 4.dp)
+                                            .focusRequester(nameFocus),
+                                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                                        keyboardActions = KeyboardActions(
+                                            onNext = { qtyFocus.requestFocus() }
+                                        ),
                                         singleLine = true
                                     )
 
-                                    // Campo 2: Unidades da Semente
-                                    NumberInputField(
-                                        value = currentDetail.second,
-                                        onValueChange = { newQuantity ->
-                                            updateSeedDetail(index, newQuantity = newQuantity)
-                                        },
-                                        label = "Quantas unidades?",
+                                    // Campo quantidade — Next vai para nome do próximo tipo (ou Done)
+                                    DisqNumberField(
+                                        value          = currentDetail.second,
+                                        onValueChange  = { updateSeedDetail(index, newQuantity = it) },
+                                        label          = "Quantas unidades?",
+                                        focusRequester = qtyFocus,
+                                        nextFocus      = nextNameFocus,
+                                        imeAction      = if (isLastField) ImeAction.Done else ImeAction.Next,
+                                        onDone         = { focusManager.clearFocus() }
                                     )
                                 }
                             }
                         }
                     }
-                    // Garante que o scroll vá até o fim sem o botão cobrir os últimos campos
-                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Spacer(Modifier.height(16.dp))
+                }
+
+                toxicSeedError?.let {
+                    Text(
+                        text  = it,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Spacer(Modifier.height(8.dp))
                 }
 
                 Button(
-                    onClick = {
-                        // Valida sementes tóxicas com quantidade 0 ou menor
+                    onClick  = {
                         if (toxicGrains && toxicSeedDetails.any { (it.second.toIntOrNull() ?: 0) <= 0 }) {
-                            toxicSeedError = "Informe a quantidade de cada semente tóxica (Campo de quantidade de sementes com 0 unidades)."
+                            toxicSeedError = "Informe a quantidade de cada semente tóxica."
                             return@Button
                         }
                         toxicSeedError = null
 
-                        val badConservationInt = if (badConservation) 1 else 0
-                        val strangeSmellInt = if (strangeSmell) 1 else 0
-                        val insectsInt = if (insects) 1 else 0
-                        val toxicGrainInt = if (toxicGrains) 1 else 0
-
                         viewModel.saveDisqualificationData(
                             classificationId = classificationId,
-                            badConservation = badConservationInt,
-                            strangeSmell = strangeSmellInt,
-                            insects = insectsInt,
-                            toxicGrains = toxicGrainInt,
-                            toxicSeeds = toxicSeedDetails,
-                            onSuccess = {
-                                navController.navigate("classification")
-                            }
+                            badConservation  = if (badConservation) 1 else 0,
+                            strangeSmell     = if (strangeSmell)    1 else 0,
+                            insects          = if (insects)         1 else 0,
+                            toxicGrains      = if (toxicGrains)     1 else 0,
+                            toxicSeeds       = toxicSeedDetails,
+                            onSuccess        = { navController.navigate(Routes.CLASSIFICATION_INPUT) }
                         )
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text("Confirmar")
                 }
-
-                toxicSeedError?.let {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = it,
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
             }
         }
     }
 }
 
-// Composable auxiliar para campo de input de número inteiro
+// =============================================================================
+// CAMPO NUMÉRICO COM FOCO E IMEACTION CONFIGURÁVEIS
+// O valor "0" funciona como placeholder: some ao focar, volta ao desfocar vazio.
+// =============================================================================
+
 @Composable
-private fun NumberInputField(
+private fun DisqNumberField(
     value: String,
     onValueChange: (String) -> Unit,
     label: String,
+    focusRequester: FocusRequester,
+    nextFocus: FocusRequester?,
+    imeAction: ImeAction,
+    onDone: () -> Unit = {}
 ) {
+    var isFocused    by remember { mutableStateOf(false) }
+    val displayValue  = if (isFocused && value == "0") "" else value
+
     OutlinedTextField(
-        value = value,
-        onValueChange = {
-            if (it.isEmpty() || (it.matches(Regex("^(\\d*)$")) && (it.toIntOrNull() ?: 0) >= 0)) {
-                onValueChange(it)
+        value         = displayValue,
+        onValueChange = { raw ->
+            when {
+                raw.isEmpty() -> onValueChange("0")
+                raw.matches(Regex("^(\\d*)$")) -> {
+                    // Remove zero à esquerda: "01" → "1"
+                    onValueChange(raw.trimStart('0').ifEmpty { "0" })
+                }
             }
         },
-        label = { Text(label) },
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+        label           = { Text(label) },
+        keyboardOptions = KeyboardOptions(
+            keyboardType = KeyboardType.Number,
+            imeAction    = imeAction
+        ),
+        keyboardActions = KeyboardActions(
+            onNext = { nextFocus?.requestFocus() },
+            onDone = { onDone() }
+        ),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 8.dp)
+            .focusRequester(focusRequester)
+            .onFocusChanged { state ->
+                isFocused = state.isFocused
+                if (!state.isFocused && value.isEmpty()) onValueChange("0")
+            },
         singleLine = true
     )
 }

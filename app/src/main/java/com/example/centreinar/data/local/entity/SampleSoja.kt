@@ -8,7 +8,7 @@ import com.example.centreinar.data.local.entity.BaseSample
 @Entity(tableName = "sample_soja")
 data class SampleSoja(
     @PrimaryKey(autoGenerate = true) override val id: Int = 0,
-    @ColumnInfo(name = "grain") var grain: String ="",
+    @ColumnInfo(name = "grain") var grain: String = "",
     @ColumnInfo(name = "group") var group: Int = 0,
     @ColumnInfo(name = "lotWeight") override val lotWeight: Float = 0.0f,
     @ColumnInfo(name = "sampleWeight") val sampleWeight: Float = 0.0f,
@@ -17,7 +17,6 @@ data class SampleSoja(
     // Defeitos Básicos
     @ColumnInfo(name = "moisture") val moisture: Float = 0.0f,
     @ColumnInfo(name = "foreignMattersAndImpurities") val foreignMattersAndImpurities: Float = 0.0f,
-    @ColumnInfo(name = "humidity") val humidity: Float = 0.0f,
     @ColumnInfo(name = "greenish") val greenish: Float = 0.0f,
     @ColumnInfo(name = "brokenCrackedDamaged") val brokenCrackedDamaged: Float = 0.0f,
     @ColumnInfo(name = "damaged") val damaged: Float = 0.0f,
@@ -29,7 +28,3 @@ data class SampleSoja(
     @ColumnInfo(name = "immature") val immature: Float = 0.0f,
     @ColumnInfo(name = "shriveled") val shriveled: Float = 0.0f,
 ) : BaseSample
-
-
-
-

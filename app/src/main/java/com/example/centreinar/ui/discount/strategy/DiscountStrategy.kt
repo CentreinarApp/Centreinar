@@ -8,12 +8,20 @@ data class DiscountInputField(
     val tabGroup: Int = 0
 )
 
+// Linha da tabela de dados de entrada usados no cálculo do desconto
+// Exibida na DiscountResultsScreen acima da OfficialReferenceTable
+data class DiscountInputRow(
+    val label: String,
+    val value: String  // formatado com unidade, ex: "14.50 %" ou "500.00 kg"
+)
+
 data class DiscountUIState(
     val isLoading: Boolean = false,
     val error: String? = null,
     val limitInputFields: List<DiscountInputField> = emptyList(),
     val officialTableColumnsCount: Int = 0,
-    val officialTableRows: List<Pair<String, List<Float>>> = emptyList()
+    val officialTableRows: List<Pair<String, List<Float>>> = emptyList(),
+    val discountInputRows: List<DiscountInputRow> = emptyList()
 )
 
 data class FinancialDiscountPayload(

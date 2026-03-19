@@ -6,21 +6,20 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.saveable
-import com.example.centreinar.ClassificationMilho
-import com.example.centreinar.ClassificationSoja
-import com.example.centreinar.InputDiscountSoja
-import com.example.centreinar.data.repository.DiscountRepository
-import com.example.centreinar.domain.repository.DiscountRepositoryMilho
-import com.example.centreinar.data.local.entity.InputDiscountMilho
+import com.example.centreinar.domain.model.GrainDescriptor
+import com.example.centreinar.util.FieldKeys
 import com.example.centreinar.ui.classificationProcess.strategy.BaseClassification
 import com.example.centreinar.ui.discount.strategy.DiscountDefectsPayload
 import com.example.centreinar.ui.discount.strategy.DiscountResult
 import com.example.centreinar.ui.discount.strategy.DiscountUIState
 import com.example.centreinar.ui.discount.strategy.FinancialDiscountPayload
 import com.example.centreinar.ui.discount.strategy.GrainDiscountStrategy
+import com.example.centreinar.util.retryUntilNotNull
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -36,14 +35,12 @@ data class ClassificationPrefill(
 @HiltViewModel
 class DiscountViewModel @Inject constructor(
     private val strategies: Map<String, @JvmSuppressWildcards GrainDiscountStrategy>,
-    private val discountRepoSoja: DiscountRepository,
-    private val discountRepoMilho: DiscountRepositoryMilho,
     private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
-    var selectedGrain by savedStateHandle.saveable { mutableStateOf<String>("Soja") }
-    var selectedGroup by savedStateHandle.saveable { mutableStateOf<Int>(1) }
-    var isOfficial    by savedStateHandle.saveable { mutableStateOf<Boolean>(true) }
+    var selectedGrain         by savedStateHandle.saveable { mutableStateOf<String>("Soja") }
+    var selectedGroup         by savedStateHandle.saveable { mutableStateOf<Int>(1) }
+    var isOfficial            by savedStateHandle.saveable { mutableStateOf<Boolean>(true) }
     var sourceClassificationId: Int? = null
 
     fun setClassificationId(id: Int) {
@@ -52,6 +49,19 @@ class DiscountViewModel @Inject constructor(
 
     private val currentStrategy: GrainDiscountStrategy?
         get() = strategies[selectedGrain]
+
+    // Descriptor do grão atualmente selecionado — consumido pelas telas de desconto.
+    val currentDescriptor: GrainDescriptor?
+        get() = currentStrategy?.descriptor
+
+    val availableGrainDescriptors: List<GrainDescriptor> =
+        strategies.values
+            .map { it.descriptor }
+            .sortedBy { it.displayName }
+
+    // =========================================================================
+    // ESTADOS
+    // =========================================================================
 
     private val _uiState = MutableStateFlow(DiscountUIState())
     val uiState: StateFlow<DiscountUIState> = _uiState.asStateFlow()
@@ -65,10 +75,18 @@ class DiscountViewModel @Inject constructor(
     private val _discountResult = MutableStateFlow<DiscountResult?>(null)
     val discountResult: StateFlow<DiscountResult?> = _discountResult.asStateFlow()
 
-    private val _classificationPrefill = MutableStateFlow<ClassificationPrefill?>(null)
-    val classificationPrefill: StateFlow<ClassificationPrefill?> = _classificationPrefill.asStateFlow()
+    // -------------------------------------------------------------------------
+    // One-shot navigation event — Channel garante que o evento é consumido
+    // exatamente uma vez, independente de recomposições ou back stack.
+    // -------------------------------------------------------------------------
+    private val _navigationEvent = Channel<DiscountNavigationEvent>(Channel.BUFFERED)
+    val navigationEvent = _navigationEvent.receiveAsFlow()
 
-    var currentDefectsMap: Map<String, Float> = emptyMap()
+    private val _classificationPrefill = MutableStateFlow<ClassificationPrefill?>(null)
+
+    // =========================================================================
+    // LÓGICA DE NEGÓCIO
+    // =========================================================================
 
     fun loadFromClassification(
         lotWeight: Float,
@@ -78,36 +96,50 @@ class DiscountViewModel @Inject constructor(
         isOfficial: Boolean,
         classificationId: Int
     ) {
-        selectedGrain           = grain
-        selectedGroup           = group
-        this.isOfficial         = isOfficial
-        sourceClassificationId  = classificationId  // ← armazena para uso no PDF
-
-        val defects = when (classification) {
-            is ClassificationSoja -> mapOf(
-                "impureza"    to classification.impuritiesPercentage,
-                "ardidos"     to classification.burntOrSourPercentage,
-                "queimados"   to classification.burntPercentage,
-                "mofados"     to classification.moldyPercentage,
-                "avariados"   to classification.spoiledPercentage,
-                "esverdeados" to classification.greenishPercentage,
-                "quebrados"   to classification.brokenCrackedDamagedPercentage
-            )
-            is ClassificationMilho -> mapOf(
-                "impureza"    to classification.impuritiesPercentage,
-                "ardidos"     to classification.ardidoPercentage,
-                "carunchados" to classification.carunchadoPercentage,
-                "avariados"   to (classification.spoiledTotalPercentage ?: 0f),
-                "quebrados"   to classification.brokenPercentage
-            )
-            else -> emptyMap()
-        }
+        selectedGrain          = grain
+        selectedGroup          = group
+        this.isOfficial        = isOfficial
+        sourceClassificationId = classificationId
 
         _classificationPrefill.value = ClassificationPrefill(
             lotWeight = lotWeight.takeIf { it > 0f },
             moisture  = classification.moisturePercentage,
-            defects   = defects
+            defects   = classification.toDefectsMap()
         )
+    }
+
+    // -------------------------------------------------------------------------
+    // Calcula o desconto direto a partir dos dados de classificação.
+    // Recebe apenas os dados financeiros — os defeitos vêm do classificationPrefill
+    // que já foi populado por loadFromClassification().
+    // A tela não precisa conhecer DiscountDefectsPayload, nem acessar o prefill.
+    // -------------------------------------------------------------------------
+    fun calculateDiscountFromClassification(
+        lotWeight: Float,
+        priceBySack: Float,
+        daysOfStorage: Int = 0,
+        doesTechnicalLoss: Boolean = false,
+        deductionValue: Float = 0f,
+        doesDeduction: Boolean = false
+    ) {
+        val strategy = currentStrategy ?: return
+        val prefill  = _classificationPrefill.value ?: return
+
+        val defectsMap = prefill.defects +
+                mapOf(FieldKeys.MOISTURE to prefill.moisture)
+
+        val defectsPayload   = strategy.createDefectsPayload(defectsMap)
+        val financialPayload = FinancialDiscountPayload(
+            priceBySack   = priceBySack,
+            lotWeight     = lotWeight,
+            group         = selectedGroup,
+            daysOfStorage = daysOfStorage,
+            doesTechnicalLoss = doesTechnicalLoss,
+            deductionValue    = deductionValue,
+            doesDeduction     = doesDeduction
+        )
+
+        calculateDiscount(defectsPayload, financialPayload)
     }
 
     fun loadDefaultLimits() {
@@ -118,12 +150,7 @@ class DiscountViewModel @Inject constructor(
             try {
                 _uiState.update { it.copy(isLoading = true) }
 
-                var baseLimits: Map<String, Float>? = null
-                repeat(10) { _ ->
-                    baseLimits = strategy.getBaseLimits(group)
-                    if (baseLimits != null) return@repeat
-                    kotlinx.coroutines.delay(300)
-                }
+                val baseLimits = retryUntilNotNull { strategy.getBaseLimits(group) }
 
                 if (baseLimits == null) {
                     _uiState.update { it.copy(error = "Não foi possível carregar os limites.") }
@@ -144,74 +171,18 @@ class DiscountViewModel @Inject constructor(
         }
     }
 
-    fun saveCustomLimit(
-        moisture: String,
-        impurities: String,
-        broken: String,
-        burntOrSour: String,
-        burnt: String,
-        moldy: String,
-        spoiled: String,
-        greenish: String,
-        carunchado: String
-    ) {
+    fun saveCustomLimit(limits: Map<String, Float>) {
         val strategy = currentStrategy ?: return
-        val fieldsMap = mapOf(
-            "moistureUpLim"     to (moisture.toFloatOrNull()    ?: 0f),
-            "impuritiesUpLim"   to (impurities.toFloatOrNull()  ?: 0f),
-            "brokenUpLim"       to (broken.toFloatOrNull()      ?: 0f),
-            "ardidoUpLim"       to (burntOrSour.toFloatOrNull() ?: 0f),
-            "burntUpLim"        to (burnt.toFloatOrNull()       ?: 0f),
-            "moldyUpLim"        to (moldy.toFloatOrNull()       ?: 0f),
-            "spoiledTotalUpLim" to (spoiled.toFloatOrNull()     ?: 0f),
-            "greenishUpLim"     to (greenish.toFloatOrNull()    ?: 0f),
-            "carunchadoUpLim"   to (carunchado.toFloatOrNull()  ?: 0f)
-        )
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                strategy.saveCustomLimitData(selectedGroup, fieldsMap)
+                strategy.saveCustomLimitData(selectedGroup, limits)
             } catch (e: Exception) {
                 _uiState.update { it.copy(error = "Erro ao salvar limites: ${e.message}") }
             }
         }
     }
 
-    fun saveInputDiscount(lotWeight: Float, priceBySack: Float) {
-        val lotPrice = (lotWeight * priceBySack) / 60f
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                when (selectedGrain) {
-                    "Soja" -> discountRepoSoja.setInputDiscount(
-                        InputDiscountSoja(
-                            grain                       = selectedGrain,
-                            group                       = selectedGroup,
-                            limitSource                 = 0,
-                            classificationId            = null,
-                            lotWeight                   = lotWeight,
-                            lotPrice                    = lotPrice,
-                            burnt                       = 0f,
-                            burntOrSour                 = 0f,
-                            moldy                       = 0f,
-                            spoiled                     = 0f,
-                            greenish                    = 0f,
-                            brokenCrackedDamaged        = 0f
-                        )
-                    )
-                    "Milho" -> discountRepoMilho.setInputDiscount(
-                        InputDiscountMilho(
-                            grain            = selectedGrain,
-                            group            = selectedGroup,
-                            classificationId = null,
-                            lotWeight        = lotWeight,
-                            lotPrice         = lotPrice
-                        )
-                    )
-                }
-            } catch (e: Exception) {
-                _uiState.update { it.copy(error = "Erro ao salvar input: ${e.message}") }
-            }
-        }
-    }
+    fun getLimitFields() = currentStrategy?.getLimitFields() ?: emptyList()
 
     fun calculateDiscount(
         defectsPayload: DiscountDefectsPayload,
@@ -224,14 +195,17 @@ class DiscountViewModel @Inject constructor(
                 val result = strategy.calculateDiscount(
                     defectsPayload   = defectsPayload,
                     financialPayload = financialPayload.copy(
-                        // Injeta o classificationId no payload financeiro para que a
-                        // strategy o grave no InputDiscount e o recupere no exportPdf
                         sourceClassificationId = sourceClassificationId
                     ),
                     isOfficial       = isOfficial
                 )
                 _discountResult.value = result
-                _uiState.update { it.copy(isLoading = false) }
+
+                // Delega para a strategy — que define a ordem e os campos do seu grão
+                val prefill = _classificationPrefill.value
+                val inputRows = strategy.getDiscountInputRows(prefill, financialPayload)
+                _uiState.update { it.copy(isLoading = false, discountInputRows = inputRows) }
+                _navigationEvent.send(DiscountNavigationEvent.NavigateToResults)
             } catch (e: Exception) {
                 _uiState.update { it.copy(isLoading = false, error = e.message) }
             }
@@ -241,8 +215,11 @@ class DiscountViewModel @Inject constructor(
     fun exportPdf(context: Context) {
         val strategy = currentStrategy ?: return
         viewModelScope.launch {
-            try { strategy.exportDiscountToPdf(context, sourceClassificationId) }
-            catch (e: Exception) { _uiState.update { it.copy(error = "Erro na exportação: ${e.message}") } }
+            try {
+                strategy.exportDiscountToPdf(context, sourceClassificationId)
+            } catch (e: Exception) {
+                _uiState.update { it.copy(error = "Erro na exportação: ${e.message}") }
+            }
         }
     }
 
@@ -256,4 +233,8 @@ class DiscountViewModel @Inject constructor(
         _classificationPrefill.value = null
         sourceClassificationId       = null
     }
+}
+
+sealed class DiscountNavigationEvent {
+    object NavigateToResults : DiscountNavigationEvent()
 }

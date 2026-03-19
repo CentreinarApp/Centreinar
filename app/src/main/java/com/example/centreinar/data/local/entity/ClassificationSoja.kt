@@ -4,12 +4,9 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.example.centreinar.ui.classificationProcess.strategy.BaseClassification
-import kotlin.collections.map
+import com.example.centreinar.util.FieldKeys
 
-
-@Entity(
-    tableName = "classification_soja"
-)
+@Entity(tableName = "classification_soja")
 data class ClassificationSoja(
     @PrimaryKey(autoGenerate = true) override val id: Int = 0,
 
@@ -35,8 +32,7 @@ data class ClassificationSoja(
     // Soma total dos avariados
     @ColumnInfo(name = "spoiledPercentage") val spoiledPercentage: Float = 0.0f,
 
-    // Tipos Individuais ---
-    // Ex: 1 = Tipo 1, 2 = Tipo 2, 7 = Fora de Tipo, etc.
+    // Tipos Individuais
     @ColumnInfo(name = "fermented") val fermentedType: Int = 0,
     @ColumnInfo(name = "germinated") val germinatedType: Int = 0,
     @ColumnInfo(name = "immature") val immatureType: Int = 0,
@@ -52,8 +48,18 @@ data class ClassificationSoja(
 
     // --- Resultado Final ---
     @ColumnInfo(name = "finalType") override val finalType: Int = 0,
-    @ColumnInfo(name = "isDisqualified") val isDisqualified: Boolean = false // Guarda se a classificação foi desclassificada ou não...
-) : BaseClassification
+    @ColumnInfo(name = "isDisqualified") val isDisqualified: Boolean = false
+) : BaseClassification {
 
-
-
+    // Converte os defeitos em um map para carregar os valores para classificação -> descontos
+    override fun toDefectsMap(): Map<String, Float> = mapOf(
+        FieldKeys.IMPURITIES   to impuritiesPercentage,
+        FieldKeys.BROKEN       to brokenCrackedDamagedPercentage,
+        FieldKeys.GREENISH     to greenishPercentage,
+        FieldKeys.MOLDY        to moldyPercentage,
+        FieldKeys.BURNT        to burntPercentage,
+        FieldKeys.BURNT_OR_SOUR to burntOrSourPercentage,
+        FieldKeys.SPOILED      to spoiledPercentage,
+        FieldKeys.ARDIDO       to sourPercentage
+    )
+}

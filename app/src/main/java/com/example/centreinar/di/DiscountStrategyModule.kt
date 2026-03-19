@@ -9,6 +9,7 @@ import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import dagger.multibindings.IntoMap
 import dagger.multibindings.StringKey
+import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -17,6 +18,7 @@ abstract class DiscountStrategyModule {
     @Binds
     @IntoMap
     @StringKey("Soja")
+    @Singleton
     abstract fun bindSojaDiscountStrategy(
         strategy: SojaDiscountStrategy
     ): GrainDiscountStrategy
@@ -24,6 +26,7 @@ abstract class DiscountStrategyModule {
     @Binds
     @IntoMap
     @StringKey("Milho")
+    @Singleton
     abstract fun bindMilhoDiscountStrategy(
         strategy: MilhoDiscountStrategy
     ): GrainDiscountStrategy
