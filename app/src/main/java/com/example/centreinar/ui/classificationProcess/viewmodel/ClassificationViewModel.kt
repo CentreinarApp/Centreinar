@@ -17,12 +17,22 @@ import com.example.centreinar.util.Utilities
 import com.example.centreinar.util.retryUntilNotNull
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+
+// =============================================================================
+// NAVIGATION EVENT
+// =============================================================================
+
+sealed class ClassificationNavigationEvent {
+    data object NavigateToResult : ClassificationNavigationEvent()
+}
 
 @HiltViewModel
 class ClassificationViewModel @Inject constructor(
@@ -31,36 +41,73 @@ class ClassificationViewModel @Inject constructor(
     val utilities: Utilities
 ) : ViewModel() {
 
+    // =========================================================================
+    // ESTADO DE NAVEGAÇÃO
+    //
+    // Começa null — atualizado pelos botões de seleção nas telas.
+    // currentStrategy é sempre derivado de selectedGrain em tempo real,
+    // nunca fixado na construção do ViewModel.
+    // =========================================================================
+
+    var selectedGrain by savedStateHandle.saveable { mutableStateOf<String?>(null) }
+    var selectedGroup by savedStateHandle.saveable { mutableStateOf<Int?>(null) }
+    var isOfficial    by savedStateHandle.saveable { mutableStateOf<Boolean>(true) }
+    var observation   by savedStateHandle.saveable { mutableStateOf<String?>(null) }
+
+    // Sempre derivado de selectedGrain — atualiza automaticamente ao mudar o grão
     private val currentStrategy: GrainStrategy?
         get() = strategies[selectedGrain]
+
+    // Descriptor do grão atualmente selecionado
+    val currentDescriptor: GrainDescriptor?
+        get() = currentStrategy?.descriptor
+
+    // grainDescriptor: usado pelas telas OfficialOrNot.
+    // Retorna o descriptor do grão atual ou o primeiro disponível como fallback.
+    val grainDescriptor: GrainDescriptor
+        get() = currentStrategy?.descriptor
+            ?: strategies.values.first().descriptor
 
     val availableGrainDescriptors: List<GrainDescriptor> =
         strategies.values
             .map { it.descriptor }
             .sortedBy { it.displayName }
 
-    // Descriptor do grão atualmente selecionado
-    val currentDescriptor: GrainDescriptor?
-        get() = currentStrategy?.descriptor
+    val calculateCleanWeight: (Float, Float, Map<String, Float>) -> Float
+        get() = { sw, fm, fields ->
+            currentStrategy?.calculateDisplayCleanWeight(sw, fm, fields)
+                ?: (sw - fm).coerceAtLeast(0f)
+        }
 
-    // Delega a construção do ClassificationPayload para a strategy.
+
+    val cleanWeightLabel: String
+        get() = currentStrategy?.cleanWeightLabel ?: "Peso da Amostra Limpa (Peso da Amostra de Trabalho - Peso da MEI):"
+
+
     fun buildPayload(state: ClassificationInputState): ClassificationPayload? =
         currentStrategy?.buildPayload(state)
 
+    /**
+     * Ponto de entrada conveniente para as telas — recebe o [ClassificationInputState]
+     * diretamente, constrói o payload internamente e dispara a classificação.
+     */
+    fun classify(state: ClassificationInputState) {
+        val payload = buildPayload(state) ?: return
+        classifySample(payload)
+    }
+
     // =========================================================================
-    // ESTADOS
+    // ESTADOS UI
     // =========================================================================
+
+    private val _navigationEvent = Channel<ClassificationNavigationEvent>(Channel.BUFFERED)
+    val navigationEvent = _navigationEvent.receiveAsFlow()
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
-
-    var selectedGrain by savedStateHandle.saveable { mutableStateOf<String?>(null) }
-    var selectedGroup by savedStateHandle.saveable { mutableStateOf<Int?>(null) }
-    var isOfficial    by savedStateHandle.saveable { mutableStateOf<Boolean>(false) }
-    var observation   by savedStateHandle.saveable { mutableStateOf<String?>(null) }
 
     private val _allOfficialLimits = MutableStateFlow<List<Any>>(emptyList())
     val allOfficialLimits: StateFlow<List<Any>> = _allOfficialLimits.asStateFlow()
@@ -77,11 +124,12 @@ class ClassificationViewModel @Inject constructor(
 
     fun classifySample(payload: ClassificationPayload) {
         val strategy = currentStrategy ?: return
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch {
             try {
                 _isLoading.value = true
                 val result = strategy.classify(payload, isOfficial)
                 _uiState.value = result
+                _navigationEvent.send(ClassificationNavigationEvent.NavigateToResult)
             } catch (e: Exception) {
                 _error.value = "Erro na classificação: ${e.message}"
             } finally {
@@ -160,6 +208,8 @@ class ClassificationViewModel @Inject constructor(
 
     fun getLimitFields() = currentStrategy?.getLimitFields() ?: emptyList()
 
+    fun getClassificationInputFields() = currentStrategy?.getClassificationInputFields() ?: emptyList()
+
     fun deleteCustomLimits() {
         viewModelScope.launch(Dispatchers.IO) {
             try {
@@ -184,6 +234,18 @@ class ClassificationViewModel @Inject constructor(
         }
     }
 
+    suspend fun setLimitAndAwait(payload: CustomLimitPayload) {
+        val strategy = currentStrategy ?: return
+        try {
+            _isLoading.value = true
+            strategy.setCustomLimit(payload)
+        } catch (e: Exception) {
+            _error.value = e.message
+        } finally {
+            _isLoading.value = false
+        }
+    }
+
     fun exportPdf(context: Context) {
         val strategy = currentStrategy ?: return
         val state    = _uiState.value
@@ -202,20 +264,18 @@ class ClassificationViewModel @Inject constructor(
         }
     }
 
-    // =========================================================================
-    // UTILITÁRIOS
-    // =========================================================================
+    fun getFinalTypeLabel(finalType: Int): String =
+        currentStrategy?.getTypeLabel(finalType, selectedGroup ?: 1) ?: "Tipo $finalType"
 
-    fun getFinalTypeLabel(finalType: Int): String {
-        return currentStrategy?.getTypeLabel(finalType, selectedGroup ?: 1)
-            ?: "Tipo $finalType"
-    }
-
+    /** Reset completo — chamado ao iniciar novo fluxo na GrainSelection. */
     fun clearStates() {
         _uiState.value           = ClassificationUIState()
         _defaultLimits.value     = null
         _allOfficialLimits.value = emptyList()
         _error.value             = null
         observation              = null
+        selectedGrain = null
+        selectedGroup = null
+        isOfficial    = true
     }
 }

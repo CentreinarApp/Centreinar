@@ -18,10 +18,14 @@ abstract class ClassificationStrategyModule {
     @Binds
     @IntoMap
     @StringKey("Soja") @Singleton
-    abstract fun bindSojaClassificationStrategy(sojaStrategy: SojaClassificationStrategy): GrainStrategy
+    abstract fun bindSojaClassificationStrategy(
+        sojaStrategy: SojaClassificationStrategy
+    ): GrainStrategy
 
     @Binds
     @IntoMap
     @StringKey("Milho") @Singleton
-    abstract fun bindMilhoClassificationStrategy(milhoStrategy: MilhoClassificationStrategy): GrainStrategy
+    abstract fun bindMilhoClassificationStrategy(
+        milhoStrategy: MilhoClassificationStrategy
+    ): GrainStrategy
 }

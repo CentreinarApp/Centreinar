@@ -49,28 +49,28 @@ fun DisqualificationInfoCard(
             )
 
             if (badConservation) {
-                Text("• Mau estado de conservação", style = MaterialTheme.typography.bodyMedium)
+                Text("• Mau estado de conservação", style = MaterialTheme.typography.bodyLarge)
             }
             if (strangeSmell) {
-                Text("• Cheiro estranho", style = MaterialTheme.typography.bodyMedium)
+                Text("• Cheiro estranho", style = MaterialTheme.typography.bodyLarge)
             }
             if (insects) {
-                Text("• Insetos vivos ou mortos", style = MaterialTheme.typography.bodyMedium)
+                Text("• Insetos vivos ou mortos", style = MaterialTheme.typography.bodyLarge)
             }
             if (toxicGrains) {
-                Text("• Sementes tóxicas presentes", style = MaterialTheme.typography.bodyMedium)
+                Text("• Sementes tóxicas presentes", style = MaterialTheme.typography.bodyLarge)
 
                 if (toxicSeeds.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         "Detalhes das Sementes Tóxicas:",
-                        style = MaterialTheme.typography.labelMedium,
+                        style = MaterialTheme.typography.titleSmall,
                         modifier = Modifier.padding(start = 16.dp, top = 4.dp, bottom = 2.dp)
                     )
                     toxicSeeds.forEach { seed ->
                         Text(
                             "- ${seed.first}: ${seed.second} unidade(s)",
-                            style = MaterialTheme.typography.bodySmall,
+                            style = MaterialTheme.typography.bodyLarge,
                             modifier = Modifier.padding(start = 24.dp)
                         )
                     }

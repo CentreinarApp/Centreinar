@@ -34,19 +34,19 @@ fun ClassificationTable(
         Column(modifier = Modifier.padding(16.dp)) {
             // Cabeçalho da Tabela
             Box(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), contentAlignment = Alignment.Center) {
-                Text(text = title, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                Text(text = title, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground)
             }
             Divider(modifier = Modifier.padding(bottom = 8.dp), color = MaterialTheme.colorScheme.outline)
 
             // Corpo da Tabela
             Column(modifier = Modifier.fillMaxWidth().border(1.dp, MaterialTheme.colorScheme.outline)) {
                 Row(
-                    modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.primaryContainer).padding(8.dp),
+                    modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.primary).padding(8.dp),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text("DEFEITO", fontSize = 13.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(2f))
-                    Text("%", fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f), textAlign = TextAlign.End)
-                    Text("TIPO", fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f), textAlign = TextAlign.End)
+                    Text("DEFEITO", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.weight(2f))
+                    Text("%", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.weight(1f), textAlign = TextAlign.End)
+                    Text("TIPO", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.weight(1f), textAlign = TextAlign.End)
                 }
 
                 rows.forEachIndexed { index, row ->
@@ -59,7 +59,7 @@ fun ClassificationTable(
                     Row(modifier = Modifier.fillMaxWidth().padding(8.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                         Text(text = row.label, fontSize = 13.sp, modifier = Modifier.weight(2f), fontWeight = weightFont)
                         // DICA: Se quiser, futuramente pode trocar esse "%.2f%%".format por aquela nossa extensão segura `.toUniversalString() + "%"`
-                        Text(text = "%.2f%%".format(row.percentage), fontSize = 13.sp, modifier = Modifier.weight(1f), textAlign = TextAlign.End, color = textColor, fontWeight = weightFont)
+                        Text(text = "%.2f".format(row.percentage), fontSize = 13.sp, modifier = Modifier.weight(1f), textAlign = TextAlign.End, color = textColor, fontWeight = weightFont)
                         Text(text = quantityText, fontSize = 13.sp, modifier = Modifier.weight(1f), textAlign = TextAlign.End)
                     }
                     if (index < rows.size - 1) {

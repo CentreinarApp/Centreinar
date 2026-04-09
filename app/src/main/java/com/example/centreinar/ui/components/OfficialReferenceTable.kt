@@ -1,11 +1,14 @@
 package com.example.centreinar.ui.components
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -20,77 +23,116 @@ import androidx.compose.ui.unit.sp
 import com.example.centreinar.ui.classificationProcess.strategy.BaseLimit
 
 @Composable
-fun OfficialReferenceTable(group: Int, isOfficial: Boolean, data: List<BaseLimit>) {
-    // Labels e valores vêm da própria entidade via toDisplayRows()
+fun OfficialReferenceTable(
+    group: Int?,
+    isOfficial: Boolean,
+    data: List<BaseLimit>,
+    isDiscount: Boolean = false
+) {
     val rows = data.firstOrNull()?.toDisplayRows() ?: return
 
-    val columnWeightLabel = 1.0f
+    val columnWeightLabel = 2.5f
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
+        shape    = MaterialTheme.shapes.medium
     ) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            // Cabeçalho
-            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Column(modifier = Modifier.padding(6.dp)) {
+            Box(
+                modifier         = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                contentAlignment = Alignment.Center
+            ) {
                 Text(
-                    text = "Defeito",
-                    modifier = Modifier.weight(columnWeightLabel),
-                    style = MaterialTheme.typography.labelSmall,
+                    text       = "Limites Utilizados no Cálculo",
+                    maxLines = 2,
+                    style      = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Start
+                    color      = MaterialTheme.colorScheme.onBackground,
+                    textAlign = TextAlign.Center
                 )
-
-                data.forEachIndexed { index, _ ->
-                    val textoCabecalho = if (group == 2 && isOfficial) {
-                        "Padrão Básico"
-                    } else if (group == 1 && (index + 1) == 4) {
-                        "Fora de Tipo"
-                    } else {
-                        "Tipo ${index + 1}"
-                    }
-
-                    Text(
-                        text = textoCabecalho,
-                        modifier = Modifier.weight(1f),
-                        textAlign = TextAlign.Center,
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
             }
-
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
-            // Linhas — label e valor vêm de toDisplayRows()
-            rows.forEachIndexed { rowIndex, (label, _) ->
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+            ) {
+                // Cabeçalho
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                        .background(MaterialTheme.colorScheme.primary)
+                        .padding(vertical = 5.dp, horizontal = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = label,
-                        modifier = Modifier.weight(columnWeightLabel),
-                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
+                        text       = "Defeito",
+                        modifier   = Modifier.weight(columnWeightLabel),
+                        style      = MaterialTheme.typography.labelLarge,
+                        color      = MaterialTheme.colorScheme.onPrimary,
+                        fontWeight = FontWeight.Bold,
+                        textAlign  = TextAlign.Center
                     )
-                    data.forEach { item ->
-                        val value = item.toDisplayRows().getOrNull(rowIndex)?.second ?: 0f
+
+                    data.forEachIndexed { index, _ ->
+                        val textoCabecalho = if (group == 2 && isOfficial) {
+                            "Padrão Básico"
+                        } else if (group == 1 && (index + 1) == 4) {
+                            "Fora de Tipo"
+                        } else {
+                            "Tipo ${index + 1}"
+                        }
+
                         Text(
-                            text = "$value%",
-                            modifier = Modifier.weight(columnWeightLabel),
-                            textAlign = TextAlign.Center,
-                            style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp),
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.primary
+                            text       = textoCabecalho,
+                            modifier   = Modifier.weight(1f),
+                            textAlign  = TextAlign.Center,
+                            style      = MaterialTheme.typography.labelLarge,
+                            color      = MaterialTheme.colorScheme.onPrimary,
+                            fontWeight = FontWeight.Bold
                         )
                     }
                 }
-                if (rowIndex < rows.lastIndex) {
-                    HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
+
+                // Linhas
+                rows.forEachIndexed { rowIndex, (label, _) ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 12.dp, horizontal = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text     = label,
+                            modifier = Modifier.weight(columnWeightLabel),
+                            style    = MaterialTheme.typography.bodyLarge,
+                            color    = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 3,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        data.forEachIndexed { colIndex, item ->
+                            val value     = item.toDisplayRows().getOrNull(rowIndex)?.second ?: 0f
+                            val highlight = isDiscount && colIndex == 0
+                            Text(
+                                text       = "$value%",
+                                modifier   = Modifier
+                                    .weight(1f)
+                                    .padding(vertical = 4.dp),
+                                textAlign  = TextAlign.Center,
+                                style      = MaterialTheme.typography.bodyLarge,
+                                fontWeight = if (highlight) FontWeight.Bold else FontWeight.Normal,
+                                color      = if (highlight) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
+                    if (rowIndex < rows.lastIndex) {
+                        HorizontalDivider(
+                            color     = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f),
+                            thickness = 1.dp
+                        )
+                    }
                 }
             }
         }

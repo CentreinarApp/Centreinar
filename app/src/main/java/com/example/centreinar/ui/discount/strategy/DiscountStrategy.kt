@@ -65,7 +65,8 @@ sealed class DiscountDefectsPayload {
 data class DiscountResultRow(
     val label: String,
     val massKg: Float,
-    val valueRS: Float
+    val valueRS: Float,
+    val infoText: String? = null
 )
 
 data class DiscountResult(

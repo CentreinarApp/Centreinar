@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -19,7 +20,8 @@ fun ActionButtons(
     onBack: () -> Unit,
     onPrimaryAction: () -> Unit,
     primaryActionText: String = "Nova Análise",
-    onExportPdf: () -> Unit
+    onExportPdf: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Column(
         modifier = Modifier
@@ -35,18 +37,18 @@ fun ActionButtons(
             Button(
                 onClick = onBack,
                 modifier = Modifier.weight(1f),
-                shape = MaterialTheme.shapes.medium
+                shape = RoundedCornerShape(5.dp)
             ) {
-                Text("Voltar", fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                Text("Voltar", fontSize = 12.sp, fontWeight = FontWeight.Bold)
             }
 
             Button(
                 onClick = onPrimaryAction, // Chama a ação definida pela tela
                 modifier = Modifier.weight(1f),
-                shape = MaterialTheme.shapes.medium
+                shape = RoundedCornerShape(5.dp)
             ) {
                 // Mostra o texto que a tela pediu
-                Text(primaryActionText, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                Text(primaryActionText, fontSize = 12.sp, fontWeight = FontWeight.Bold)
             }
         }
 
@@ -54,9 +56,9 @@ fun ActionButtons(
         Button(
             onClick = onExportPdf,
             modifier = Modifier.fillMaxWidth(),
-            shape = MaterialTheme.shapes.medium
+            shape = RoundedCornerShape(5.dp)
         ) {
-            Text("Exportar PDF", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            Text("Exportar PDF", fontSize = 12.sp, fontWeight = FontWeight.Bold)
         }
     }
 }

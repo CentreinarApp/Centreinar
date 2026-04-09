@@ -13,17 +13,20 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -45,14 +48,14 @@ fun OfficialLimitsTable(
     val rowLabels  = firstLimit.toDisplayRows().map { it.first }
 
     Card(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier.fillMaxWidth(),
         colors   = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
         )
     ) {
         Column(
-            modifier            = Modifier.fillMaxSize().padding(12.dp),
-            verticalArrangement = Arrangement.SpaceEvenly
+            modifier            = Modifier.fillMaxWidth().padding(12.dp),
+            verticalArrangement = Arrangement.Top
         ) {
             Row(
                 modifier              = Modifier.fillMaxWidth(),
@@ -61,8 +64,8 @@ fun OfficialLimitsTable(
             ) {
                 Text(
                     text       = "Defeito",
-                    modifier   = Modifier.weight(1f),
-                    style      = MaterialTheme.typography.labelSmall,
+                    modifier   = Modifier.weight(3f),
+                    style      = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Bold,
                     textAlign  = TextAlign.Start
                 )
@@ -76,7 +79,7 @@ fun OfficialLimitsTable(
                         text       = header,
                         modifier   = Modifier.weight(1f),
                         textAlign  = TextAlign.Center,
-                        style      = MaterialTheme.typography.labelSmall,
+                        style      = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -92,9 +95,12 @@ fun OfficialLimitsTable(
                 ) {
                     Text(
                         text     = label,
-                        modifier = Modifier.weight(1f),
-                        style    = MaterialTheme.typography.bodyMedium.copy(fontSize = 12.sp),
-                        maxLines = 2,
+                        modifier = Modifier.weight(3f),
+                        style    = MaterialTheme.typography.bodyLarge.copy(
+                            fontSize = 12.sp,
+                            lineBreak = LineBreak.Paragraph
+                        ),
+                        maxLines = 3,
                         overflow = TextOverflow.Ellipsis
                     )
                     data.forEach { limit ->
@@ -138,11 +144,18 @@ fun NumberInputField(
     val focusManager       = LocalFocusManager.current
     OutlinedTextField(
         value         = value,
+        textStyle = MaterialTheme.typography.bodyLarge,
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedTextColor = MaterialTheme.colorScheme.onBackground,
+            unfocusedTextColor = MaterialTheme.colorScheme.onBackground,
+            focusedBorderColor = MaterialTheme.colorScheme.primary,
+            unfocusedBorderColor = MaterialTheme.colorScheme.onSurfaceVariant
+        ),
         onValueChange = { raw ->
             val sanitized = raw.replace(',', '.').filter { it.isDigit() || it == '.' }
             if (sanitized.count { it == '.' } <= 1) onValueChange(sanitized)
         },
-        label         = { Text(label) },
+        label         = { Text(text = label, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onBackground) },
         modifier      = Modifier.fillMaxWidth().focusRequester(focusRequester),
         keyboardOptions = KeyboardOptions(
             keyboardType = KeyboardType.Decimal,

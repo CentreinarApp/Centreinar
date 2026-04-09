@@ -19,14 +19,12 @@ import androidx.compose.ui.unit.dp
 fun ColorAndGroupCard(
     title: String,
     subtitle: String,
-    containerColor: Color,
     modifier: Modifier = Modifier
 ) {
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        colors = CardDefaults.cardColors(containerColor = containerColor)
+            .padding(vertical = 4.dp)
     ) {
         Column(
             modifier = Modifier
@@ -43,7 +41,7 @@ fun ColorAndGroupCard(
             )
             Text(
                 text = subtitle,
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.bodyLarge,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
             )

@@ -30,7 +30,7 @@ import com.example.centreinar.ui.discount.screens.DiscountGroupSelectionScreen
 import com.example.centreinar.ui.discount.screens.DiscountInputScreen
 import com.example.centreinar.ui.discount.screens.DiscountLimitInputScreen
 import com.example.centreinar.ui.discount.screens.DiscountResultScreen
-import com.example.centreinar.ui.discount.screens.GrainSelectionDiscountScreen
+import com.example.centreinar.ui.discount.screens.DiscountScreenGrainSelection
 import com.example.centreinar.ui.discount.screens.OfficialOrNotOfficialDiscountScreen
 import com.example.centreinar.ui.discount.viewmodel.DiscountViewModel
 import com.example.centreinar.ui.main.screens.HomeScreen
@@ -146,7 +146,7 @@ fun CentreinarApp() {
             // Fluxo DESCONTOS
             // -------------------------------------------------------------------------
             composable(Routes.GRAIN_SELECTION_DISCOUNT) { backStackEntry ->
-                GrainSelectionDiscountScreen(
+                DiscountScreenGrainSelection(
                     navController,
                     backStackEntry.sharedDiscountViewModel(navController)
                 )

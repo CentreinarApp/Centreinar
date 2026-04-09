@@ -38,11 +38,15 @@ class ClassificationRepositoryMilhoImpl @Inject constructor(
         if (limitsList.isNullOrEmpty()) throw IllegalStateException("Limites não encontrados para Milho.")
 
         val l1 = limitsList.find { it.type == 1 }
+            ?: throw IllegalStateException("Tabela de limites incompleta (precisa de pelo menos o Tipo 1).")
+
         val l2 = limitsList.find { it.type == 2 }
         val l3 = limitsList.find { it.type == 3 }
 
-        if (l1 == null || l2 == null || l3 == null)
-            throw IllegalStateException("Tabela de limites incompleta (precisa de Tipo 1, 2 e 3).")
+        // Se for padrão oficial (que tem mais de 1 limite na lista), l2 e l3 são obrigatórios
+        if (limitsList.size > 1 && (l2 == null || l3 == null)) {
+            throw IllegalStateException("Tabela de limites incompleta (precisa de Tipo 1, 2 e 3 para o padrão oficial).")
+        }
 
         val cleanWeight = if (sample.cleanWeight > 0f) sample.cleanWeight
         else (sample.sampleWeight - (sample.impurities + sample.broken))
@@ -61,18 +65,18 @@ class ClassificationRepositoryMilhoImpl @Inject constructor(
         val pGessado     = tools.calculateDefectPercentage(sample.gessado,      cleanWeight).roundToTwoDecimals()
         val pSpoiledTotal = tools.calculateDefectPercentage(sumSpoiledTotalWeights, cleanWeight).roundToTwoDecimals()
 
-        fun getIndividualType(value: Float, limit1: Float, limit2: Float, limit3: Float): Int = when {
-            value <= limit1 -> 1
-            value <= limit2 -> 2
-            value <= limit3 -> 3
-            else            -> 7
+        fun getIndividualType(value: Float, limit1: Float, limit2: Float?, limit3: Float?): Int {
+            if (value <= limit1) return 1
+            if (limit2 != null && value <= limit2) return 2
+            if (limit3 != null && value <= limit3) return 3
+            return 7
         }
 
-        val typeImpurities   = getIndividualType(pImpurities,   l1.impuritiesUpLim,   l2.impuritiesUpLim,   l3.impuritiesUpLim)
-        val typeBroken       = getIndividualType(pBroken,        l1.brokenUpLim,        l2.brokenUpLim,        l3.brokenUpLim)
-        val typeArdido       = getIndividualType(pArdido,        l1.ardidoUpLim,        l2.ardidoUpLim,        l3.ardidoUpLim)
-        val typeCarunchado   = getIndividualType(pCarunchado,    l1.carunchadoUpLim,    l2.carunchadoUpLim,    l3.carunchadoUpLim)
-        val typeSpoiledTotal = getIndividualType(pSpoiledTotal,  l1.spoiledTotalUpLim,  l2.spoiledTotalUpLim,  l3.spoiledTotalUpLim)
+        val typeImpurities   = getIndividualType(pImpurities,   l1.impuritiesUpLim,   l2?.impuritiesUpLim,   l3?.impuritiesUpLim)
+        val typeBroken       = getIndividualType(pBroken,        l1.brokenUpLim,        l2?.brokenUpLim,        l3?.brokenUpLim)
+        val typeArdido       = getIndividualType(pArdido,        l1.ardidoUpLim,        l2?.ardidoUpLim,        l3?.ardidoUpLim)
+        val typeCarunchado   = getIndividualType(pCarunchado,    l1.carunchadoUpLim,    l2?.carunchadoUpLim,    l3?.carunchadoUpLim)
+        val typeSpoiledTotal = getIndividualType(pSpoiledTotal,  l1.spoiledTotalUpLim,  l2?.spoiledTotalUpLim,  l3?.spoiledTotalUpLim)
 
         val finalType = listOf(typeImpurities, typeBroken, typeArdido, typeCarunchado, typeSpoiledTotal).maxOrNull() ?: 1
 

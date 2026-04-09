@@ -2,12 +2,14 @@ package com.example.centreinar.ui.main.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.centreinar.domain.model.GrainDescriptor
@@ -40,6 +42,7 @@ import kotlinx.coroutines.flow.StateFlow
  */
 @Composable
 fun LimitInputScreen(
+    topBar: @Composable () -> Unit,
     limitFields: List<LimitField>,
     descriptor: GrainDescriptor?,
     currentGrain: String?,
@@ -56,8 +59,9 @@ fun LimitInputScreen(
     val moistureFocus = remember { FocusRequester() }
     var errorMessage  by remember { mutableStateOf<String?>(null) }
 
-    // Estado dinâmico: um mapa chave→valor para cada field declarado pela Strategy
-    // + umidade, que é sempre exibida separadamente no topo
+    val configuration = LocalConfiguration.current
+    val isSmallScreen = configuration.screenHeightDp < 700
+
     var moisture    by remember(currentGrain, currentGroup) { mutableStateOf("") }
     var fieldValues by remember(currentGrain, currentGroup) {
         mutableStateOf(limitFields.associate { it.key to "" })
@@ -76,98 +80,142 @@ fun LimitInputScreen(
         }
     }
 
-    Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+    Scaffold(
+        modifier = Modifier.fillMaxSize()
+    ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
-                .padding(24.dp)
+                .padding(bottom = innerPadding.calculateBottomPadding()),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                text  = if (!isOfficial) "Insira os limites de tolerância" else "Limites de Referência MAPA",
-                style = MaterialTheme.typography.headlineSmall
-            )
-            Text(
-                text  = if (descriptor?.supportsGroups == true)
-                    "$currentGrain - Grupo $currentGroup"
-                else
-                    currentGrain ?: "",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.secondary
-            )
+            Column(modifier = Modifier.fillMaxWidth()) { topBar() }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Column(
+                modifier = Modifier
+                    .widthIn(max = 600.dp)
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .padding(if (isSmallScreen) 12.dp else 22.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = if (!isOfficial) "Insira os limites de tolerância" else "Limites de Referência MAPA",
+                    style = if (isSmallScreen) MaterialTheme.typography.titleMedium else MaterialTheme.typography.titleLarge
+                )
+                Text(
+                    text = if (descriptor?.supportsGroups == true)
+                        "$currentGrain - Grupo $currentGroup"
+                    else
+                        currentGrain ?: "",
+                    style = if (isSmallScreen) MaterialTheme.typography.bodyMedium else MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.secondary
+                )
+                Spacer(modifier = Modifier.height(if (isSmallScreen) 8.dp else 16.dp))
 
-            // Umidade — sempre visível no topo, independente do grão
-            NumberInputField(
-                label          = "Umidade da Amostra (%)",
-                value          = moisture,
-                onValueChange  = { moisture = it },
-                focusRequester = moistureFocus,
-                nextFocus      = null,
-                enabled        = !isOfficial,
-                readOnly       = isOfficial
-            )
+                if (isOfficial) {
+                    NumberInputField(
+                        label = "Umidade da Amostra (%)",
+                        value = moisture,
+                        onValueChange = { moisture = it },
+                        focusRequester = moistureFocus,
+                        nextFocus = null,
+                        enabled = !isOfficial,
+                        readOnly = isOfficial
+                    )
+                    Spacer(modifier = Modifier.height(if (isSmallScreen) 8.dp else 16.dp))
+                }
 
-            Spacer(modifier = Modifier.height(16.dp))
+                Box(modifier = Modifier.weight(1f)) {
+                    when {
+                        isLoading -> CircularProgressIndicator(
+                            modifier = Modifier.align(Alignment.Center)
+                        )
 
-            Box(modifier = Modifier.weight(1f)) {
-                when {
-                    isLoading -> CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-                    isOfficial -> {
-                        val limitsForTable = allOfficialLimits.filterIsInstance<BaseLimit>()
-                        if (limitsForTable.isNotEmpty()) {
-                            OfficialLimitsTable(group = currentGroup ?: 1, data = limitsForTable)
-                        } else {
-                            Text("Tabela oficial não encontrada.", modifier = Modifier.align(Alignment.Center))
-                        }
-                    }
-                    else -> {
-                        // Renderização dinâmica
-                        Column(modifier = Modifier.verticalScroll(scrollState)) {
-                            limitFields.forEach { field ->
-                                NumberInputField(
-                                    label          = field.label,
-                                    value          = fieldValues[field.key] ?: "",
-                                    onValueChange  = { fieldValues = fieldValues + (field.key to it) },
-                                    focusRequester = remember { FocusRequester() },
-                                    nextFocus      = null,
-                                    enabled        = true
+                        isOfficial -> {
+                            val limitsForTable = allOfficialLimits.filterIsInstance<BaseLimit>()
+                            if (limitsForTable.isNotEmpty()) {
+                                OfficialLimitsTable(
+                                    group = currentGroup ?: 1,
+                                    data = limitsForTable
                                 )
-                                Spacer(Modifier.height(8.dp))
+                            } else {
+                                Text(
+                                    "Tabela oficial não encontrada.",
+                                    modifier = Modifier.align(Alignment.Center)
+                                )
+                            }
+                        }
+
+                        else -> {
+                            Column(modifier = Modifier.verticalScroll(scrollState)) {
+                                NumberInputField(
+                                    label = "Umidade da Amostra (%)",
+                                    value = moisture,
+                                    onValueChange = { moisture = it },
+                                    focusRequester = moistureFocus,
+                                    nextFocus = null,
+                                    enabled = true,
+                                    readOnly = false
+                                )
+                                Spacer(Modifier.height(22.dp))
+                                val focusRequesters = remember(limitFields.size) {
+                                    List(limitFields.size) { FocusRequester() }
+                                }
+                                limitFields.forEachIndexed { index, field ->
+                                    NumberInputField(
+                                        label = field.label,
+                                        value = fieldValues[field.key] ?: "",
+                                        onValueChange = {
+                                            fieldValues = fieldValues + (field.key to it)
+                                        },
+                                        focusRequester = focusRequesters[index],
+                                        nextFocus = focusRequesters.getOrNull(index + 1),
+                                        enabled = true
+                                    )
+                                    Spacer(Modifier.height(22.dp))
+                                }
                             }
                         }
                     }
                 }
-            }
 
-            Spacer(Modifier.height(32.dp))
+                Spacer(Modifier.height(if (isSmallScreen) 16.dp else 32.dp))
 
-            errorMessage?.let {
-                Text(it, color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.padding(vertical = 4.dp))
-            }
-
-            Button(
-                onClick = {
-                    if (moisture.isEmpty() || moisture == ".") {
-                        errorMessage = "Informe a umidade da amostra."
-                        return@Button
-                    }
-                    errorMessage = null
-                    // Monta o mapa final: umidade + todos os fields da Strategy
-                    onSaveAndContinue(
-                        buildMap {
-                            put(FieldKeys.MOISTURE, moisture.toFloatOrDefault())
-                            fieldValues.forEach { (key, value) ->
-                                put(key, value.toFloatOrDefault())
-                            }
-                        }
+                errorMessage?.let {
+                    Text(
+                        it, color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(vertical = 4.dp)
                     )
-                },
-                modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
-            ) {
-                Text(if (!isOfficial) "Salvar e Continuar" else "Próximo")
+                }
+
+                Button(
+                    onClick = {
+                        if (moisture.isEmpty() || moisture == ".") {
+                            errorMessage = "Informe a umidade da amostra."
+                            return@Button
+                        }
+                        errorMessage = null
+                        onSaveAndContinue(
+                            buildMap {
+                                put(FieldKeys.MOISTURE, moisture.toFloatOrDefault())
+                                fieldValues.forEach { (key, value) ->
+                                    put(key, value.toFloatOrDefault())
+                                }
+                            }
+                        )
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = if (isSmallScreen) 44.dp else 50.dp),
+                    shape = RoundedCornerShape(8.dp),
+                ) {
+                    Text(
+                        text = if (!isOfficial) "Salvar e Continuar" else "Continuar",
+                        style = if (isSmallScreen) MaterialTheme.typography.titleMedium else MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                }
             }
         }
     }

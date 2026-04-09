@@ -20,7 +20,7 @@ interface GrainDiscountStrategy {
     fun getLimitFields(): List<LimitField>
 
     fun getDiscountInputRows(
-        prefill: com.example.centreinar.ui.discount.viewmodel.ClassificationPrefill?,
+        defectsPayload: DiscountDefectsPayload,
         financial: FinancialDiscountPayload
     ): List<DiscountInputRow>
 
@@ -37,6 +37,7 @@ interface GrainDiscountStrategy {
     suspend fun getBaseLimits(group: Int): Map<String, Float>?
     suspend fun getOfficialTableData(group: Int): Pair<Int, List<Pair<String, List<Float>>>>
     suspend fun getOfficialLimitsList(group: Int): List<Any>
+    suspend fun getLimitsForDisplay(group: Int, isOfficial: Boolean): List<Any>
     suspend fun saveCustomLimitData(group: Int, fieldMap: Map<String, Float>)
 
     suspend fun exportDiscountToPdf(context: Context, sourceClassificationId: Int? = null)

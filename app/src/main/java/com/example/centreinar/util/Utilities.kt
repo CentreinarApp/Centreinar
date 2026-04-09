@@ -1,14 +1,9 @@
 package com.example.centreinar.util
 
-import android.util.Log
-import com.example.centreinar.data.local.entity.LimitMilho
 import kotlinx.coroutines.delay
 import javax.inject.Inject
 import javax.inject.Singleton
 import java.math.RoundingMode
-import java.text.DecimalFormat
-import java.text.DecimalFormatSymbols
-import java.util.Locale
 
 @Singleton
 class Utilities @Inject constructor() {
@@ -59,8 +54,25 @@ suspend fun <T> retryUntilNotNull(
 }
 
 fun sanitizeNumericInput(raw: String): String {
-    val sanitized = raw.replace(',', '.').filter { it.isDigit() || it == '.' }
-    return if (sanitized.count { it == '.' } <= 1) sanitized else sanitized.dropLast(1)
+    val cleaned = raw.replace(',', '.')
+    val sb = StringBuilder()
+    var hasDot = false
+
+    for (ch in cleaned) {
+        when {
+            ch.isDigit() -> sb.append(ch)
+            ch == '.' -> {
+                // aceita ponto somente se já houver pelo menos um dígito antes e ainda não tiver ponto
+                if (sb.isNotEmpty() && !hasDot) {
+                    sb.append('.')
+                    hasDot = true
+                }
+            }
+        }
+    }
+
+    return sb.toString()
 }
+
 
 fun String.toFloatOrDefault(): Float = replace(",", ".").toFloatOrNull() ?: 0f

@@ -31,17 +31,15 @@ fun InputDataTable(
 
     Card(
         modifier = modifier.fillMaxWidth(),
-        colors   = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-        )
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
 
             Text(
                 text       = title,
-                style      = MaterialTheme.typography.titleSmall,
+                maxLines = 2,
+                style      = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
-                color      = MaterialTheme.colorScheme.primary,
+                color      = MaterialTheme.colorScheme.onBackground,
                 modifier   = Modifier.fillMaxWidth().padding(bottom = 8.dp),
                 textAlign  = TextAlign.Center
             )
@@ -55,7 +53,7 @@ fun InputDataTable(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(MaterialTheme.colorScheme.primaryContainer)
+                        .background(MaterialTheme.colorScheme.primary)
                         .padding(vertical = 4.dp, horizontal = 8.dp),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
@@ -63,14 +61,14 @@ fun InputDataTable(
                         text       = "Defeito",
                         style      = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Bold,
-                        color      = MaterialTheme.colorScheme.onPrimaryContainer,
+                        color      = MaterialTheme.colorScheme.onPrimary,
                         modifier   = Modifier.weight(2f)
                     )
                     Text(
                         text       = "Valor",
                         style      = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Bold,
-                        color      = MaterialTheme.colorScheme.onPrimaryContainer,
+                        color      = MaterialTheme.colorScheme.onPrimary,
                         modifier   = Modifier.weight(1f),
                         textAlign  = TextAlign.End
                     )

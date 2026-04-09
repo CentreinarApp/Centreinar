@@ -10,6 +10,8 @@ import com.example.centreinar.data.local.entity.ToxicSeedMilho
 import com.example.centreinar.data.repository.ClassificationRepositoryMilho
 import com.example.centreinar.domain.model.GrainDescriptor
 import com.example.centreinar.domain.model.LimitField
+import com.example.centreinar.domain.model.ClassificationInputField
+import com.example.centreinar.ui.classificationProcess.strategy.ClassificationInputState
 import com.example.centreinar.domain.usecase.ClassifyMilhoUseCase
 import com.example.centreinar.util.ClassificationPdfPayload
 import com.example.centreinar.util.FieldKeys
@@ -18,6 +20,7 @@ import com.example.centreinar.util.PdfDisqualificationData
 import com.example.centreinar.util.PdfLimitRow
 import com.example.centreinar.util.PdfSampleData
 import com.example.centreinar.util.PdfTableRow
+import com.example.centreinar.util.getTypeLabel
 import javax.inject.Inject
 
 class MilhoClassificationStrategy @Inject constructor(
@@ -28,11 +31,15 @@ class MilhoClassificationStrategy @Inject constructor(
 
     override val descriptor = GrainDescriptor(
         name               = "Milho",
+        limitRegulation    = "IN MAPA Nº60/2011",
         displayName        = "Milho",
         colorScheme        = "secondary",
-        supportsGroups     = false,  // Milho não passa por GroupSelection — group fixo 1
-        supportsCarunchado = true
+        supportsGroups     = false,
+        supportsCarunchado = true,
+        minSampleWeight    = 250f
     )
+
+    override val cleanWeightLabel: String = "Peso da Amostra Limpa (Peso da Amostra de Trabalho - Peso da MEI - Peso dos Grãos Quebrados):"
 
     override fun buildPayload(state: ClassificationInputState): ClassificationPayload {
         val sample = SampleMilho(
@@ -64,6 +71,30 @@ class MilhoClassificationStrategy @Inject constructor(
             weightSemiHard    = state.weightSemiHard
         )
     }
+
+    override fun getClassificationInputFields(): List<ClassificationInputField> = listOf(
+        // Tab 1 — Avariados
+        ClassificationInputField(FieldKeys.SOUR,       "Ardidos (g)",             tabGroup = 1),
+        ClassificationInputField(FieldKeys.MOLDY,      "Mofados (g)",             tabGroup = 1),
+        ClassificationInputField(FieldKeys.FERMENTED,  "Fermentados (g)",         tabGroup = 1),
+        ClassificationInputField(FieldKeys.GERMINATED, "Germinados (g)",          tabGroup = 1),
+        ClassificationInputField(FieldKeys.IMMATURE,   "Chochos e Imaturos (g)", tabGroup = 1),
+        ClassificationInputField(FieldKeys.GESSADO,    "Gessados (g)",            tabGroup = 1),
+        // Tab 2 — Defeitos Finais
+        ClassificationInputField(FieldKeys.CARUNCHADO, "Grãos Carunchados (g)",  tabGroup = 2),
+        ClassificationInputField("milho_classe_section", "Classe (Cor) do Milho", tabGroup = 2,
+            fieldType = ClassificationInputField.FieldType.MILHO_CLASSE),
+        ClassificationInputField("milho_grupo_section", "Grupo (Forma) do Milho", tabGroup = 2,
+            fieldType = ClassificationInputField.FieldType.MILHO_GRUPO)
+    )
+
+    override fun getLimitFields(): List<LimitField> = listOf(
+        LimitField(FieldKeys.ARDIDO,     "Ardidos (%)"),
+        LimitField(FieldKeys.SPOILED,    "Total de Avariados (%)"),
+        LimitField(FieldKeys.BROKEN,     "Quebrados (%)"),
+        LimitField(FieldKeys.IMPURITIES, "Matérias Estranhas e Impurezas (%)"),
+        LimitField(FieldKeys.CARUNCHADO, "Carunchados (%)")
+    )
 
     override fun getSampleInputRows(state: ClassificationUIState): List<SampleInputRow> {
         return state.sampleInputRows
@@ -98,7 +129,7 @@ class MilhoClassificationStrategy @Inject constructor(
         } ?: emptyList()
 
         val rows = listOf(
-            ClassificationRow("Matérias Estranhas e Impurezas", classification.impuritiesPercentage, classification.impuritiesType, limit.impuritiesUpLim),
+            ClassificationRow("Matéria Estranha/Impurezas", classification.impuritiesPercentage, classification.impuritiesType, limit.impuritiesUpLim),
             ClassificationRow("Ardidos", classification.ardidoPercentage, classification.ardidoType, limit.ardidoUpLim),
             ClassificationRow("Mofados", classification.mofadoPercentage, classification.mofadoType, limit.mofadoUpLim),
             ClassificationRow("Total de Avariados", classification.spoiledTotalPercentage ?: 0f, classification.spoiledTotalType ?: 0, limit.spoiledTotalUpLim),
@@ -116,14 +147,6 @@ class MilhoClassificationStrategy @Inject constructor(
             sampleLotWeight  = sample?.lotWeight ?: 0f
         )
     }
-
-    override fun getLimitFields(): List<LimitField> = listOf(
-        LimitField(FieldKeys.ARDIDO,     "Ardidos (%)"),
-        LimitField(FieldKeys.SPOILED,    "Total Avariados (%)"),
-        LimitField(FieldKeys.BROKEN,     "Quebrados (%)"),
-        LimitField(FieldKeys.IMPURITIES, "Matérias Estranhas e Impurezas (%)"),
-        LimitField(FieldKeys.CARUNCHADO, "Carunchados (%)")
-    )
 
     override suspend fun classify(payload: ClassificationPayload, isOfficial: Boolean): ClassificationUIState {
         require(payload is ClassificationPayload.Milho) { "Payload incorreto para a estratégia de Milho" }
@@ -207,7 +230,7 @@ class MilhoClassificationStrategy @Inject constructor(
             SampleInputRow("Avariados Total",     "%.2f g".format(
                 payload.sample.ardido + payload.sample.mofado + payload.sample.fermented +
                         payload.sample.germinated + payload.sample.immature + payload.sample.gessado)),
-            SampleInputRow("Carunchados",         "%.2f g".format(payload.sample.carunchado))
+            SampleInputRow("Carunchados",         "%.2f g".format(payload.sample.carunchado)),
         )
 
         return ClassificationUIState(
@@ -222,13 +245,22 @@ class MilhoClassificationStrategy @Inject constructor(
         )
     }
 
+    override fun calculateDisplayCleanWeight(
+        sampleWeight: Float,
+        foreignMatters: Float,
+        fieldValues: Map<String, Float>
+    ): Float {
+        val broken = fieldValues[FieldKeys.BROKEN] ?: 0f
+        return (sampleWeight - foreignMatters - broken).coerceAtLeast(0f)
+    }
+
     override suspend fun saveDisqualificationData(
         classificationId: Int,
         badConservation: Int,
         strangeSmell: Int,
         insects: Int,
         toxicGrains: Int,
-        toxicSeeds: List<Pair<String, String>>
+        toxicSeeds: List<Pair<String, String>>,
     ) {
         val resolvedId = repositoryMilho.getLastClassificationId(grainName) ?: return
 
@@ -349,8 +381,8 @@ class MilhoClassificationStrategy @Inject constructor(
     override fun getTypeLabel(finalType: Int, group: Int): String {
         return when (finalType) {
             -1   -> "-"
-            0   -> "Desclassificada"
-            7   -> "Fora de Tipo"
+            0    -> "Desclassificada"
+            7    -> "Fora de Tipo"
             else -> "Tipo $finalType"
         }
     }

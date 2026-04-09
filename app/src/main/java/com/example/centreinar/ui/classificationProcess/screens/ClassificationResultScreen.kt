@@ -2,9 +2,13 @@ package com.example.centreinar.ui.classificationProcess.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -15,6 +19,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -23,6 +28,7 @@ import com.example.centreinar.ui.classificationProcess.components.*
 import com.example.centreinar.ui.classificationProcess.strategy.BaseLimit
 import com.example.centreinar.ui.classificationProcess.viewmodel.ClassificationViewModel
 import com.example.centreinar.ui.components.ActionButtons
+import com.example.centreinar.ui.components.InfoDialog
 import com.example.centreinar.ui.components.InputDataTable
 import com.example.centreinar.ui.components.OfficialReferenceTable
 import com.example.centreinar.ui.discount.viewmodel.DiscountNavigationEvent
@@ -63,7 +69,9 @@ fun ClassificationResultScreen(
         }
     }
 
-    Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+    Scaffold(
+        modifier = Modifier.fillMaxSize()
+    ) { innerPadding ->
         if (uiState.isLoading) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
@@ -86,7 +94,13 @@ fun ClassificationResultScreen(
                         modifier = Modifier.padding(16.dp)
                     )
                     Spacer(Modifier.height(16.dp))
-                    Button(onClick = { navController.popBackStack() }) { Text("Voltar") }
+                    Button(
+                        onClick = { navController.popBackStack() },
+                        modifier = Modifier.heightIn(min = 50.dp),
+                        shape = RoundedCornerShape(8.dp)
+                    ) { Text(
+                        text = "Voltar"
+                    ) }
                 }
             }
 
@@ -98,78 +112,107 @@ fun ClassificationResultScreen(
             val moistureLimit  = limits.moistureUpLim
             val groupLimit     = limits.group
 
+            // Tela inteira
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(innerPadding)
-                    .padding(16.dp)
+                    .padding(bottom = innerPadding.calculateBottomPadding()),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text("Resultado da Classificação", style = MaterialTheme.typography.headlineSmall)
-                Text(if (classificationViewModel.isOfficial) "Referência Oficial" else "Referência Não Oficial")
-
-                Spacer(Modifier.height(16.dp))
-
-                Column(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())) {
-
-                    MoistureInfoCard(moisture = moistureValue, limit = moistureLimit)
-
-                    Spacer(Modifier.height(8.dp))
-
-                    ClassificationTable(
-                        title          = "RESULTADO ${classificationViewModel.selectedGrain?.uppercase() ?: ""}",
-                        finalTypeLabel = classificationViewModel.getFinalTypeLabel(finalTypeValue),
-                        rows           = uiState.tableRows,
-                        typeTranslator = { classificationViewModel.getFinalTypeLabel(it) }
+                // TopBar
+                Column( modifier = Modifier.fillMaxWidth() ) {
+                    ClassificationTopBar(
+                        onBackClick = { navController.popBackStack() }
                     )
+                }
 
-                    uiState.complementaryCards.forEach { card ->
-                        Spacer(Modifier.height(8.dp))
-                        ColorAndGroupCard(
-                            title          = card.title,
-                            subtitle       = card.subtitle,
-                            containerColor = when (card.colorType) {
-                                "secondary" -> MaterialTheme.colorScheme.secondaryContainer
-                                else        -> MaterialTheme.colorScheme.tertiaryContainer
-                            }
+                // Conteúdo da tela
+                Column(
+                    modifier = Modifier
+                        .widthIn(max = 600.dp)
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .verticalScroll(rememberScrollState())
+                        .padding(22.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Column(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())) {
+                        Text(
+                            text = "Resultado da Classificação",
+                            style = MaterialTheme.typography.titleLarge,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Text(
+                            text = "Referência: ${classificationViewModel.grainDescriptor.displayName}" +
+                                    (if (classificationViewModel.grainDescriptor.displayName != "Milho") {
+                                        " Grupo ${classificationViewModel.selectedGroup}"
+                                    } else { " " }) +
+                                    (if (classificationViewModel.isOfficial)
+                                        " (${classificationViewModel.grainDescriptor.limitRegulation})"
+                                    else { " Conforme contrato comercial" }),
+                            textAlign = TextAlign.Center
+                        )
+                        Spacer(Modifier.height(16.dp))
+
+                        MoistureInfoCard(
+                            moisture = moistureValue,
+                            limit = moistureLimit
+                        )
+                        Spacer(Modifier.height(10.dp))
+
+                        ClassificationTable(
+                            title          = "RESULTADO ${classificationViewModel.selectedGrain?.uppercase() ?: ""}",
+                            finalTypeLabel = classificationViewModel.getFinalTypeLabel(finalTypeValue),
+                            rows           = uiState.tableRows,
+                            typeTranslator = { classificationViewModel.getFinalTypeLabel(it) }
+                        )
+
+                        uiState.complementaryCards.forEach { card ->
+                            Spacer(Modifier.height(8.dp))
+                            ColorAndGroupCard(
+                                title          = card.title,
+                                subtitle       = card.subtitle
+                            )
+                        }
+
+                        Spacer(Modifier.height(10.dp))
+
+                        // Desclassificação
+                        uiState.disqualification?.let { disq ->
+                            DisqualificationInfoCard(
+                                badConservation = disq.badConservation == 1,
+                                strangeSmell    = disq.strangeSmell    == 1,
+                                insects         = disq.insects         == 1,
+                                toxicGrains     = disq.toxicGrains     == 1,
+                                toxicSeeds      = uiState.toxicSeeds
+                            )
+                        }
+
+                        Spacer(Modifier.height(35.dp))
+
+                        // Tabela de referência
+                        val limitsForTable: List<BaseLimit> =
+                            if (classificationViewModel.isOfficial && allOfficialLimits.isNotEmpty())
+                                allOfficialLimits.filterIsInstance<BaseLimit>()
+                            else
+                                listOf(limits)
+
+                        // Tabela de dados de entrada da amostra (pesos e defeitos em gramas)
+                        if (uiState.sampleInputRows.isNotEmpty()) {
+                            InputDataTable(
+                                title = "DADOS DA AMOSTRA",
+                                rows  = uiState.sampleInputRows.map { it.label to it.value }
+                            )
+                            Spacer(Modifier.height(20.dp))
+                        }
+
+                        OfficialReferenceTable(
+                            group      = groupLimit,
+                            isOfficial = classificationViewModel.isOfficial,
+                            data       = limitsForTable
                         )
                     }
-
-                    Spacer(Modifier.height(26.dp))
-
-                    // Desclassificação
-                    uiState.disqualification?.let { disq ->
-                        DisqualificationInfoCard(
-                            badConservation = disq.badConservation == 1,
-                            strangeSmell    = disq.strangeSmell    == 1,
-                            insects         = disq.insects         == 1,
-                            toxicGrains     = disq.toxicGrains     == 1,
-                            toxicSeeds      = uiState.toxicSeeds
-                        )
-                    }
-
-                    Spacer(Modifier.height(26.dp))
-
-                    // Tabela de referência
-                    val limitsForTable: List<BaseLimit> =
-                        if (classificationViewModel.isOfficial && allOfficialLimits.isNotEmpty())
-                            allOfficialLimits.filterIsInstance<BaseLimit>()
-                        else
-                            listOf(limits)
-
-                    // Tabela de dados de entrada da amostra (pesos e defeitos em gramas)
-                    if (uiState.sampleInputRows.isNotEmpty()) {
-                        InputDataTable(
-                            title = "DADOS DA AMOSTRA",
-                            rows  = uiState.sampleInputRows.map { it.label to it.value }
-                        )
-                        Spacer(Modifier.height(12.dp))
-                    }
-
-                    OfficialReferenceTable(
-                        group      = groupLimit,
-                        isOfficial = classificationViewModel.isOfficial,
-                        data       = limitsForTable
-                    )
                 }
 
                 ActionButtons(
@@ -191,23 +234,27 @@ fun ClassificationResultScreen(
                         )
                         showDiscountSheet = true
                     },
-                    onExportPdf = { classificationViewModel.exportPdf(context) }
+                    onExportPdf = { classificationViewModel.exportPdf(context) },
+                    modifier = Modifier
+                        .widthIn(max = 600.dp)
+                        .padding(start = 10.dp, end = 10.dp)
+                        .heightIn(min = 40.dp, max = 50.dp)
                 )
-            }
 
-            // =================================================================
-            // BOTTOM SHEET — campos que faltam para calcular o desconto
-            // =================================================================
-            if (showDiscountSheet) {
-                ModalBottomSheet(
-                    onDismissRequest = { showDiscountSheet = false },
-                    sheetState       = sheetState
-                ) {
-                    DiscountBottomSheetContent(
-                        initialLotWeight  = uiState.sampleLotWeight.takeIf { it > 0f }?.toString() ?: "",
-                        discountViewModel = discountViewModel,
-                        onDismiss         = { showDiscountSheet = false }
-                    )
+                // =================================================================
+                // BOTTOM SHEET — campos que faltam para calcular o desconto
+                // =================================================================
+                if (showDiscountSheet) {
+                    ModalBottomSheet(
+                        onDismissRequest = { showDiscountSheet = false },
+                        sheetState       = sheetState
+                    ) {
+                        DiscountBottomSheetContent(
+                            initialLotWeight  = uiState.sampleLotWeight.takeIf { it > 0f }?.toString() ?: "",
+                            discountViewModel = discountViewModel,
+                            onDismiss         = { showDiscountSheet = false }
+                        )
+                    }
                 }
             }
         }
@@ -281,15 +328,36 @@ private fun DiscountBottomSheetContent(
         Spacer(Modifier.height(20.dp))
 
         // Switch — Quebra Técnica
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+        ) {
             Switch(checked = doesTechnicalLoss, onCheckedChange = { doesTechnicalLoss = it })
             Spacer(Modifier.width(12.dp))
-            Column {
+
+            Column(modifier = Modifier.weight(1f)) {
                 Text("Quebra Técnica", style = MaterialTheme.typography.bodyLarge)
                 Text(
                     "Desconto por dias de armazenamento",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            var showInfo by remember { mutableStateOf(false) }
+
+            IconButton(onClick = { showInfo = true }) {
+                Icon(
+                    imageVector        = Icons.Outlined.Info,
+                    contentDescription = "O que é Quebra técnica?"
+                )
+            }
+
+            if (showInfo) {
+                InfoDialog(
+                    title       = "O que é Quebra Técnica?",
+                    description = "Quebra técnica é a perda de peso do grão armazenado causada pela respiração celular, que consome matéria seca. O limite máximo considerado é de 0,15% por quinzena. Ao marcar esta opção, o campo de dias de armazenamento será habilitado e o valor será incluído no cálculo do desconto.",
+                    onDismiss   = { showInfo = false }
                 )
             }
         }
@@ -320,7 +388,7 @@ private fun DiscountBottomSheetContent(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-        }*/
+        }
 
         if (doesDeduction) {
             Spacer(Modifier.height(12.dp))
@@ -332,6 +400,7 @@ private fun DiscountBottomSheetContent(
                 nextFocus      = null
             )
         }
+        */
 
         // Erro
         errorMessage?.let {
@@ -347,14 +416,19 @@ private fun DiscountBottomSheetContent(
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             OutlinedButton(
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.weight(1f).heightIn(min = 50.dp),
+                shape = RoundedCornerShape(8.dp),
                 onClick  = onDismiss
             ) {
-                Text("Cancelar")
+                Text(
+                    text = "Cancelar",
+                    color = MaterialTheme.colorScheme.onBackground
+                )
             }
 
             Button(
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.weight(1f).heightIn(min = 50.dp),
+                shape = RoundedCornerShape(8.dp),
                 enabled  = !uiState.isLoading,
                 onClick  = {
                     val fLotWeight   = lotWeight.toFloatOrZero()

@@ -5,6 +5,7 @@ import androidx.compose.runtime.getValue
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import com.example.centreinar.ui.discount.components.DiscountTopBar
 import com.example.centreinar.ui.discount.viewmodel.DiscountViewModel
 import com.example.centreinar.ui.main.screens.LimitInputScreen
 import com.example.centreinar.util.Routes
@@ -18,6 +19,7 @@ fun DiscountLimitInputScreen(
     val allOfficialLimits by viewModel.allOfficialLimits.collectAsStateWithLifecycle()
 
     LimitInputScreen(
+        topBar = { DiscountTopBar( onBackClick = { navController.popBackStack() }) },
         limitFields       = viewModel.getLimitFields(),
         descriptor        = viewModel.currentDescriptor,
         currentGrain      = viewModel.selectedGrain,

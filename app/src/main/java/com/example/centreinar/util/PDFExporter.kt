@@ -41,24 +41,15 @@ data class ClassificationPdfPayload(
     val colorYellow: Float? = null,
     val colorOther: Float? = null,
     val colorDetailText: String? = null,
-    // true = exibe dados normalmente | false = exibe "NÃO DEFINIDO"
     val colorDefined: Boolean = true,
     val sample: PdfSampleData? = null,
     val disqualification: PdfDisqualificationData? = null,
     val limitHeaders: List<String> = emptyList(),
     val limitRows: List<PdfLimitRow> = emptyList(),
     val observation: String? = null,
-    // Defeitos em gramas da amostra — exibidos em página separada
     val sampleInputRows: List<Pair<String, String>> = emptyList()
 )
 
-/**
- * Quando [classificationPayload] não é nulo, o PDF gerado pela tela de descontos
- * terá a seguinte ordem de páginas:
- * Pág 1 — Resultado da Classificação
- * Pág 2 — Resultado dos Descontos
- * Pág 3 — Dados Complementares e Limites de Referência
- */
 data class DiscountPdfPayload(
     val grain: String,
     val summaryRows: List<PdfDiscountRow>,
@@ -68,8 +59,9 @@ data class DiscountPdfPayload(
     val lotWeight: Float? = null,
     val lotPrice: Float? = null,
     val classificationPayload: ClassificationPdfPayload? = null,
-    // Defeitos em % usados no cálculo do desconto
-    val discountInputRows: List<Pair<String, String>> = emptyList()
+    val discountInputRows: List<Pair<String, String>> = emptyList(),
+    val limitHeaders: List<String> = emptyList(),
+    val limitRows: List<PdfLimitRow> = emptyList()
 )
 
 // =============================================================================
@@ -89,7 +81,15 @@ class PDFExporter @Inject constructor(
     fun exportClassification(context: Context, payload: ClassificationPdfPayload) {
         val document = PdfDocument()
         val paints   = setupPaints()
-        addClassificationPages(document, paints, payload)
+
+        // Fluxo 1: Direto da Classificação
+        // Pág 1: Resultado da Classificação
+        addClassificationResultPage(document, paints, payload)
+        // Pág 2: Dados da amostra em gramas (separada)
+        addInputDataPage(document, paints, payload.sampleInputRows, emptyList())
+        // Pág 3: Dados complementares + limites
+        addComplementaryPage(document, paints, payload)
+
         saveAndShare(context, document, payload.grain)
     }
 
@@ -102,45 +102,32 @@ class PDFExporter @Inject constructor(
 
         val classif = discount.classificationPayload
         if (classif != null) {
-            // Pág 1: resultado principal da classificação
+            // Fluxo 2: Desconto com dados oriundos da Classificação
+            // Pág 1: Resultado da Classificação
             addClassificationResultPage(document, paints, classif)
-            // Pág 2: resultado dos descontos
+            // Pág 2: Resultado dos Descontos
             addDiscountPages(document, paints, discount)
-            // Pág 3: dados da amostra (gramas) + dados do desconto (%) juntos
+            // Pág 3: Dados da amostra (e dados do desconto, se houver)
             addInputDataPage(document, paints, classif.sampleInputRows, discount.discountInputRows)
-            // Pág 4: dados complementares + observações + limites
-            // boldLimitFirstColumn=true — segunda coluna em negrito no PDF de desconto (1º Limite sempre no desconto oficial)
+            // Pág 4: Dados complementares e limites de referência
             val priceBySack = if ((discount.lotWeight ?: 0f) > 0f && (discount.lotPrice ?: 0f) > 0f)
                 ((discount.lotPrice!! / discount.lotWeight!!) * 60f) else null
             addComplementaryPage(document, paints, classif, boldLimitFirstColumn = true, priceBySack = priceBySack)
         } else {
-            // Desconto avulso — apenas a página de descontos
+            // Fluxo 3: Desconto Avulso
+            // Pág 1: Resultado dos Descontos
             addDiscountPages(document, paints, discount)
+            // Pág 2: Dados utilizados no cálculo + Limites de referência juntos na mesma página
+            addStandaloneDiscountDataAndLimitsPage(document, paints, discount)
         }
 
         saveAndShare(context, document, discount.grain)
     }
 
     // =========================================================================
-    // PÁGINAS DE CLASSIFICAÇÃO
+    // PÁGINA DE RESULTADO DA CLASSIFICAÇÃO
     // =========================================================================
 
-    private fun addClassificationPages(
-        document: PdfDocument,
-        paints: Paints,
-        payload: ClassificationPdfPayload
-    ) {
-        // Pág 1: resultado da classificação
-        addClassificationResultPage(document, paints, payload)
-        // Pág 2: dados da amostra em gramas (página separada)
-        addInputDataPage(document, paints, payload.sampleInputRows, emptyList())
-        // Pág 3: dados complementares + observações + limites
-        addComplementaryPage(document, paints, payload)
-    }
-
-    // -------------------------------------------------------------------------
-    // Página de resultado principal da classificação
-    // -------------------------------------------------------------------------
     private fun addClassificationResultPage(
         document: PdfDocument,
         paints: Paints,
@@ -172,7 +159,6 @@ class PDFExporter @Inject constructor(
         y = drawTable(canvas, y, listOf("PARÂMETRO", "PERCENTUAL", "TIPO"), tableData, paints)
         y += 20f
 
-        // Bloco de cor/classe/grupo — exibido quando o grão tem este conceito
         if (payload.colorLabel != null) {
             canvas.drawRect(50f, y, pageWidth - 50f, y + 45f, paints.borderPaint)
             canvas.drawText(payload.colorLabel.uppercase(), 60f, y + 18f, paints.headerPaint)
@@ -191,11 +177,11 @@ class PDFExporter @Inject constructor(
         document.finishPage(page)
     }
 
-    // -------------------------------------------------------------------------
-    // Página de dados de entrada (amostra em gramas e/ou desconto em %)
-    // sampleRows vazio  → só desconto | discountRows vazio → só amostra
-    // ambos preenchidos → amostra em cima, desconto abaixo (fluxo de desconto)
-    // -------------------------------------------------------------------------
+    // =========================================================================
+    // PÁGINAS DE DADOS DE ENTRADA E LIMITES (COMPARTILHADAS)
+    // =========================================================================
+
+    // Usada para Fluxo 1 e 2 (Mostra Dados da Amostra em página separada)
     private fun addInputDataPage(
         document: PdfDocument,
         paints: Paints,
@@ -228,10 +214,39 @@ class PDFExporter @Inject constructor(
         document.finishPage(page)
     }
 
-    // -------------------------------------------------------------------------
-    // Página de dados complementares + observações + limites
-    // Usada tanto no fluxo de classificação quanto no de desconto
-    // -------------------------------------------------------------------------
+    // Usada EXCLUSIVAMENTE para o Fluxo 3 (Desconto Avulso) - Dados e Limites na mesma página
+    private fun addStandaloneDiscountDataAndLimitsPage(
+        document: PdfDocument,
+        paints: Paints,
+        payload: DiscountPdfPayload
+    ) {
+        if (payload.discountInputRows.isEmpty() && payload.limitRows.isEmpty()) return
+
+        val pageNum  = document.pages.size + 1
+        val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, pageNum).create()
+        val page     = document.startPage(pageInfo)
+        val canvas   = page.canvas
+        var y        = 60f
+
+        if (payload.discountInputRows.isNotEmpty()) {
+            canvas.drawText("DADOS UTILIZADOS NO CÁLCULO DO DESCONTO", pageWidth / 2f, y, paints.titlePaint)
+            y += 40f
+            y = drawTable(canvas, y, listOf("CAMPO", "VALOR"),
+                payload.discountInputRows.map { (l, v) -> listOf(l, v) }, paints)
+            y += 40f
+        }
+
+        if (payload.limitRows.isNotEmpty() && payload.limitHeaders.isNotEmpty()) {
+            canvas.drawText("LIMITES DE REFERÊNCIA UTILIZADOS", pageWidth / 2f, y, paints.titlePaint)
+            y += 40f
+            val tableData = payload.limitRows.map { row -> listOf(row.label) + row.valuesByType }
+            drawTable(canvas, y, payload.limitHeaders, tableData, paints, boldAndUnderlineSecondColumn = true)
+        }
+
+        document.finishPage(page)
+    }
+
+    // Usada para Fluxo 1 e 2 (Dados Complementares + Observações + Limites)
     private fun addComplementaryPage(
         document: PdfDocument,
         paints: Paints,
@@ -273,14 +288,12 @@ class PDFExporter @Inject constructor(
             y += 10f
         }
 
-        // Observações antes dos limites
         payload.observation?.takeIf { it.isNotBlank() }?.let { obs ->
             canvas.drawText("OBSERVAÇÕES", 50f, y, paints.headerPaint); y += 15f
             drawMultilineText(canvas, obs, 50f, y, paints.cellPaint, pageWidth - 100)
             y += 40f
         }
 
-        // Limites abaixo das observações
         if (payload.limitRows.isNotEmpty() && payload.limitHeaders.isNotEmpty()) {
             y += 20f
             canvas.drawText("LIMITES DE REFERÊNCIA UTILIZADOS", pageWidth / 2f, y, paints.titlePaint)
@@ -293,7 +306,7 @@ class PDFExporter @Inject constructor(
     }
 
     // =========================================================================
-    // PÁGINA DE DESCONTO
+    // PÁGINA DE RESULTADO DE DESCONTOS
     // =========================================================================
 
     private fun addDiscountPages(
@@ -343,12 +356,11 @@ class PDFExporter @Inject constructor(
         val margin      = 50f
         val columnWidth = (pageWidth - 2 * margin) / headers.size.toFloat()
         val textPadding = 5f
-        val maxTextWidth = columnWidth - (textPadding * 2) // Largura útil da célula
+        val maxTextWidth = columnWidth - (textPadding * 2)
         val baseRowHeight = 25f
         val lineHeight  = paints.cellPaint.textSize + 6f
         var y           = yStart
 
-        // Função auxiliar interna para quebrar o texto em várias linhas
         fun getLines(text: String, paint: Paint): List<String> {
             val words = text.split("\\s+".toRegex())
             val lines = mutableListOf<String>()
@@ -367,7 +379,6 @@ class PDFExporter @Inject constructor(
             return if (lines.isEmpty()) listOf("") else lines
         }
 
-        // Desenhar Cabeçalhos
         val headerLines = headers.map { getLines(it, paints.headerPaint) }
         val maxHeaderLines = headerLines.maxOfOrNull { it.size } ?: 1
         val headerRowHeight = maxOf(baseRowHeight, (maxHeaderLines * lineHeight) + 10f)
@@ -376,17 +387,11 @@ class PDFExporter @Inject constructor(
         headers.forEachIndexed { i, _ ->
             val lines = headerLines[i]
             lines.forEachIndexed { j, line ->
-                canvas.drawText(
-                    line,
-                    margin + (i * columnWidth) + textPadding,
-                    y + 17f + (j * lineHeight),
-                    paints.headerPaint
-                )
+                canvas.drawText(line, margin + (i * columnWidth) + textPadding, y + 17f + (j * lineHeight), paints.headerPaint)
             }
         }
         y += headerRowHeight
 
-        // Desenhar Linhas de Dados
         data.forEach { row ->
             val cellLines = row.map { getLines(it, paints.cellPaint) }
             val maxLines = cellLines.maxOfOrNull { it.size } ?: 1
@@ -483,10 +488,8 @@ fun getTypeLabel(finalType: Int, group: Int): String {
     if (finalType == 7) return "Fora de Tipo"
 
     return if (group == 2) {
-        // Grupo 2 só tem um limite de referência (padrão básico)
         "Padrão Básico"
     } else when (finalType) {
-        // Grupo 1 tem 3 limites de referência
         1    -> "Tipo 1"
         2    -> "Tipo 2"
         3    -> "Tipo 3"

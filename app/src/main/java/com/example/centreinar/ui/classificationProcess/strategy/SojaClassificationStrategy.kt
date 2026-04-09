@@ -10,6 +10,8 @@ import com.example.centreinar.data.local.entities.ToxicSeedSoja
 import com.example.centreinar.data.repository.ClassificationRepository
 import com.example.centreinar.domain.model.GrainDescriptor
 import com.example.centreinar.domain.model.LimitField
+import com.example.centreinar.domain.model.ClassificationInputField
+import com.example.centreinar.ui.classificationProcess.strategy.ClassificationInputState
 import com.example.centreinar.domain.usecase.ClassifySojaUseCase
 import com.example.centreinar.util.ClassificationPdfPayload
 import com.example.centreinar.util.FieldKeys
@@ -18,6 +20,7 @@ import com.example.centreinar.util.PdfDisqualificationData
 import com.example.centreinar.util.PdfLimitRow
 import com.example.centreinar.util.PdfSampleData
 import com.example.centreinar.util.PdfTableRow
+import com.example.centreinar.util.getTypeLabel
 import javax.inject.Inject
 
 class SojaClassificationStrategy @Inject constructor(
@@ -28,11 +31,15 @@ class SojaClassificationStrategy @Inject constructor(
 
     override val descriptor = GrainDescriptor(
         name               = "Soja",
+        limitRegulation    = "IN MAPA N°11/2007",
         displayName        = "Soja",
         colorScheme        = "primary",
         supportsGroups     = true,
-        supportsColorClass = true
+        supportsColorClass = true,
+        minSampleWeight    = 125f
     )
+
+    override val cleanWeightLabel: String = "Peso da Amostra Limpa (Peso da Amostra de trabalho - Peso da MEI):"
 
     override fun buildPayload(state: ClassificationInputState): ClassificationPayload {
         val sample = SampleSoja(
@@ -60,6 +67,36 @@ class SojaClassificationStrategy @Inject constructor(
             isColorDefined    = state.isColorDefined
         )
     }
+
+    override fun getClassificationInputFields(): List<ClassificationInputField> = listOf(
+        // Tab 1 — Avariados
+        ClassificationInputField(FieldKeys.SOUR,       "Ardidos (g)",          tabGroup = 1),
+        ClassificationInputField(FieldKeys.BURNT,      "Queimados (g)",        tabGroup = 1),
+        ClassificationInputField(FieldKeys.MOLDY,      "Mofados (g)",          tabGroup = 1),
+        ClassificationInputField(FieldKeys.FERMENTED,  "Fermentados (g)",      tabGroup = 1),
+        ClassificationInputField(FieldKeys.GERMINATED, "Germinados (g)",       tabGroup = 1),
+        ClassificationInputField(FieldKeys.IMMATURE,   "Imaturos (g)",         tabGroup = 1),
+        ClassificationInputField(FieldKeys.SHRIVELED,  "Chochos (g)",          tabGroup = 1),
+        ClassificationInputField(FieldKeys.PIERCING,   "Grãos Picados (Percevejo) (g) (a)",    tabGroup = 1),
+        ClassificationInputField(FieldKeys.DAMAGED_INPUT, "Demais danificados (g) (b)", tabGroup = 1),
+        ClassificationInputField(FieldKeys.DAMAGED,    "Total de Danificados [(a)+(b)]", tabGroup = 1,
+            fieldType = ClassificationInputField.FieldType.CALCULATED),
+        // Tab 2 — Defeitos Finais
+        ClassificationInputField(FieldKeys.BROKEN,     "Partidos, Quebrados e Amassados (g)", tabGroup = 2),
+        ClassificationInputField(FieldKeys.GREENISH,   "Esverdeados (g)",      tabGroup = 2),
+        ClassificationInputField("color_class_section", "Classe de Cor",       tabGroup = 2,
+            fieldType = ClassificationInputField.FieldType.COLOR_CLASS)
+    )
+
+    override fun getLimitFields(): List<LimitField> = listOf(
+        LimitField(FieldKeys.IMPURITIES,    "Matérias Estranhas e Impurezas (%)"),
+        LimitField(FieldKeys.BURNT,         "Queimados (%)"),
+        LimitField(FieldKeys.BURNT_OR_SOUR, "Ardidos e Queimados (%)"),
+        LimitField(FieldKeys.MOLDY,         "Mofados (%)"),
+        LimitField(FieldKeys.SPOILED,       "Total de Avariados (%)"),
+        LimitField(FieldKeys.GREENISH,      "Esverdeados (%)"),
+        LimitField(FieldKeys.BROKEN,        "Partidos, Quebrados e Amassados (%)")
+    )
 
     override fun getSampleInputRows(state: ClassificationUIState): List<SampleInputRow> {
         return state.sampleInputRows
@@ -132,16 +169,6 @@ class SojaClassificationStrategy @Inject constructor(
         )
     }
 
-    override fun getLimitFields(): List<LimitField> = listOf(
-        LimitField(FieldKeys.BURNT_OR_SOUR, "Ardidos e Queimados (%)"),
-        LimitField(FieldKeys.BURNT,         "Queimados (%)"),
-        LimitField(FieldKeys.MOLDY,         "Mofados (%)"),
-        LimitField(FieldKeys.SPOILED,       "Total Avariados (%)"),
-        LimitField(FieldKeys.GREENISH,      "Esverdeados (%)"),
-        LimitField(FieldKeys.BROKEN,        "Partidos, Quebrados e Amassados (%)"),
-        LimitField(FieldKeys.IMPURITIES, "Matérias Estranhas e Impurezas (%)")
-    )
-
     override suspend fun classify(payload: ClassificationPayload, isOfficial: Boolean): ClassificationUIState {
         require(payload is ClassificationPayload.Soja) { "Payload incorreto para a estratégia de Soja" }
 
@@ -203,13 +230,14 @@ class SojaClassificationStrategy @Inject constructor(
             SampleInputRow("Germinados",             "%.2f g".format(payload.sample.germinated)),
             SampleInputRow("Imaturos",               "%.2f g".format(payload.sample.immature)),
             SampleInputRow("Chochos",                "%.2f g".format(payload.sample.shriveled)),
-            SampleInputRow("Danificados Total",            "%.2f g".format(payload.sample.damaged)),
+            SampleInputRow("Danificados",            "%.2f g".format(payload.sample.damaged)),
             SampleInputRow("Avariados Total",        "%.2f g".format(
                 payload.sample.moldy + payload.sample.fermented + payload.sample.sour +
                         payload.sample.burnt + payload.sample.germinated + payload.sample.immature +
                         payload.sample.shriveled + payload.sample.damaged)),
             SampleInputRow("Esverdeados",            "%.2f g".format(payload.sample.greenish)),
-            SampleInputRow("Partidos, Quebrados e Amassados",     "%.2f g".format(payload.sample.brokenCrackedDamaged))
+            SampleInputRow("Partidos, Quebrados e Amassados" +
+                    "",     "%.2f g".format(payload.sample.brokenCrackedDamaged))
         )
 
         return ClassificationUIState(
@@ -230,7 +258,7 @@ class SojaClassificationStrategy @Inject constructor(
         strangeSmell: Int,
         insects: Int,
         toxicGrains: Int,
-        toxicSeeds: List<Pair<String, String>>
+        toxicSeeds: List<Pair<String, String>>,
     ) {
         val disqualification = DisqualificationSoja(
             classificationId = null,

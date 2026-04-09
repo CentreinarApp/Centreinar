@@ -7,21 +7,21 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.saveable
 import com.example.centreinar.domain.model.GrainDescriptor
-import com.example.centreinar.util.FieldKeys
 import com.example.centreinar.ui.classificationProcess.strategy.BaseClassification
 import com.example.centreinar.ui.discount.strategy.DiscountDefectsPayload
 import com.example.centreinar.ui.discount.strategy.DiscountResult
 import com.example.centreinar.ui.discount.strategy.DiscountUIState
 import com.example.centreinar.ui.discount.strategy.FinancialDiscountPayload
 import com.example.centreinar.ui.discount.strategy.GrainDiscountStrategy
+import com.example.centreinar.util.FieldKeys
 import com.example.centreinar.util.retryUntilNotNull
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -38,29 +38,45 @@ class DiscountViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
-    var selectedGrain         by savedStateHandle.saveable { mutableStateOf<String>("Soja") }
-    var selectedGroup         by savedStateHandle.saveable { mutableStateOf<Int>(1) }
+    // =========================================================================
+    // ESTADO DE NAVEGAÇÃO
+    //
+    // Começa null — atualizado pelos botões de seleção nas telas.
+    // currentStrategy é sempre derivado de selectedGrain em tempo real.
+    // =========================================================================
+
+    var selectedGrain         by savedStateHandle.saveable { mutableStateOf<String?>(null) }
+    var selectedGroup         by savedStateHandle.saveable { mutableStateOf<Int?>(null) }
     var isOfficial            by savedStateHandle.saveable { mutableStateOf<Boolean>(true) }
     var sourceClassificationId: Int? = null
 
-    fun setClassificationId(id: Int) {
-        sourceClassificationId = id
-    }
-
+    // Sempre derivado de selectedGrain — nunca fixado na construção
     private val currentStrategy: GrainDiscountStrategy?
         get() = strategies[selectedGrain]
 
-    // Descriptor do grão atualmente selecionado — consumido pelas telas de desconto.
+    // Descriptor do grão atualmente selecionado
     val currentDescriptor: GrainDescriptor?
         get() = currentStrategy?.descriptor
+
+    // grainDescriptor: usado pelas telas OfficialOrNot.
+    // Retorna o descriptor do grão atual ou o primeiro disponível como fallback.
+    val grainDescriptor: GrainDescriptor
+        get() = currentStrategy?.descriptor
+            ?: strategies.values.first().descriptor
 
     val availableGrainDescriptors: List<GrainDescriptor> =
         strategies.values
             .map { it.descriptor }
             .sortedBy { it.displayName }
 
+    fun setClassificationId(id: Int) {
+        sourceClassificationId = id
+    }
+
+    fun getStrategy(grainName: String): GrainDiscountStrategy? = strategies[grainName]
+
     // =========================================================================
-    // ESTADOS
+    // ESTADOS UI
     // =========================================================================
 
     private val _uiState = MutableStateFlow(DiscountUIState())
@@ -75,14 +91,12 @@ class DiscountViewModel @Inject constructor(
     private val _discountResult = MutableStateFlow<DiscountResult?>(null)
     val discountResult: StateFlow<DiscountResult?> = _discountResult.asStateFlow()
 
-    // -------------------------------------------------------------------------
-    // One-shot navigation event — Channel garante que o evento é consumido
-    // exatamente uma vez, independente de recomposições ou back stack.
-    // -------------------------------------------------------------------------
+    // One-shot navigation event — consumido exatamente uma vez
     private val _navigationEvent = Channel<DiscountNavigationEvent>(Channel.BUFFERED)
     val navigationEvent = _navigationEvent.receiveAsFlow()
 
     private val _classificationPrefill = MutableStateFlow<ClassificationPrefill?>(null)
+    val classificationPrefill: StateFlow<ClassificationPrefill?> = _classificationPrefill.asStateFlow()
 
     // =========================================================================
     // LÓGICA DE NEGÓCIO
@@ -108,12 +122,6 @@ class DiscountViewModel @Inject constructor(
         )
     }
 
-    // -------------------------------------------------------------------------
-    // Calcula o desconto direto a partir dos dados de classificação.
-    // Recebe apenas os dados financeiros — os defeitos vêm do classificationPrefill
-    // que já foi populado por loadFromClassification().
-    // A tela não precisa conhecer DiscountDefectsPayload, nem acessar o prefill.
-    // -------------------------------------------------------------------------
     fun calculateDiscountFromClassification(
         lotWeight: Float,
         priceBySack: Float,
@@ -130,10 +138,10 @@ class DiscountViewModel @Inject constructor(
 
         val defectsPayload   = strategy.createDefectsPayload(defectsMap)
         val financialPayload = FinancialDiscountPayload(
-            priceBySack   = priceBySack,
-            lotWeight     = lotWeight,
-            group         = selectedGroup,
-            daysOfStorage = daysOfStorage,
+            priceBySack       = priceBySack,
+            lotWeight         = lotWeight,
+            group             = selectedGroup ?: 1,
+            daysOfStorage     = daysOfStorage,
             doesTechnicalLoss = doesTechnicalLoss,
             deductionValue    = deductionValue,
             doesDeduction     = doesDeduction
@@ -143,12 +151,12 @@ class DiscountViewModel @Inject constructor(
     }
 
     fun loadDefaultLimits() {
-        val group    = selectedGroup
+        val group    = selectedGroup ?: return
         val strategy = currentStrategy ?: return
 
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch {
             try {
-                _uiState.update { it.copy(isLoading = true) }
+                _uiState.update { it.copy(isLoading = true, error = null) }
 
                 val baseLimits = retryUntilNotNull { strategy.getBaseLimits(group) }
 
@@ -158,24 +166,27 @@ class DiscountViewModel @Inject constructor(
                 }
 
                 _defaultLimits.value = baseLimits
+                _allOfficialLimits.value = strategy.getLimitsForDisplay(group, isOfficial)
 
-                if (isOfficial) {
-                    _allOfficialLimits.value = strategy.getOfficialLimitsList(group)
-                }
+                // sucesso: garante que não exista erro
+                _uiState.update { it.copy(error = null) }
 
             } catch (e: Exception) {
                 _uiState.update { it.copy(error = "Erro ao carregar limites: ${e.message}") }
             } finally {
+                // NÃO limpar error aqui
                 _uiState.update { it.copy(isLoading = false) }
             }
         }
+
     }
 
+    // Recebe Map<String, Float> com FieldKeys.* — alinhado com LimitInputScreen genérico
     fun saveCustomLimit(limits: Map<String, Float>) {
         val strategy = currentStrategy ?: return
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch {
             try {
-                strategy.saveCustomLimitData(selectedGroup, limits)
+                strategy.saveCustomLimitData(selectedGroup ?: 1, limits)
             } catch (e: Exception) {
                 _uiState.update { it.copy(error = "Erro ao salvar limites: ${e.message}") }
             }
@@ -197,13 +208,12 @@ class DiscountViewModel @Inject constructor(
                     financialPayload = financialPayload.copy(
                         sourceClassificationId = sourceClassificationId
                     ),
-                    isOfficial       = isOfficial
+                    isOfficial = isOfficial
                 )
                 _discountResult.value = result
 
-                // Delega para a strategy — que define a ordem e os campos do seu grão
-                val prefill = _classificationPrefill.value
-                val inputRows = strategy.getDiscountInputRows(prefill, financialPayload)
+                // Passa diretamente o defectsPayload que veio do formulário de inputs (seja manual ou preenchido)
+                val inputRows = strategy.getDiscountInputRows(defectsPayload, financialPayload)
                 _uiState.update { it.copy(isLoading = false, discountInputRows = inputRows) }
                 _navigationEvent.send(DiscountNavigationEvent.NavigateToResults)
             } catch (e: Exception) {
@@ -223,8 +233,11 @@ class DiscountViewModel @Inject constructor(
         }
     }
 
-    fun getStrategy(grainName: String): GrainDiscountStrategy? = strategies[grainName]
+    fun clearDiscountResult() {
+        _discountResult.value = null
+    }
 
+    /** Reset completo — chamado ao iniciar novo fluxo na GrainSelection. */
     fun clearStates() {
         _uiState.value               = DiscountUIState()
         _defaultLimits.value         = null
@@ -232,6 +245,17 @@ class DiscountViewModel @Inject constructor(
         _discountResult.value        = null
         _classificationPrefill.value = null
         sourceClassificationId       = null
+        selectedGrain = null
+        selectedGroup = null
+        isOfficial    = true
+    }
+
+    /** Reset apenas dos dados de UI — preserva grain/group já selecionados.
+     *  Chamado pelo GroupSelectionScreen para limpar limites sem perder o grão. */
+    fun resetUiState() {
+        _uiState.value           = DiscountUIState()
+        _defaultLimits.value     = null
+        _allOfficialLimits.value = emptyList()
     }
 }
 

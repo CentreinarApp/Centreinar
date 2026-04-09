@@ -29,6 +29,7 @@ class MilhoDiscountStrategy @Inject constructor(
 
     override val descriptor = GrainDescriptor(
         name           = "Milho",
+        limitRegulation = "IN MAPA Nº60/2011",
         displayName    = "Milho",
         colorScheme    = "secondary",
         supportsGroups = false
@@ -44,18 +45,26 @@ class MilhoDiscountStrategy @Inject constructor(
     // -------------------------------------------------------------------------
 
     override fun getDiscountInputRows(
-        prefill: com.example.centreinar.ui.discount.viewmodel.ClassificationPrefill?,
+        defectsPayload: DiscountDefectsPayload,
         financial: FinancialDiscountPayload
-    ): List<DiscountInputRow> = listOf(
-        DiscountInputRow("Peso do Lote",          "%.2f kg".format(financial.lotWeight)),
-        DiscountInputRow("Preço por Saca",        "R\$ %.2f".format(financial.priceBySack)),
-        DiscountInputRow("Umidade",               "%.2f %%".format(prefill?.moisture ?: 0f)),
-        DiscountInputRow("Impurezas",             "%.2f %%".format(prefill?.defects?.get(com.example.centreinar.util.FieldKeys.IMPURITIES) ?: 0f)),
-        DiscountInputRow("Quebrados",             "%.2f %%".format(prefill?.defects?.get(com.example.centreinar.util.FieldKeys.BROKEN) ?: 0f)),
-        DiscountInputRow("Ardidos",               "%.2f %%".format(prefill?.defects?.get(com.example.centreinar.util.FieldKeys.ARDIDO) ?: 0f)),
-        DiscountInputRow("Avariados Total",       "%.2f %%".format(prefill?.defects?.get(com.example.centreinar.util.FieldKeys.SPOILED) ?: 0f)),
-        DiscountInputRow("Carunchados",           "%.2f %%".format(prefill?.defects?.get(com.example.centreinar.util.FieldKeys.CARUNCHADO) ?: 0f))
-    )
+    ): List<DiscountInputRow> {
+
+        // Converte para o payload específico de Milho
+        val payload = defectsPayload as? DiscountDefectsPayload.Milho
+            ?: return emptyList()
+
+        return listOf(
+            DiscountInputRow("Peso do Lote", "%.2f kg".format(financial.lotWeight)),
+            DiscountInputRow("Preço por Saca", "R$ %.2f".format(financial.priceBySack)),
+            DiscountInputRow("Dias de Armazenamento", "${financial.daysOfStorage} dias"),
+            DiscountInputRow("Umidade", "%.2f %%".format(payload.moisture)),
+            DiscountInputRow("Impurezas", "%.2f %%".format(payload.impurities)),
+            DiscountInputRow("Quebrados", "%.2f %%".format(payload.broken)),
+            DiscountInputRow("Ardidos", "%.2f %%".format(payload.ardido)),
+            DiscountInputRow("Avariados Total", "%.2f %%".format(payload.spoiled)),
+            DiscountInputRow("Carunchados", "%.2f %%".format(payload.carunchado))
+        )
+    }
 
     override fun getLimitInputFields(classificationId: Int?): List<DiscountInputField> = listOf(
         DiscountInputField(FieldKeys.MOISTURE,   "Umidade da Amostra (%)"),
@@ -67,7 +76,7 @@ class MilhoDiscountStrategy @Inject constructor(
     )
 
     override fun getDefectInputFields(): List<DiscountInputField> = listOf(
-        DiscountInputField(FieldKeys.IMPURITIES, "Mat. Estranha e Imp. (%)", tabGroup = 0),
+        DiscountInputField(FieldKeys.IMPURITIES, "Matérias Estranhas e Impurezas (%)", tabGroup = 0),
         DiscountInputField(FieldKeys.BROKEN,     "Quebrados (%)",            tabGroup = 1),
         DiscountInputField(FieldKeys.ARDIDO,     "Ardidos (%)",              tabGroup = 1),
         DiscountInputField(FieldKeys.SPOILED,    "Total Avariados (%)",      tabGroup = 1),
@@ -102,6 +111,16 @@ class MilhoDiscountStrategy @Inject constructor(
         )
     }
 
+    override suspend fun getLimitsForDisplay(group: Int, isOfficial: Boolean): List<Any> {
+        return if (isOfficial) {
+            classificationRepo.getLimitsByGroup(grainName, group, 0)
+        } else {
+            val lastSource = classificationRepo.getLastLimitSource()
+            val limit = classificationRepo.getLimit(grainName, group, 1, lastSource)
+            limit?.let { listOf(it) } ?: emptyList()
+        }
+    }
+
     override suspend fun getOfficialTableData(group: Int): Pair<Int, List<Pair<String, List<Float>>>> {
         val limits = classificationRepo.getLimitsByGroup(grainName, group, 0)
         if (limits.isEmpty()) return Pair(0, emptyList())
@@ -109,8 +128,8 @@ class MilhoDiscountStrategy @Inject constructor(
             "Umidade"          to limits.map { it.moistureUpLim },
             "Ardidos"          to limits.map { it.ardidoUpLim },
             "Avariados Total"  to limits.map { it.spoiledTotalUpLim },
-            "Quebrados"        to limits.map { it.brokenUpLim },
-            "Mat. Est. e Imp." to limits.map { it.impuritiesUpLim },
+            "Grãos Quebrados"        to limits.map { it.brokenUpLim },
+            "Matérias Estranhas e Impurezas" to limits.map { it.impuritiesUpLim },
             "Carunchados"      to limits.map { it.carunchadoUpLim }
         ))
     }
@@ -212,15 +231,23 @@ class MilhoDiscountStrategy @Inject constructor(
             val input      = discountRepo.getLastInputDiscount()
             val isOfficial = input.limitSource == 0
 
-            val classificationPayload: ClassificationPdfPayload? =
-                sourceClassificationId?.let { buildClassificationPayload(it, isOfficial) }
+            val classificationPayload = sourceClassificationId?.let {
+                buildClassificationPayload(it, isOfficial, input.limitSource)
+            }
+
+            // Limites usados no cálculo — necessários no fluxo avulso (sem classificationPayload)
+            val limitsForDisplay = classificationRepo.getLimitsByGroup(grainName, input.group, input.limitSource)
+                .filterIsInstance<LimitMilho>()
+            val pdfLimitHeaders = listOf("Defeito") + limitsForDisplay.mapIndexed { i, _ -> "Tipo ${i + 1}" }
+            val pdfLimitRows    = limitsForDisplay.toLimitRows()
+                .map { (label, values) -> PdfLimitRow(label, values.map { "%.2f%%".format(it) }) }
 
             val discountPayload = DiscountPdfPayload(
                 grain        = grainName,
                 summaryRows  = listOf(
-                    PdfDiscountRow("Matérias Estranhas e Impurezas", discount.impuritiesLoss,        discount.impuritiesLossPrice),
-                    PdfDiscountRow("Umidade",                    discount.humidityLoss,           discount.humidityLossPrice),
-                    PdfDiscountRow("Desconto de Classificação",  discount.classificationDiscount, discount.classificationDiscountPrice),
+                    PdfDiscountRow("Desc. Matérias Estranhas e Impurezas", discount.impuritiesLoss,        discount.impuritiesLossPrice),
+                    PdfDiscountRow("Desc. Umidade",                    discount.humidityLoss,           discount.humidityLossPrice),
+                    PdfDiscountRow("Desc. Classificação",  discount.classificationDiscount, discount.classificationDiscountPrice),
                     PdfDiscountRow("Quebra Técnica",             discount.technicalLoss,          discount.technicalLossPrice),
                     PdfDiscountRow("Desconto Total",             discount.finalDiscount,          discount.finalDiscountPrice),
                     PdfDiscountRow("Lote Líquido Final",         discount.finalWeight,            discount.finalWeightPrice)
@@ -228,7 +255,7 @@ class MilhoDiscountStrategy @Inject constructor(
                 detailRows   = listOf(
                     PdfDiscountRow("Matérias Estranhas e Impurezas", discount.impuritiesLoss,  discount.impuritiesLossPrice),
                     PdfDiscountRow("Umidade",                    discount.humidityLoss,    discount.humidityLossPrice),
-                    PdfDiscountRow("Quebrados",                  discount.brokenLoss,      discount.brokenLossPrice),
+                    PdfDiscountRow("Grãos Quebrados",                  discount.brokenLoss,      discount.brokenLossPrice),
                     PdfDiscountRow("Ardidos",                    discount.ardidoLoss,      discount.ardidoLossPrice),
                     PdfDiscountRow("Total de Avariados",         discount.spoiledLoss,     discount.spoiledLossPrice),
                     PdfDiscountRow("Carunchados",                discount.carunchadoLoss,  discount.carunchadoLossPrice)
@@ -238,7 +265,9 @@ class MilhoDiscountStrategy @Inject constructor(
                 lotWeight             = input.lotWeight,
                 lotPrice              = input.lotPrice,
                 classificationPayload = classificationPayload,
-                discountInputRows     = buildMilhoDiscountInputRows(input)
+                discountInputRows     = buildMilhoDiscountInputRows(input),
+                limitHeaders          = pdfLimitHeaders,
+                limitRows             = pdfLimitRows
             )
 
             pdfExporter.exportDiscount(context, discountPayload)
@@ -247,14 +276,19 @@ class MilhoDiscountStrategy @Inject constructor(
         }
     }
 
-    private suspend fun buildClassificationPayload(classificationId: Int, isOfficial: Boolean): ClassificationPdfPayload? {
+    private suspend fun buildClassificationPayload(classificationId: Int, isOfficial: Boolean, limitSource: Int): ClassificationPdfPayload? {
         val classification   = classificationRepo.getClassification(classificationId) ?: return null
         val sample           = classificationRepo.getSample(classification.sampleId)  ?: return null
         val disqualification = classificationRepo.getDisqualificationByClassificationId(classificationId)
         val toxicSeeds       = disqualification?.let { classificationRepo.getToxicSeedsByDisqualificationId(it.id) }
         val colorData        = classificationRepo.getColorClassification(classificationId.toLong())
-        val lastSource       = classificationRepo.getLastLimitSource()
-        val limit            = classificationRepo.getLimit(grainName, sample.group, classification.finalType, lastSource)
+        val lastSource       = discountRepo.getLastLimitSource()
+        val limit = classificationRepo.getLimit(
+            grainName,
+            sample.group,
+            if (isOfficial) classification.finalType else 1, // não oficial sempre tipo 1
+            limitSource
+        )
 
         val detailText = colorData?.let {
             "Grupo: ${it.framingGroup} (Duro: %.1f%%) | Classe: ${it.framingClass} (Amarelo: %.1f%%)".format(
@@ -273,12 +307,12 @@ class MilhoDiscountStrategy @Inject constructor(
         }
 
         val limitRows = listOf(
+            "Umidade"         to limitesParaPdf.map { "%.2f%%".format(it.moistureUpLim) },
             "Ardidos"         to limitesParaPdf.map { "%.2f%%".format(it.ardidoUpLim) },
-            "Mofados"         to limitesParaPdf.map { "%.2f%%".format(it.mofadoUpLim) },
             "Avariados Total" to limitesParaPdf.map { "%.2f%%".format(it.spoiledTotalUpLim) },
             "Quebrados"       to limitesParaPdf.map { "%.2f%%".format(it.brokenUpLim) },
-            "Carunchados"     to limitesParaPdf.map { "%.2f%%".format(it.carunchadoUpLim) },
-            "Matérias Estranhas e Impurezas"   to limitesParaPdf.map { "%.2f%%".format(it.impuritiesUpLim) }
+            "Matérias Estranhas e Impurezas"   to limitesParaPdf.map { "%.2f%%".format(it.impuritiesUpLim) },
+            "Carunchados"     to limitesParaPdf.map { "%.2f%%".format(it.carunchadoUpLim) }
         ).map { (label, values) -> PdfLimitRow(label, values) }
 
         val tableRows = listOf(
@@ -347,7 +381,7 @@ private fun DiscountMilho.toDiscountResult(
     summaryRows = listOf(
         DiscountResultRow("Desc. por Matérias Estranhas e Impurezas", impuritiesLoss,         impuritiesLossPrice),
         DiscountResultRow("Desc. por Umidade",                        humidityLoss,           humidityLossPrice),
-        DiscountResultRow("Desconto de Classificação",                classificationDiscount, classificationDiscountPrice),
+        DiscountResultRow("Desc. Classificação",                classificationDiscount, classificationDiscountPrice, "Desconto aplicado sobre o atributo (defeito ou teor) que excedeu o limite de tolerância definido para Tipo."),
         DiscountResultRow("Quebra Técnica",                           technicalLoss,          technicalLossPrice),
         DiscountResultRow("Desconto Total",                           finalDiscount,          finalDiscountPrice),
         DiscountResultRow("Lote Líquido Final",                       finalWeight,            finalWeightPrice)

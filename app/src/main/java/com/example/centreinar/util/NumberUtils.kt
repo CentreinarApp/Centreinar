@@ -16,7 +16,9 @@ fun Float.toUniversalString(): String {
 
 // Função para arredondar para duas casas decimais
 fun Float.roundToTwoDecimals(): Float {
-    return this.toBigDecimal().setScale(2, RoundingMode.HALF_UP).toFloat()
+    return this.toDouble().toBigDecimal()
+        .setScale(2, RoundingMode.HALF_UP)
+        .toFloat()
 }
 
 // Função para arredondar para uma casa decimal
