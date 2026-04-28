@@ -7,6 +7,7 @@ object Routes {
     // Fluxo de Classificação
     // -------------------------------------------------------------------------
 
+    const val SPLASH = "splash"
     const val HOME                  = "home"
     const val GRAIN_SELECTION       = "grainSelection"
     const val GROUP_SELECTION       = "groupSelection"

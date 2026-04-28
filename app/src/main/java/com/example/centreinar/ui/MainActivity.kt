@@ -4,6 +4,9 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
@@ -34,6 +37,7 @@ import com.example.centreinar.ui.discount.screens.DiscountScreenGrainSelection
 import com.example.centreinar.ui.discount.screens.OfficialOrNotOfficialDiscountScreen
 import com.example.centreinar.ui.discount.viewmodel.DiscountViewModel
 import com.example.centreinar.ui.main.screens.HomeScreen
+import com.example.centreinar.ui.main.screens.SplashScreen
 import com.example.centreinar.ui.theme.CentreinarTheme
 import com.example.centreinar.util.Routes
 import dagger.hilt.android.AndroidEntryPoint
@@ -59,9 +63,28 @@ fun CentreinarApp() {
 
     NavHost(
         navController = navController,
-        startDestination = "main_flow",
-        modifier = Modifier.fillMaxSize()
+        startDestination = Routes.SPLASH,
+        modifier = Modifier.fillMaxSize(),
+        enterTransition = {
+            slideInHorizontally(initialOffsetX = { it }, animationSpec = tween(600))
+        },
+        exitTransition = {
+            slideOutHorizontally(targetOffsetX = { -it }, animationSpec = tween(600))
+        },
+        popEnterTransition = {
+            slideInHorizontally(initialOffsetX = { -it }, animationSpec = tween(600))
+        },
+        popExitTransition = {
+            slideOutHorizontally(targetOffsetX = { it }, animationSpec = tween(600))
+        }
     ) {
+        // -------------------------------------------------------------------------
+        // Splash Screen
+        // -------------------------------------------------------------------------
+        composable(Routes.SPLASH) {
+            SplashScreen(navController = navController)
+        }
+
         navigation(
             startDestination = Routes.HOME,
             route = "main_flow"

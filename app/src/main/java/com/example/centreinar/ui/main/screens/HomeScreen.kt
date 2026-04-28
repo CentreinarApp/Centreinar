@@ -1,22 +1,30 @@
 package com.example.centreinar.ui.main.screens
 
+import android.R.attr.textStyle
+import android.content.Context
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -25,6 +33,10 @@ import androidx.navigation.NavController
 import com.example.centreinar.R
 import com.example.centreinar.ui.classificationProcess.viewmodel.ClassificationViewModel
 import com.example.centreinar.util.Routes
+import kotlinx.coroutines.launch
+
+private const val PREFS_NAME = "centreinar_prefs"
+private const val KEY_TERMS_ACCEPTED = "terms_accepted"
 
 @Composable
 fun HomeScreen(
@@ -34,22 +46,60 @@ fun HomeScreen(
     val configuration = LocalConfiguration.current
     val isSmallScreen = configuration.screenHeightDp < 700
 
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var showTermsDialog by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val accepted = prefs.getBoolean(KEY_TERMS_ACCEPTED, false)
+        if (!accepted) {
+            showTermsDialog = true
+        }
+    }
+
+    if (showTermsDialog) {
+        TermsOfUseDialog(
+            onAccept = {
+                scope.launch {
+                    val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                    prefs.edit().putBoolean(KEY_TERMS_ACCEPTED, true).apply()
+                    showTermsDialog = false
+                }
+            }
+        )
+    }
+
+    val headlineMedium = MaterialTheme.typography.headlineMedium
+    val headlineSmall = MaterialTheme.typography.headlineSmall
+    var textStyle by remember { mutableStateOf(headlineMedium) }
+
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         bottomBar = {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .navigationBarsPadding()
-                    .height(70.dp),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
+            Column(
+                modifier = Modifier.navigationBarsPadding(),
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Image(
-                    painter = painterResource(id = R.drawable.logo_centreinar),
-                    contentDescription = "Logo do Centreinar",
-                    modifier = Modifier.size(150.dp),
-                    contentScale = ContentScale.Fit
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(70.dp),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.logo_centreinar),
+                        contentDescription = "Logo do Centreinar",
+                        modifier = Modifier.size(150.dp),
+                        contentScale = ContentScale.Fit
+                    )
+                }
+                Text(
+                    text = "APLICATIVO EM FASE DE TESTE (BETA)",
+                    style = MaterialTheme.typography.bodySmall,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth().padding(top = 5.dp, bottom = 10.dp)
                 )
             }
         }
@@ -74,10 +124,6 @@ fun HomeScreen(
                         .padding(top = 16.dp, bottom = 12.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    val headlineMedium = MaterialTheme.typography.headlineMedium
-                    val headlineSmall = MaterialTheme.typography.headlineSmall
-                    var textStyle by remember { mutableStateOf(headlineMedium) }
-
                     Text(
                         text = "Olá, seja bem vindo! \uD83D\uDC4B\uD83C\uDF31",
                         style = textStyle,
@@ -140,6 +186,66 @@ fun HomeScreen(
             }
         }
     }
+}
+
+@Composable
+fun TermsOfUseDialog(
+    onAccept: () -> Unit
+) {
+    val scrollState = rememberScrollState()
+
+    AlertDialog(
+        onDismissRequest = { /* Não permite fechar sem aceitar */ },
+        title = {
+            Text(
+                text = "Termos de Uso",
+                style = MaterialTheme.typography.titleLarge
+            )
+        },
+        text = {
+            Column {
+                Text(
+                    text = ("ATENÇÃO: FAVOR NÃO REPASSAR O ARQUIVO .APK DE INSTALAÇÃO PARA TERCEIROS.\n\nO APP ESTÁ EM FASE DE TESTE, PODENDO CONTER ALGUNS ERR0S QUE SERÃO CORRIGIDOS NO APLICATIVO OFICIAL.").trimIndent(),
+                    style = MaterialTheme.typography.titleSmall,
+                    textAlign = TextAlign.Justify,
+                    color = MaterialTheme.colorScheme.error
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    text = "Por favor, leia e aceite os Termos de Uso para continuar.",
+                    style = MaterialTheme.typography.bodySmall,
+                    textAlign = TextAlign.Justify,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 200.dp, max = 320.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .verticalScroll(scrollState)
+                            .fillMaxWidth()
+                    ) {
+                        Text(
+                            text = stringResource(R.string.use_term_app).trimIndent(),
+                            style = MaterialTheme.typography.bodyMedium,
+                            textAlign = TextAlign.Justify
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = onAccept,
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF424C91)),
+            ) {
+                Text("Aceitar e Continuar")
+            }
+        }
+    )
 }
 
 @Composable

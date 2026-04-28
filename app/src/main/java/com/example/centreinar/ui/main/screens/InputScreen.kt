@@ -43,10 +43,10 @@ import com.example.centreinar.util.toUniversalString
  * Define o comportamento da [InputScreen] para cada fluxo.
  *
  * [Classification] — aba básica com peso/amostra/impurezas, campos dinâmicos
- *   via [ClassificationInputField], botão "Classificar".
+ * via [ClassificationInputField], botão "Classificar".
  *
  * [Discount] — aba básica com lote/preço/umidade, campos dinâmicos via
- *   [DiscountInputField], botão "Calcular Desconto".
+ * [DiscountInputField], botão "Calcular Desconto".
  */
 sealed class InputScreenMode {
 
@@ -147,19 +147,18 @@ fun InputScreen(
 
     // ── Seção Classe e Grupo (Milho) ─────────────────────────────────────────
     var defineClasseMilho      by remember { mutableStateOf(false) }
-    var cleanWeightMilhoClasse by remember { mutableStateOf("") }
+    var cleanWeightMilho       by remember { mutableStateOf("") }
     var weightAmarela          by remember { mutableStateOf("") }
     var weightBranca           by remember { mutableStateOf("") }
     var weightCores            by remember { mutableStateOf("") }
     var defineGrupoMilho       by remember { mutableStateOf(false) }
-    var cleanWeightMilhoGrupo  by remember { mutableStateOf("") }
     var weightDuro             by remember { mutableStateOf("") }
     var weightDentado          by remember { mutableStateOf("") }
     var weightSemiduro         by remember { mutableStateOf("") }
 
-    // ── Controle de bloqueio por excesso de peso (Milho) ─────────────────────
-    var classeExceedsLimit by remember { mutableStateOf(false) }
-    var grupoExceedsLimit  by remember { mutableStateOf(false) }
+    // ── Controle de bloqueio por limite de peso (Milho) ──────────────────────
+    var classeInvalid by remember { mutableStateOf(false) }
+    var grupoInvalid  by remember { mutableStateOf(false) }
 
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
@@ -193,13 +192,13 @@ fun InputScreen(
     // Peso limpo exclusivo para cálculo de classe/cor/grupo — pode usar valor manual
     val baseCleanWeightForColor: Float = remember(
         doesDefineColorClass, cleanSampleWeightInput, calculatedCleanWeight,
-        defineClasseMilho, defineGrupoMilho, cleanWeightMilhoClasse
+        defineClasseMilho, defineGrupoMilho, cleanWeightMilho
     ) {
         when {
             descriptor?.supportsColorClass == true && doesDefineColorClass ->
                 cleanSampleWeightInput.toFloatOrZero()
             descriptor?.supportsCarunchado == true && (defineClasseMilho || defineGrupoMilho) ->
-                cleanWeightMilhoClasse.toFloatOrZero().takeIf { it > 0f } ?: calculatedCleanWeight
+                cleanWeightMilho.toFloatOrZero().takeIf { it > 0f } ?: calculatedCleanWeight
             else -> calculatedCleanWeight
         }
     }
@@ -232,11 +231,10 @@ fun InputScreen(
     val otherColorsFocus            = remember { FocusRequester() }
     val focusBranca                 = remember { FocusRequester() }
     val focusCores                  = remember { FocusRequester() }
-    val cleanWeightMilhoClasseFocus = remember { FocusRequester() }
+    val cleanWeightMilhoFocus       = remember { FocusRequester() }
     val focusDuro                   = remember { FocusRequester() }
     val focusDentado                = remember { FocusRequester() }
     val focusSemi                   = remember { FocusRequester() }
-    val cleanWeightMilhoGrupoFocus  = remember { FocusRequester() }
     val daysOfStorageFocus          = remember { FocusRequester() }
     val deductionValueFocus         = remember { FocusRequester() }
 
@@ -428,9 +426,9 @@ fun InputScreen(
                                     mCores   = weightCores,    onMCores   = { weightCores = it },
                                     focusBranca                  = focusBranca,
                                     focusCores                   = focusCores,
-                                    cleanWeightClasse            = cleanWeightMilhoClasse,
-                                    onCleanWeightClasseChange    = { cleanWeightMilhoClasse = it },
-                                    cleanWeightClasseFocus       = cleanWeightMilhoClasseFocus,
+                                    cleanWeight                  = cleanWeightMilho,
+                                    onCleanWeightChange          = { cleanWeightMilho = it },
+                                    cleanWeightFocus             = cleanWeightMilhoFocus,
                                     milhoGrupo                   = defineGrupoMilho,
                                     onMilhoGrupoToggle           = { defineGrupoMilho = it },
                                     mDuro    = weightDuro,     onMDuro    = { weightDuro = it },
@@ -439,12 +437,9 @@ fun InputScreen(
                                     focusDuro                    = focusDuro,
                                     focusDentado                 = focusDentado,
                                     focusSemi                    = focusSemi,
-                                    cleanWeightGrupo             = cleanWeightMilhoGrupo,
-                                    onCleanWeightGrupoChange     = { cleanWeightMilhoGrupo = it },
-                                    cleanWeightGrupoFocus        = cleanWeightMilhoGrupoFocus,
-                                    onClasseExceedsLimit         = { classeExceedsLimit = it },
-                                    onGrupoExceedsLimit          = { grupoExceedsLimit = it },
-                                    isSmallScreen             = isSmallScreen
+                                    onClasseInvalid              = { classeInvalid = it },
+                                    onGrupoInvalid               = { grupoInvalid = it },
+                                    isSmallScreen                = isSmallScreen
                                 )
                             } else {
                                 DiscountDynamicTab(
@@ -490,7 +485,7 @@ fun InputScreen(
                     } else {
                         Button(
                             modifier = Modifier.heightIn(min = 50.dp),
-                            enabled  = !classeExceedsLimit && !grupoExceedsLimit,
+                            enabled  = !classeInvalid && !grupoInvalid,
                             onClick  = {
                                 focusManager.clearFocus()
                                 if (isClassification) {
@@ -728,16 +723,14 @@ private fun ClassificationDefectsTab2(
     mAmarela: String, onMAmarela: (String) -> Unit,
     mBranca: String,  onMBranca: (String) -> Unit, focusBranca: FocusRequester,
     mCores: String,   onMCores: (String) -> Unit,  focusCores: FocusRequester,
-    cleanWeightClasse: String, onCleanWeightClasseChange: (String) -> Unit,
-    cleanWeightClasseFocus: FocusRequester,
+    cleanWeight: String, onCleanWeightChange: (String) -> Unit,
+    cleanWeightFocus: FocusRequester,
     milhoGrupo: Boolean, onMilhoGrupoToggle: (Boolean) -> Unit,
     mDuro: String,    onMDuro: (String) -> Unit,    focusDuro: FocusRequester,
     mDentado: String, onMDentado: (String) -> Unit, focusDentado: FocusRequester,
     mSemi: String,    onMSemi: (String) -> Unit,    focusSemi: FocusRequester,
-    cleanWeightGrupo: String, onCleanWeightGrupoChange: (String) -> Unit,
-    cleanWeightGrupoFocus: FocusRequester,
-    onClasseExceedsLimit: (Boolean) -> Unit,
-    onGrupoExceedsLimit: (Boolean) -> Unit,
+    onClasseInvalid: (Boolean) -> Unit,
+    onGrupoInvalid: (Boolean) -> Unit,
     isSmallScreen: Boolean
 ) {
     Column(modifier = Modifier.padding(if (isSmallScreen) 8.dp else 16.dp)) {
@@ -763,19 +756,16 @@ private fun ClassificationDefectsTab2(
                 mAmarela = mAmarela,      onMAmarela = onMAmarela,
                 mBranca  = mBranca,       onMBranca  = onMBranca,  focusBranca = focusBranca,
                 mCores   = mCores,        onMCores   = onMCores,   focusCores  = focusCores,
-                cleanWeightClasse         = cleanWeightClasse,
-                onCleanWeightClasseChange = onCleanWeightClasseChange,
-                cleanWeightClasseFocus    = cleanWeightClasseFocus,
+                cleanWeight               = cleanWeight,
+                onCleanWeightChange       = onCleanWeightChange,
+                cleanWeightFocus          = cleanWeightFocus,
                 milhoGrupo                = milhoGrupo,
                 onMilhoGrupoToggle        = onMilhoGrupoToggle,
                 mDuro    = mDuro,         onMDuro    = onMDuro,    focusDuro    = focusDuro,
                 mDentado = mDentado,      onMDentado = onMDentado, focusDentado = focusDentado,
                 mSemi    = mSemi,         onMSemi    = onMSemi,    focusSemi    = focusSemi,
-                cleanWeightGrupo          = cleanWeightGrupo,
-                onCleanWeightGrupoChange  = onCleanWeightGrupoChange,
-                cleanWeightGrupoFocus     = cleanWeightGrupoFocus,
-                onClasseExceedsLimit      = onClasseExceedsLimit,
-                onGrupoExceedsLimit       = onGrupoExceedsLimit
+                onClasseInvalid           = onClasseInvalid,
+                onGrupoInvalid            = onGrupoInvalid
             )
         }
     }
@@ -915,17 +905,37 @@ private fun MilhoClasseGroupSection(
     mAmarela: String, onMAmarela: (String) -> Unit,
     mBranca: String,  onMBranca: (String) -> Unit, focusBranca: FocusRequester,
     mCores: String,   onMCores: (String) -> Unit,  focusCores: FocusRequester,
-    cleanWeightClasse: String, onCleanWeightClasseChange: (String) -> Unit,
-    cleanWeightClasseFocus: FocusRequester,
+
+    cleanWeight: String, onCleanWeightChange: (String) -> Unit,
+    cleanWeightFocus: FocusRequester,
+
     milhoGrupo: Boolean, onMilhoGrupoToggle: (Boolean) -> Unit,
     mDuro: String,    onMDuro: (String) -> Unit,    focusDuro: FocusRequester,
     mDentado: String, onMDentado: (String) -> Unit, focusDentado: FocusRequester,
     mSemi: String,    onMSemi: (String) -> Unit,    focusSemi: FocusRequester,
-    cleanWeightGrupo: String, onCleanWeightGrupoChange: (String) -> Unit,
-    cleanWeightGrupoFocus: FocusRequester,
-    onClasseExceedsLimit: (Boolean) -> Unit,
-    onGrupoExceedsLimit: (Boolean) -> Unit
+
+    onClasseInvalid: (Boolean) -> Unit,
+    onGrupoInvalid: (Boolean) -> Unit
 ) {
+    // Rastreia qual switch foi ativado primeiro ("classe" ou "grupo")
+    var firstActivated by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(milhoClasse, milhoGrupo) {
+        if (!milhoClasse && !milhoGrupo) {
+            firstActivated = null
+        } else if (milhoClasse && firstActivated == null) {
+            firstActivated = "classe"
+        } else if (milhoGrupo && firstActivated == null) {
+            firstActivated = "grupo"
+        } else if (!milhoClasse && firstActivated == "classe") {
+            firstActivated = if (milhoGrupo) "grupo" else null
+        } else if (!milhoGrupo && firstActivated == "grupo") {
+            firstActivated = if (milhoClasse) "classe" else null
+        }
+    }
+
+    val limitePeso = cleanWeight.toFloatOrZero()
+
     // ── Classe (Cor) ──────────────────────────────────────────────────────────
     Spacer(Modifier.height(24.dp))
     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -934,10 +944,16 @@ private fun MilhoClasseGroupSection(
     }
     val focusAmarela = remember { FocusRequester() }
     if (milhoClasse) {
+        val isClasseEditable = firstActivated == "classe"
+
         Spacer(Modifier.height(8.dp))
         InputNumberField(
-            cleanWeightClasse, onCleanWeightClasseChange,
-            "Peso da Amostra Limpa — Classe (g)", cleanWeightClasseFocus, focusAmarela
+            value = cleanWeight,
+            onValueChange = onCleanWeightChange,
+            label = "Peso da Amostra Limpa — Classe (g)",
+            focusRequester = cleanWeightFocus,
+            nextFocus = focusAmarela,
+            enabled = isClasseEditable
         )
         Spacer(Modifier.height(4.dp))
         Text(
@@ -953,24 +969,28 @@ private fun MilhoClasseGroupSection(
         Spacer(Modifier.height(4.dp))
         InputNumberField(mCores,   onMCores,   "Peso Cores (Misturada) (g)", focusCores, null)
 
-        // Validação — Classe
-        val somaClasse   = mAmarela.toFloatOrZero() + mBranca.toFloatOrZero() + mCores.toFloatOrZero()
-        val limiteClasse = cleanWeightClasse.toFloatOrZero()
-        val classeExcede = limiteClasse > 0f && somaClasse > limiteClasse
-        onClasseExceedsLimit(classeExcede)
-        if (classeExcede) {
+        // Validação — Classe (Maior ou Menor)
+        val somaClasse = mAmarela.toFloatOrZero() + mBranca.toFloatOrZero() + mCores.toFloatOrZero()
+        val classeInvalida = limitePeso > 0f && kotlin.math.abs(somaClasse - limitePeso) > 0.01f
+
+        onClasseInvalid(classeInvalida)
+
+        if (classeInvalida) {
             Spacer(Modifier.height(6.dp))
+            val msgClasse = if (somaClasse > limitePeso) {
+                "⚠ A soma dos pesos (%.1fg) ultrapassa o peso da amostra limpa (%.1fg)."
+            } else {
+                "⚠ A soma dos pesos (%.1fg) é menor que o peso da amostra limpa (%.1fg)."
+            }
             Text(
-                "⚠ A soma dos pesos (%.1fg) ultrapassa o peso da amostra limpa (%.1fg). Corrija os valores para prosseguir."
-                    .format(somaClasse, limiteClasse),
+                text = msgClasse.format(somaClasse, limitePeso) + " Corrija os valores.",
                 color = MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.fillMaxWidth()
             )
         }
     } else {
-        // Garante que o estado de bloqueio seja limpo ao desativar o switch
-        onClasseExceedsLimit(false)
+        onClasseInvalid(false)
     }
 
     // ── Grupo (Forma) ─────────────────────────────────────────────────────────
@@ -980,10 +1000,16 @@ private fun MilhoClasseGroupSection(
         Text(" Definir Grupo (Forma) do Milho", fontWeight = FontWeight.Bold)
     }
     if (milhoGrupo) {
+        val isGrupoEditable = firstActivated == "grupo"
+
         Spacer(Modifier.height(8.dp))
         InputNumberField(
-            cleanWeightGrupo, onCleanWeightGrupoChange,
-            "Peso da Amostra Limpa — Grupo (g)", cleanWeightGrupoFocus, focusDuro
+            value = cleanWeight,
+            onValueChange = onCleanWeightChange,
+            label = "Peso da Amostra Limpa — Grupo (g)",
+            focusRequester = cleanWeightFocus,
+            nextFocus = focusDuro,
+            enabled = isGrupoEditable
         )
         Spacer(Modifier.height(4.dp))
         Text(
@@ -999,24 +1025,28 @@ private fun MilhoClasseGroupSection(
         Spacer(Modifier.height(4.dp))
         InputNumberField(mSemi,    onMSemi,    "Peso Semiduro (g)", focusSemi,    null)
 
-        // Validação — Grupo
-        val somaGrupo   = mDuro.toFloatOrZero() + mDentado.toFloatOrZero() + mSemi.toFloatOrZero()
-        val limiteGrupo = cleanWeightGrupo.toFloatOrZero()
-        val grupoExcede = limiteGrupo > 0f && somaGrupo > limiteGrupo
-        onGrupoExceedsLimit(grupoExcede)
-        if (grupoExcede) {
+        // Validação — Grupo (Maior ou Menor)
+        val somaGrupo = mDuro.toFloatOrZero() + mDentado.toFloatOrZero() + mSemi.toFloatOrZero()
+        val grupoInvalido = limitePeso > 0f && kotlin.math.abs(somaGrupo - limitePeso) > 0.01f
+
+        onGrupoInvalid(grupoInvalido)
+
+        if (grupoInvalido) {
             Spacer(Modifier.height(6.dp))
+            val msgGrupo = if (somaGrupo > limitePeso) {
+                "⚠ A soma dos pesos (%.1fg) ultrapassa o peso da amostra limpa (%.1fg)."
+            } else {
+                "⚠ A soma dos pesos (%.1fg) é menor que o peso da amostra limpa (%.1fg)."
+            }
             Text(
-                "⚠ A soma dos pesos (%.1fg) ultrapassa o peso da amostra limpa (%.1fg). Corrija os valores para prosseguir."
-                    .format(somaGrupo, limiteGrupo),
+                text = msgGrupo.format(somaGrupo, limitePeso) + " Corrija os valores.",
                 color = MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.fillMaxWidth()
             )
         }
     } else {
-        // Garante que o estado de bloqueio seja limpo ao desativar o switch
-        onGrupoExceedsLimit(false)
+        onGrupoInvalid(false)
     }
 }
 
@@ -1030,7 +1060,8 @@ fun InputNumberField(
     onValueChange: (String) -> Unit,
     label: String,
     focusRequester: FocusRequester,
-    nextFocus: FocusRequester?
+    nextFocus: FocusRequester?,
+    enabled: Boolean = true
 ) {
     val focusManager = LocalFocusManager.current
     // 1. Pegue a referência do controlador do teclado
@@ -1044,6 +1075,7 @@ fun InputNumberField(
         },
         label = { Text(label) },
         singleLine = true,
+        enabled = enabled,
         keyboardOptions = KeyboardOptions(
             keyboardType = KeyboardType.Decimal,
             imeAction = if (nextFocus != null) ImeAction.Next else ImeAction.Done
@@ -1068,8 +1100,6 @@ fun InputNumberField(
             .focusRequester(focusRequester)
     )
 }
-
-
 
 // =============================================================================
 // EXTENSÕES PRIVADAS

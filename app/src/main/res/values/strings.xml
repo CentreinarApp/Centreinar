@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Centreinar</string>
+    <string name="app_name">Classigrãos</string>
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
     <string name="nav_header_title">Android Studio</string>
@@ -10,4 +10,19 @@
     <string name="menu_home">Home</string>
     <string name="menu_gallery">Gallery</string>
     <string name="menu_slideshow">Slideshow</string>
+
+    <string name="use_term_app">
+        O(A) Sr.(a) está sendo convidado(a) a participar de uma pesquisa. Leia este documento com atenção e, em caso de dúvidas, consulte o pesquisador responsável. Este TCLE explica o estudo e solicita sua permissão para participar.\n\n
+O objetivo desta pesquisa é desenvolver uma plataforma segura, offline e precisa para classificação e cálculo de descontos nos grãos de soja e milho, aumentando a transparência e reduzindo fraudes nesses processos.
+\nSe o(a) Sr.(a) aceitar participar da pesquisa, os procedimentos envolvidos em sua participação são os seguintes:\n
+- Comprometimento em se disponibilizar a receber, instalar e testar as versões do aplicativo;\n
+- Responder a 2 formulários de validação, que tem duração de no máximo 15 minutos e retornar o feedback sincero, contribuindo com a evolução do aplicativo.\n\n
+Todo processo será feito de maneira online, via e-mail e whatsapp do projeto, sem necessidade de comparecimento presencial. Neste estudo, os possíveis riscos decorrentes da participação na pesquisa são possíveis desconfortos ao responder as perguntas, insegurança ao utilizar uma nova tecnologia e possível frustração ao cometer erros durante o uso do aplicativo.
+Os possíveis benefícios resultantes da participação na pesquisa são aumentar a transparência e evitar fraudes nos processos de classificação e cálculos de descontos dos grãos de soja e milho e otimizar ambos os processos.\n Além disso, o(a) Sr.(a) poderá acompanhar os resultados da pesquisa por meio de um artigo que será disponibilizado ao final e a versão gratuita do aplicativo disponível para download na Play Store.
+Sua participação é voluntária e pode ser retirada a qualquer momento sem prejuízos. Caso deseje, os dados fornecidos poderão ser excluídos mediante solicitação.\n\n Os dados serão armazenados por no mínimo 5 anos após o encerramento da pesquisa. É assegurada assistência e livre acesso a informações durante toda a pesquisa.
+Não está previsto nenhum tipo de remuneração pela sua participação na pesquisa e o(a) Sr.(a) não terá nenhum custo com respeito aos procedimentos envolvidos. Em caso de danos decorrentes da pesquisa, os participantes terão direito à assistência e indenização conforme previsto na Resolução CNS nº 466/2012.
+Solicitamos também sua autorização para apresentar os resultados deste estudo em eventos da área de tecnologia e publicar em revista científica nacional e/ou internacional. Por ocasião da publicação dos resultados, seu nome será mantido em sigilo absoluto, bem como em todas fases da pesquisa.
+\n\n Caso o(a) Sr.(a) tenha dúvidas, poderá entrar em contato com o pesquisador responsável Gefferson Pereira da Paixão, pelo telefone (31) 3612-4111 e/ou pelo e-mail gefferson.paixao@ufv.br, ou pessoalmente no Centreinar, localizado no campus da UFV, em Viçosa/MG;
+
+    </string>
 </resources>

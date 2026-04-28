@@ -31,7 +31,7 @@ fun ClassificationGrainSelectionScreen(
             onBackClick = { navController.popBackStack() },
             modifier = Modifier
         ) },
-        description = "Regulamentada pelo Ministério da Agricultura, Pecuária e Armazenagem (MAPA), a classificação de grãos é o pilar que define a segurança e o valor real de cada lote.\n\nNosso aplicativo simplifica esse processo essencial, automatizando o cálculo de umidade, impurezas e avarias. Transforme dados complexos em negociações justas, rápidas e transparentes, garantindo precisão total na palma da sua mão.",
+        description = "Regulamentada pelo Ministério da Agricultura e Pecuária (MAPA), a classificação de grãos é o pilar que define a segurança e o valor real de cada lote ao identificar e quantificar atributos de qualidade e segurança, como umidade, impurezas, avarias e sementes tóxicas ou restritivas.\n\nNosso aplicativo simplifica esse processo essencial, automatizando o cálculo de classificação. Transforme dados complexos em negociações justas, rápidas e transparentes, garantindo precisão total na palma da sua mão.",
         callToActionText = "Escolha o grão que deseja clasificar:"
     )
 }

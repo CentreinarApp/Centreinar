@@ -31,8 +31,8 @@ fun DiscountScreenGrainSelection(
             onBackClick = { navController.popBackStack() },
             modifier = Modifier
         ) },
-        description = "Regulamentado pelo Ministério da Agricultura, Pecuária e Armazenagem (MAPA), o cálculo de descontos é o pilar que garante a conversão justa de cada avaria em valor real, protegendo a rentabilidade de cada lote.\n" +
-                "\n" + "Nosso aplicativo simplifica a gestão de descontos. Esqueça as contas manuais e transforme dados complexos em negociações rápidas e transparentes, garantindo o controle total da sua rentabilidade na palma da sua mão.",
+        description = "Os descontos aplicados ao lote de grãos são realizados sobre o resultado da classificação sempre que o parâmetro quantificado (Impurezas, umidade e defeitos) for superior ao valor de referência adotado.\n" +
+                "\n" + "Nosso aplicativo simplifica o cálculo de descontos conforme as recomendações que tratam de requisitos técnicos necessários para a certificação de unidades armazenadoras (IN MAPA Nº33/2007). \n\nEsqueça as contas manuais e transforme dados complexos em negociações rápidas e transparentes, garantindo o controle total da sua rentabilidade na palma da sua mão.",
         callToActionText = "Escolha o grão que deseja calcular os descontos:"
     )
 }
